@@ -1,0 +1,11 @@
+const {chromium}=require('playwright');const fs=require('fs');
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:800},deviceScaleFactor:2,hasTouch:true});const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.setContent('<!doctype html><html><body style="margin:0">'+fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8')+'</body></html>');await p.waitForTimeout(600);
+await p.evaluate(()=>{const W=window.__smelt;W.endIntro();W.S.moved=true});await p.waitForTimeout(300);
+const z=()=>p.evaluate(()=>window.__smelt.zoom);const z0=await z();
+const c=await ctx.newCDPSession(p);const tp=(t,pts)=>c.send('Input.dispatchTouchEvent',{type:t,touchPoints:pts.map((q,i)=>({x:q[0],y:q[1],id:i}))});
+await tp('touchStart',[[165,400],[225,400]]);for(let i=1;i<=10;i++)await tp('touchMove',[[165-i*6,400],[225+i*6,400]]);await tp('touchEnd',[]);
+await p.waitForTimeout(300);const z1=await z();await p.screenshot({path:require('os').tmpdir()+'/gamezoom.png'});
+await p.evaluate(()=>{document.getElementById('mZo').click();document.getElementById('mZo').click()});const z2=await z();
+const st='n/a';
+console.log({z0,z1,z2,st,errs});await b.close()})();

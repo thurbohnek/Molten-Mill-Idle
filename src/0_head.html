@@ -1,0 +1,176 @@
+<title>Molten Mill Idle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: centered stage (full width up to 1400px) with full-bleed canvas + HUD overlay respecting safe areas */
+:root{
+  color-scheme:dark;
+  --bg:#0b0d12;--frame:#14181f;--floor:#3b4048;--floor2:#343940;--seam:#2b2f36;--paint:#f2c230;
+  --hazard:#f5c518;--ink:#111318;--steel:#8b939e;--steeld:#565d67;--steell:#b9c1cb;--scrap:#6f6a64;
+  --rust:#7a5240;--molten:#ff7a1a;--moltenhi:#ffd36b;--moltend:#c2410c;--arc:#d6ecff;
+  --vest:#ff7a1f;--vestl:#ffd23f;--helmet:#f8f6ee;--helper:#ffd23f;--skin:#e7b48f;--coin:#ffcf33;
+  --ui:#f4f1ea;--uidim:#a7adb7;--refrac:#7c4a3a;--truck:#2f6fb5;--good:#5fd38d;
+  --night:rgba(6,9,18,.5);--panel:rgba(16,19,26,.84);--panel2:rgba(16,19,26,.96);--focus:#ffd23f;
+  --shred:#9aa6b4;--kalk:#e9e4d6;--kull:#2b2b2e;--leg:#7d8fa6;--rebar:#7b5f4c;--wire:#a7774f;
+  --prem:#6fb7ff;--water:#123049;--water2:#1b4566;--ship:#8c2f2a;--rail:#5b5148;--locked:rgba(8,10,14,.62);
+  --danger:#ff6b5a;--o2:#4f8fd8;--elek:#30333a;--ildf:#a4553f;--gass:#e8742c;--vann:#3a8fd0;--tcore:#3d4756;--kokille:#3b3f46;--slag:#56524d;--hette:#9b7b4f;--bind:#b8bec7;--valse:#9aa3ad;
+}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ui);font-family:'Rubik',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+#app{box-sizing:border-box;height:100%;display:flex;justify-content:center;align-items:stretch;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+#stage{position:relative;width:100%;max-width:1400px;height:100%;overflow:hidden;background:var(--frame)}
+/* the plant runs left → right, so the stage may grow wide; framed card only when there is height to spare */
+@media (min-width:560px) and (min-height:600px){#app{padding-top:16px;padding-bottom:16px;align-items:center}#stage{max-height:940px;border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06)}}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
+.hud{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;display:flex;gap:8px;align-items:center;pointer-events:none;transition:opacity .4s}
+.chip{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:7px 12px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:nowrap}
+#money{font-size:19px;font-weight:800}#money.long{font-size:16px;padding-left:10px;padding-right:10px;gap:5px}
+#money.bump{animation:bump .18s ease-out}
+@keyframes bump{50%{transform:scale(1.12)}}
+.coin{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,var(--coin) 55%,#c98a00);box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
+.heat{color:var(--uidim);font-size:13px;position:relative;overflow:hidden}.heat b{color:var(--ui)}
+.heat .bar{position:absolute;left:10px;right:10px;bottom:3px;height:3px;border-radius:2px;background:rgba(255,255,255,.1)}
+.heat .bar i{display:block;height:100%;width:0;border-radius:2px;background:var(--hazard)}
+#menuBtn{pointer-events:auto;margin-left:auto;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:var(--panel);color:var(--ui);display:grid;place-items:center;cursor:pointer;padding:0}
+#menuBtn:focus-visible,.mrow button:focus-visible,.mbtn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#menuBtn svg{width:20px;height:20px}
+#goal{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);background:var(--panel);border:1px solid rgba(245,197,24,.35);color:var(--ui);border-radius:14px;padding:7px 12px;font-size:13px;font-weight:700;text-align:center;pointer-events:none;transition:opacity .4s}
+#goal span{color:var(--hazard)}
+#goal small{display:block;color:var(--uidim);font-size:11px;font-weight:600;margin-top:2px}
+#stat{position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);pointer-events:none;font-size:12px;font-weight:700;transition:opacity .4s;max-width:calc(100% - 24px);overflow:hidden}
+#stat i{width:9px;height:9px;border-radius:50%;background:var(--steel);display:inline-block;flex:none}
+#toast{position:absolute;left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translate(-50%,0) scale(.9);background:rgba(16,19,26,.92);border:2px solid var(--hazard);border-radius:16px;padding:10px 16px;font-weight:800;font-size:16px;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:80%}
+#toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
+#toast.big{border-color:var(--good);font-size:20px}
+#stage.intro .hud,#stage.intro #goal,#stage.intro #stat{opacity:0}
+#menu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);right:12px;width:min(290px,calc(100% - 24px));box-sizing:border-box;background:var(--panel2);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:6px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:none;z-index:5;font-size:14px}
+#menu.on{display:block}
+#menu h2{font-size:15px;margin:8px 0 4px;font-weight:800}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);min-height:44px}
+.mrow:last-child{border-bottom:0}
+.dest{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px 0}
+.dest .mbtn{min-width:0}
+.dest .mbtn[aria-checked="true"]{background:var(--good);color:#0c1a12;border-color:transparent}
+.dest .mbtn:disabled{opacity:.35;cursor:not-allowed}
+.dinfo{font-size:12px;opacity:.75;padding:2px 0 6px;font-variant-numeric:tabular-nums}
+.mrow[hidden]{display:none}
+.mbtn{min-height:40px;min-width:76px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#232833;color:var(--ui);font:inherit;font-weight:800;cursor:pointer;padding:0 12px}
+.mbtn[aria-pressed="true"]{background:var(--good);color:#0c1a12;border-color:transparent}
+.mbtn.warn{background:transparent;color:var(--danger);border-color:rgba(255,107,90,.5)}
+.mbtn.warnf{background:var(--danger);color:#1a0b08;border-color:transparent}
+.mbtn.go{background:var(--hazard);color:#111;border-color:transparent}
+.plist{font-size:12px;color:var(--uidim);display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:4px 0 6px;font-variant-numeric:tabular-nums}.plist b{color:var(--ui);font-weight:700;text-align:right}.plist .lk{opacity:.45}
+#menu{max-height:calc(100% - 90px);overflow-y:auto;overscroll-behavior:contain}
+.mrow .tg{min-width:96px}
+#stats{font-size:12px;color:var(--uidim);line-height:1.6;padding:4px 0 6px}
+#stats b{color:var(--ui);font-weight:700}
+#modal{position:absolute;inset:0;background:rgba(5,7,10,.6);display:none;align-items:center;justify-content:center;z-index:6;padding:16px;box-sizing:border-box}
+#modal.on{display:flex}
+#modal .box{background:var(--panel2);border:2px solid var(--hazard);border-radius:18px;padding:16px;max-width:320px;text-align:center}
+#modal h2{margin:0 0 6px;font-size:18px}#modal p{margin:0 0 14px;color:var(--uidim);font-size:14px;line-height:1.45}#modal p b{color:var(--ui)}
+#modal .btns{display:flex;gap:10px;justify-content:center}
+
+.heat{flex-direction:column;align-items:flex-start;gap:0;padding:5px 12px 8px;line-height:1.15;min-width:0;flex:0 1 auto;overflow:hidden}
+.heat span#cv{font-size:10px;color:var(--uidim);font-weight:700}.heat b{font-size:12.5px;max-width:132px;overflow:hidden;text-overflow:ellipsis}
+.heat{align-items:stretch;padding-left:9px;padding-right:9px}.heat span#cv,.heat b{display:block;overflow:hidden;text-overflow:ellipsis}
+#st{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#mapBtn{pointer-events:auto;margin-left:auto;position:relative;width:52px;height:44px;border-radius:22px;border:0;background:var(--hazard);color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;padding:0;font:inherit;font-size:8.5px;font-weight:800;flex:none}
+#mapBtn svg{width:19px;height:19px}#mapBtn i{position:absolute;right:2px;top:1px;width:10px;height:10px;border-radius:50%;background:var(--danger);display:none;box-shadow:0 0 0 2px var(--frame)}#mapBtn.bad i{display:block}
+#mapBtn:focus-visible,#craneBtn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#menuBtn{margin-left:0;flex:none}
+#goal{min-width:min(300px,calc(100% - 24px))}
+#gbar{height:5px;border-radius:3px;background:rgba(255,255,255,.1);margin:5px 4px 0;overflow:hidden}#gbar i{display:block;height:100%;width:0;background:var(--hazard);border-radius:3px}#gbar[hidden]{display:none}
+#gs:empty{display:none}
+#craneBtn{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 64px);min-height:48px;border-radius:16px;border:2px solid var(--hazard);background:var(--panel2);color:var(--hazard);font:inherit;font-weight:800;font-size:14px;padding:0 16px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+#craneBtn.on{background:var(--hazard);color:#111}#craneBtn[hidden]{display:none}
+#stage.intro #craneBtn,#stage.intro #mapBtn{opacity:0}
+#mapov{position:absolute;inset:0;background:rgba(9,11,15,.97);z-index:7;display:none;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 10px);box-sizing:border-box;gap:8px}
+#mapov.on{display:flex}
+.mtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mtop h2{margin:0;font-size:18px;font-weight:800;margin-right:auto}
+.seg{display:flex;gap:6px}.seg .mbtn{min-width:0;font-size:12.5px;padding:0 10px}
+.msum{font-size:12.5px;color:var(--uidim);font-variant-numeric:tabular-nums}.msum b{color:var(--ui)}.msum .bad{color:var(--danger)}
+.mwrap{position:relative;flex:1 1 auto;min-height:150px;display:flex;min-width:0}
+.mzoom{position:absolute;right:8px;bottom:8px;display:flex;flex-direction:column;gap:6px}.mzoom button{width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(27,32,41,.92);color:var(--ui);font:inherit;font-size:20px;font-weight:800;cursor:pointer;padding:0;line-height:1}.mzoom button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}.mzoom button:disabled{opacity:.35}
+.mscroll{flex:1 1 auto;min-width:0;min-height:0;overflow:auto;cursor:grab;overscroll-behavior:contain;border-radius:12px;background:#0f1218;border:1px solid rgba(255,255,255,.08);-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none}
+.mscroll svg{display:block;height:100%;width:auto;max-width:none;min-height:240px}
+@media (min-aspect-ratio:4/3){#mapov.on{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,36%);grid-template-rows:auto auto minmax(0,1fr)}.mtop,.msum{grid-column:1/-1}.mwrap{grid-row:3;min-height:0}.mpanel{grid-row:3;max-height:none;min-height:0}.mscroll svg{min-height:0}}
+.mscroll .node{cursor:pointer}.mscroll .node.sel .nb{stroke:var(--hazard);stroke-width:2.5}.mscroll .node:focus{outline:none}.mscroll .node:focus-visible .nb{stroke:var(--hazard);stroke-width:3}
+.mscroll .flow{animation:dash 1.1s linear infinite}@keyframes dash{to{stroke-dashoffset:-16}}
+.mscroll .pulse{animation:pul 1.4s ease-in-out infinite}@keyframes pul{50%{opacity:.35}}
+.mpanel{flex:0 0 auto;max-height:42%;overflow-y:auto;overscroll-behavior:contain;background:#11141a;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 14px;font-size:13px;font-variant-numeric:tabular-nums}
+.mpanel h3{margin:0 0 4px;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.flag{font-size:10.5px;font-weight:800;letter-spacing:.04em;background:var(--danger);color:#1a0b08;border-radius:6px;padding:2px 7px}.flag.amb{background:var(--hazard);color:#111}.flag.ok{background:var(--good);color:#0c1a12}
+.prow{display:grid;grid-template-columns:84px 1fr;gap:4px 10px;padding:5px 0;border-top:1px solid rgba(255,255,255,.07)}
+.prow .k{color:var(--uidim);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding-top:2px}
+.prow ul{margin:0;padding:0;list-style:none}.prow li{display:flex;gap:6px;align-items:center}.prow li i{width:10px;height:10px;border-radius:3px;flex:none}
+.prow .lv{display:grid;grid-template-columns:1fr auto;gap:1px 10px}.prow .lv b{font-weight:700;text-align:right}.prow .lv .mx{color:var(--good)}.prow .lv .lk{opacity:.45}.prow .lv .urg{font-style:normal;font-size:10px;font-weight:800;color:var(--danger);text-transform:uppercase}
+.util{height:7px;border-radius:4px;background:#232833;overflow:hidden;margin-top:5px}.util i{display:block;height:100%;background:var(--good)}
+.pnote{font-size:12.5px;color:var(--uidim);margin:6px 0 0}
+/* tap-to-explain bubble: dark panel, hazard border; placed above or below the play area, whichever is farther from the object */
+#info{position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:min(88%,440px);box-sizing:border-box;background:var(--panel2);border:2px solid var(--hazard);border-radius:16px;padding:10px 14px 11px;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:4;pointer-events:none;font-size:13.5px;line-height:1.4;display:none}
+#info.on{display:block}
+#info b{display:block;font-size:15px;font-weight:800;color:var(--hazard);margin:0 0 3px}
+#info p{margin:0;color:var(--ui);font-weight:500}
+#info p.n{margin-top:6px;color:var(--uidim);font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
+#info p.n:empty{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<div id="app"><div id="stage" class="intro">
+  <canvas id="c" tabindex="0" aria-label="Molten Mill spillområde. Dra eller bruk piltaster for å gå. Gå på rutene for å kjøpe. Trykk på ting for en forklaring." data-ia="Molten Mill spillområde. Dra eller bruk piltaster for å gå. Gå på rutene for å kjøpe. Trykk på ting for en forklaring."></canvas>
+  <div class="hud">
+    <div class="chip" id="money"><span class="coin"></span><b id="mv">0</b><small id="cur">kr</small></div>
+    <div class="chip heat" id="phase"><span id="cv">Fase 1</span><b id="pv">Blokkstøping</b><span class="bar"><i id="lvb"></i></span></div>
+    <button id="mapBtn" type="button" aria-label="Kart over linja" data-ia="Kart over linja" aria-expanded="false" aria-controls="mapov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span data-i="KART">KART</span><i id="mapDot"></i></button>
+    <button id="menuBtn" type="button" aria-label="Meny" data-ia="Meny" aria-expanded="false" aria-controls="menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div id="goal" role="status" aria-live="polite"><div id="gm"></div><div id="gbar"><i id="gbi"></i></div><small id="gs"></small></div>
+  <button id="craneBtn" type="button" hidden>Styr kranen</button>
+  <div id="stat" class="chip"><i id="sdot"></i><span id="st"></span></div>
+  <div id="menu" role="dialog" aria-label="Meny" data-ia="Meny">
+    <div class="mrow"><span lang="en">Language / Språk</span><div class="seg" role="group" aria-label="Language / Språk"><button class="mbtn" id="mLangEn" type="button" aria-pressed="true" lang="en" aria-label="English">EN</button><button class="mbtn" id="mLangNo" type="button" aria-pressed="false" lang="nb" aria-label="Norsk">NO</button></div></div>
+    <div class="mrow"><span>Zoom</span><div class="seg"><button class="mbtn" id="mZo" type="button" aria-label="Zoom ut" data-ia="Zoom ut">−</button><button class="mbtn" id="mZi" type="button" aria-label="Zoom inn" data-ia="Zoom inn">+</button></div></div>
+    <div class="mrow"><span data-i="Lyd">Lyd</span><button class="mbtn" id="mSound" type="button" aria-pressed="true">På</button></div>
+    <div class="mrow"><span data-i="Vibrasjon">Vibrasjon</span><button class="mbtn" id="mVib" type="button" aria-pressed="true">På</button></div>
+    <div id="mCastW" hidden><h2 data-i="Støping">Støping</h2>
+    <div class="dest" id="mCast" role="radiogroup" aria-label="Støping" data-ia="Støping">
+      <button class="mbtn" type="button" role="radio" data-c="auto" data-i="Auto">Auto</button>
+      <button class="mbtn" type="button" role="radio" data-c="blokk" data-i="Blokk">Blokk</button>
+      <button class="mbtn" type="button" role="radio" data-c="strang" data-i="Streng">Streng</button>
+    </div></div>
+    <div id="mMixW" hidden><h2 data-i="Valseprogram">Valseprogram</h2>
+    <div class="dest" id="mMix" role="radiogroup" aria-label="Valseprogram" data-ia="Valseprogram">
+      <button class="mbtn" type="button" role="radio" data-m="arm" data-i="Armering">Armering</button>
+      <button class="mbtn" type="button" role="radio" data-m="begge" data-i="Begge">Begge</button>
+      <button class="mbtn" type="button" role="radio" data-m="vals" data-i="Valstråd">Valstråd</button>
+    </div></div>
+    <div id="mTogW" hidden><h2 data-i="Automatiske transporter: videre eller salg">Automatiske transporter: videre eller salg</h2><div id="mTog"></div></div>
+    <h2 data-i="Hjelpere leverer til">Hjelpere leverer til</h2>
+    <div class="dest" id="mDest" role="radiogroup" aria-label="Hjelpere leverer til" data-ia="Hjelpere leverer til">
+      <button class="mbtn" type="button" role="radio" id="d_best" data-d="best">Beste pris</button>
+      <button class="mbtn" type="button" role="radio" id="d_dock" data-d="dock">Lastebil</button>
+      <button class="mbtn" type="button" role="radio" id="d_tog" data-d="tog">Tog</button>
+      <button class="mbtn" type="button" role="radio" id="d_kai" data-d="kai">Kai</button>
+    </div>
+    <div id="destInfo" class="dinfo"></div>
+    <h2 data-i="Priser per tonn (lastebil)">Priser per tonn (lastebil)</h2>
+    <div id="prices" class="plist"></div>
+    <h2 data-i="Statistikk">Statistikk</h2>
+    <div id="stats"></div>
+    <div class="mrow" id="resetRow"><span data-i="Nullstill spillet">Nullstill spillet</span><button class="mbtn warn" id="mReset" type="button" data-i="Nullstill">Nullstill</button></div>
+    <div class="mrow" id="resetConf" hidden><span data-i="Slette alt?">Slette alt?</span><span style="display:flex;gap:6px"><button class="mbtn warnf" id="mResetYes" type="button" data-i="Ja, slett">Ja, slett</button><button class="mbtn" id="mResetNo" type="button" data-i="Avbryt">Avbryt</button></span></div>
+  </div>
+  <div id="modal" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="box"><h2 id="mdT"></h2><p id="mdP"></p><div class="btns"><button class="mbtn go" id="mdYes" type="button"></button><button class="mbtn" id="mdNo" type="button" data-i="Avbryt">Avbryt</button></div></div></div>
+  <div id="mapov" role="dialog" aria-modal="true" aria-label="Kart over produksjonslinja" data-ia="Kart over produksjonslinja">
+    <div class="mtop"><h2 data-i="Kart">Kart</h2><div class="seg" role="group" aria-label="Kartvisning" data-ia="Kartvisning"><button class="mbtn" type="button" id="mProd" aria-pressed="true" data-i="Produktflyt">Produktflyt</button><button class="mbtn" type="button" id="mMoney" aria-pressed="false" data-i="Pengeflyt">Pengeflyt</button></div><button class="mbtn" id="mapClose" type="button" aria-label="Lukk kartet" data-ia="Lukk kartet" data-i="Lukk">Lukk</button></div>
+    <div id="mapSum" class="msum"></div>
+    <div class="mwrap"><div class="mscroll" id="mapScroll"><svg id="mapSvg" viewBox="0 0 1420 500" role="group" aria-label="Linja fra skrap til salg" data-ia="Linja fra skrap til salg"></svg></div><div class="mzoom" role="group" aria-label="Zoom"><button type="button" id="mzIn" aria-label="Zoom inn" data-ia="Zoom inn">+</button><button type="button" id="mzOut" aria-label="Zoom ut" data-ia="Zoom ut">−</button><button type="button" id="mzFit" aria-label="Tilpass kartet" data-ia="Tilpass kartet">⤢</button></div></div>
+    <div id="mapPanel" class="mpanel" aria-live="polite"></div>
+  </div>
+  <div id="info" role="status" aria-live="polite"><b id="infoT"></b><p id="infoP"></p><p class="n" id="infoN"></p></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div></div>
+<script>

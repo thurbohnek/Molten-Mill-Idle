@@ -1,0 +1,198 @@
+
+/* ---------- i18n: English (default) and Norwegian bokmål ----------
+   Game data and code keep the Norwegian text; t_(key,…args) returns the English text for it.
+   {0},{1}… in a key are filled with the args. "ctx§text" keys disambiguate words that translate differently
+   (Norwegian shows the part after §). Keys that are missing in English are collected in I18N_MISS (tests check it). */
+const I18N_MISS=new Set();
+function t_(s,...a){let o=s==null?'':''+s;
+ if(!NO_()){const e=EN[o];if(e!=null)o=e;else{if(/[A-Za-zÆØÅæøå]/.test(o))I18N_MISS.add(o);const i=o.indexOf('§');if(i>=0)o=o.slice(i+1)}}
+ else{const i=o.indexOf('§');if(i>=0)o=o.slice(i+1)}
+ return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
+const EN={
+ /* --- zones, plates, plants --- */
+ 'FORSYNING · RÅJERN':'SUPPLY · IRONMAKING','RÅJERNSVERK':'IRONMAKING','SKRAPPLASS':'SCRAP YARD','FORSYNING · OVN':'SUPPLY · FURNACE','SMELTEVERK':'MELT SHOP',
+ 'ØSEOVN':'LADLE FURNACE','BLOKKSTØPING':'INGOT CASTING','STRANGGJUTING':'CONTINUOUS CASTER','SALG':'SALE','SALG 2':'SALE 2','GJENNOMVARMING':'REHEATING',
+ 'VALSEVERK':'ROLLING MILL','TEMPCORE':'TEMPCORE','VALSTRÅD':'WIRE ROD','NETTVERK':'MESH WELDING','KLIPP OG BØY':'CUT & BEND','UTLASTING':'SHIPPING',
+ 'STÅLVERK':'MELT SHOP','EL-OVN':'ELECTRIC','MASOVN':'BLAST FURNACE','NEDLAGT':'CLOSED','TOMT':'PLOT','SKRAPHAUG 2':'SCRAP PILE 2',
+ 'BESSEMER':'BESSEMER','SM-OVN':'OPEN HEARTH','LD-KONVERTER':'LD CONVERTER','LYSBUEOVN':'ARC FURNACE','UHP-LYSBUEOVN':'UHP ARC FURNACE','CONSTEEL-OVN':'CONSTEEL',
+ 'EL-RÅJERNSOVN':'ELECTRIC SMELTER',
+ /* --- products / kinds --- */
+ 'Masseljern':'Pig iron','Støpeblokk':'Ingot','Emne':'Billet','Armeringsstål':'Rebar','Tempcore-armering':'Tempcore rebar','Valstråd':'Wire rod','Armeringsnett':'Rebar mesh',
+ 'Bøyd armering':'Bent rebar','Slagg (pukk)':'Slag (aggregate)',
+ 'skrap':'scrap','malm':'ore','masseljern':'pig iron','slagg':'slag','elektroder':'electrodes','kokiller':'moulds','varme kokiller':'hot moulds','kanalstein':'runner bricks',
+ 'varmholdsmasse':'hot-top compound','støpeblokker':'ingots','emner':'billets','armeringsstål':'rebar','valstråd':'wire rod','armeringsnett':'rebar mesh','bøyd armering':'bent rebar',
+ 'stenger':'bars','armering':'rebar',
+ /* --- furnaces --- */
+ 'Bessemer-konverter':'Bessemer converter','Siemens-Martin-ovn':'Open-hearth (Siemens-Martin) furnace','LD-konverter':'LD (BOF) converter','Lysbueovn':'Electric arc furnace',
+ 'UHP-lysbueovn':'UHP electric arc furnace','Consteel-ovn':'Consteel arc furnace','s blåsing':'s blow','MW gass':'MW gas','MVA':'MVA',
+ '≈20 min':'≈20 min','≈8 t':'≈8 h','≈40 min':'≈40 min','≈2 t':'≈2 h','<60 min':'<60 min',
+ 'kalk/dolo':'lime/dolomite','oksygen':'oxygen','kull':'coal','koks':'coke','cowpere':'hot stoves',
+ 'Koksmasovn':'Coke blast furnace','Elektrisk råjernsovn':'Electric iron smelter',
+ /* --- builds --- */
+ 'SM-ovn':'Open hearth','Øseovn':'Ladle furnace','Strang':'Caster','Stranggjuting':'Continuous caster','Valseverk':'Rolling mill','El-råjernsovn':'Electric smelter',
+ 'Jernbane':'Railway','Omlegging':'Conversion','Omlegging: lysbueovn':'Conversion: arc furnace','UHP-ovn':'UHP furnace','Tempcore':'Tempcore','Nettverk':'Mesh welding',
+ 'Consteel':'Consteel','Klipp og bøy':'Cut & bend','Kai':'Quay','Masovn og Bessemer':'Blast furnace & Bessemer',
+ 'Råjern og skrap i kasser – større charger, men trenger kalk.':'Hot metal and scrap charged in boxes – bigger heats, but it needs lime.',
+ 'Legeringer og temperatur i øsa gir bedre kvalitet og høyere pris.':'Alloying and temperature control in the ladle give better quality and a higher price.',
+ 'Rent oksygen gjennom en lanse ovenfra. Mye råjern, litt skrap.':'Pure oxygen blown through a lance from above. Mostly hot metal, a little scrap.',
+ 'Samme pris, men 97 % utbytte i stedet for ca. 85 %.':'Same price, but 97% yield instead of about 85%.',
+ 'Gjennomvarmingsovn og valselinje: emner blir armeringsstål.':'Reheating furnace and rolling line: billets become rebar.',
+ 'Tre Søderberg-elektroder og lukket topp. Koksen er bare reduksjonsmiddel – energien er strøm.':'Three Söderberg electrodes and a closed top. Coke is only the reducing agent – the energy is electricity.',
+ 'Toget betaler mer per tonn enn lastebilen.':'The train pays more per tonne than the truck.',
+ 'Råjernsverket legges ned. Stålet lages av skrap i lysbueovn.':'The ironworks closes. Steel is made from scrap in an electric arc furnace.',
+ 'Vannkjølte paneler, stor trafo, O₂-lanser og kullinjeksjon.':'Water-cooled panels, a big transformer, O₂ lances and coal injection.',
+ 'Bråkjøling gir B500-armering uten dyre legeringer.':'Quenching gives B500 rebar without expensive alloys.',
+ 'Ferdigblokk, leggehode og Stelmor. Med egen lastebil.':'Finishing block, laying head and Stelmor. With its own truck.',
+ 'Valstråd sveises til armeringsnett.':'Wire rod is welded into rebar mesh.',
+ 'Kontinuerlig chargering med forvarmingstunnel og flat bad.':'Continuous charging through a preheating tunnel, flat-bath operation.',
+ 'Ferdig bøyd armering per byggeprosjekt.':'Rebar cut and bent to order for each building project.',
+ 'Skip gir best pris for eksport.':'Ships pay the best price, for export.',
+ /* --- upgrades (full names; pad titles use the same keys) --- */
+ 'Større bæring':'Carry more','Raskere gange':'Walk faster','Skraptilførsel':'Scrap supply','Skrapkran':'Scrap crane','Større skrapkasse':'Bigger scrap box',
+ 'Flere chargeringskasser':'More charging boxes','Større skrapkurv':'Bigger scrap bucket','Raskere Consteel-bånd':'Faster Consteel belt','Skraphaug 2':'Scrap pile 2',
+ 'Kurvforvarming':'Bucket preheating','Større konverter':'Bigger converter','Større ovn':'Bigger furnace','Sterkere blåsemaskin':'Stronger blowing engine',
+ 'Sterkere brennere':'Stronger burners','Kraftigere O₂-lanse':'Stronger O₂ lance','Mer effekt':'More power','Raskere raffinering':'Faster refining','Raskere tapping':'Faster tapping',
+ 'Tapper':'Tapper','Ekstra øse':'Extra ladle','Større slaggpotte':'Bigger slag pot','Slaggbil':'Slag pot carrier','Kalk og dolo':'Lime & dolomite','Oksygenanlegg':'Oxygen plant',
+ 'Veggmonterte injektorer':'Wall-mounted injectors','Dørlansemanipulator':'Door lance manipulator','Elektrodekran':'Electrode crane','Kullinjeksjon':'Coal injection',
+ 'Mer effekt (MVA)':'More power (MVA)','Større masovn':'Bigger blast furnace','Malmtilførsel':'Ore supply','Malmkran':'Ore crane','Større chargeringsbånd':'Bigger charging belt',
+ 'Større skip':'Bigger skip','Større torpedovogn':'Bigger torpedo car','Ekstra torpedovogn':'Extra torpedo car','Koksverk':'Coke plant','Cowpere':'Hot stoves',
+ 'Pelletverk':'Pellet plant','Sinterverk':'Sinter plant','Bedre metallurgi':'Better metallurgy','Raskere behandling':'Faster treatment','Ny øsekran':'New ladle crane',
+ 'Flere kokiller':'More moulds','Større kokiller':'Bigger moulds','Raskere størkning':'Faster solidi­fication','Raskere kokillekran':'Faster mould crane',
+ 'Kanalsteinlager':'Runner-brick store','Varmholdsmasse':'Hot-top compound','Flere strenger':'More strands','Støpefart':'Casting speed','Skjærebrenner':'Cutting torch',
+ 'Øsetårn (sekvens)':'Ladle turret (sequence)','Salgsavtale':'Sales contract','Hjelperfart':'Helper speed','Hjelperkapasitet':'Helper capacity','Ovnskapasitet':'Furnace capacity',
+ 'Bjelkeovn':'Walking-beam furnace','Magnetkran':'Magnet crane','Varminnsetting':'Hot charging','Valsefart':'Rolling speed','Splittvalsing':'Slit rolling',
+ 'Rullebane til klipp og bøy':'Roller table to cut & bend','Tempcore-kapasitet':'Tempcore capacity','Finverksfart':'Finishing-block speed','Stelmor-vifter':'Stelmor fans',
+ 'Kveiletransport':'Coil conveyor','Sveisefart':'Welding speed','Bøyefart':'Bending speed','Togavtale':'Rail contract','Kaiavtale':'Shipping contract',
+ 'Vegginjektorer':'Wall injectors','Dørlanse':'Door lance','Flere kasser':'More boxes','Raskere bånd':'Faster belt','Større bånd':'Bigger belt',
+ /* upgrade effects */
+ 'stk':'pcs','+{0} % fart':'+{0}% speed','+{0} % kapasitet':'+{0}% capacity','+{0} % skrap':'+{0}% scrap','Henter selv':'Fetches by itself','kasser':'boxes',
+ '+{0} % kasse':'+{0}% box','+{0} % kurv':'+{0}% bucket','−{0} % tid':'−{0}% time','Tapper ovnen for deg':'Taps the furnace for you','øser':'ladles',
+ 'Tømmer selv':'Empties by itself','Fyller selv':'Refills by itself','Bygg anlegget':'Build the plant','+{0} % O₂':'+{0}% O₂','−{0} % kWh/t':'−{0}% kWh/t',
+ 'Raskere oppsett':'Faster set-up','Mindre kapp':'Less crop loss','+{0} % utbytte':'+{0}% yield','Sekvensstøping':'Sequence casting','Flytter selv':'Moves by itself',
+ 'Rullebane':'Roller table','+{0} % pris':'+{0}% price','+{0} % valsefart':'+{0}% rolling speed','Automatisk':'Automatic','+{0} % effekt':'+{0}% power',
+ '+{0} % råjern':'+{0}% hot metal','+{0} % malm':'+{0}% ore','vogner':'cars','{0} → {1} % jern':'{0} → {1}% iron',
+ /* helpers */
+ 'Malmhjelper':'Ore helper','Skraphjelper':'Scrap helper','Ovnshjelper':'Furnace helper','Blokkhjelper':'Ingot helper','Emnehjelper':'Billet helper',
+ 'Valseverkshjelper':'Rolling-mill helper','Tempcorehjelper':'Tempcore helper','Valstrådhjelper':'Wire-rod helper','Netthjelper':'Mesh helper','Bøyehjelper':'Bending helper',
+ /* switches */
+ 'Råjern':'Hot metal','Støping':'Casting','Valseprogram':'Mill program','Auto':'Auto','Blokk':'Ingots','Streng':'Caster','Armering':'Rebar','Begge':'Both',
+ 'Stålverk':'Melt shop','Salg':'Sale','VIDERE':'ONWARD',
+ /* pads */
+ 'Bygg: {0}':'Build: {0}','Nytt verk':'New Mill','Hjelpere {0} av {1}':'Helpers {0} of {1}','MAKS':'MAX','Nivå {0}/{1}':'Level {0}/{1}','Fase {0} · ny stasjon':'Phase {0} · new station',
+ '+{0} ekspertise':'+{0} expertise','Tjen {0} totalt':'Earn {0} in total','TRYKK':'TAP','KLAR':'READY',
+ /* toasts + floats */
+ 'Chargeringen er full':'The charging area is full','Ingen plass å levere':'Nowhere to deliver','Slaggpotta er full – ovnen står!':'Slag pot full – the furnace has stopped!',
+ '1625 °C – KLAR!':'1625 °C – READY!','Klar for tapping! Gå på TAPP':'Ready to tap! Step on TAP','Charge {0}: {1} t stål':'Heat {0}: {1} t of steel','Kvalitet ×{0}':'Quality ×{0}',
+ 'Ben i kanalene: −{0} %':'Steel left in the runners: −{0}%','{0} støpeblokker':'{0} ingots',
+ 'Malmkranen henter malm selv. Trykk STYR KRANEN for å kjøre den selv.':'The ore crane now fetches ore by itself. Tap DRIVE to drive it yourself.',
+ 'Skrapkranen henter skrap selv. Trykk STYR KRANEN for å kjøre den selv (dobbel last).':'The scrap crane now fetches scrap by itself. Tap DRIVE to drive it yourself (double load).',
+ '{0} – kjøpt!':'{0} – bought!','Ny ovn: {0}!':'New furnace: {0}!','Ingen ekstern energi – oksidasjonen gir varmen':'No external energy – oxidation supplies the heat',
+ 'tap-til-tap {0}':'tap-to-tap {0} in real life','trenger {0}':'needs {0}','Chargen: {0}–{1} % råjern, resten skrap':'The charge: {0}–{1}% hot metal, the rest scrap',
+ 'Ny råjernsovn: {0}!':'New iron furnace: {0}!','{0} er bygget!':'{0} is built!',
+ 'Omleggingen: Råjernsverket legges ned – nå blir det skrap og lysbue':'The conversion: the ironworks closes – from now on it is scrap and electric arc',
+ '{0} masseljern ligger klare for salg ved malmtoget':'{0} pig iron are ready for sale at the ore train','Malmhjelperne får nye jobber · +{0} tilbake':'The ore helpers get new jobs · +{0} refunded',
+ 'Nytt verk! Inntekt ×{0}':'New Mill! Income ×{0}','Nytt spill startet':'New game started','Ingen tom øse under tappen':'No empty ladle under the tap',
+ 'Verksnivå {0}! Bonus +{1}':'Mill level {0}! Bonus +{1}','Kranen kjører selv igjen':'The crane runs by itself again','Du styrer {0} ({1})':'You are driving the {0} ({1})',
+ 'Mens du var borte: +{0}':'While you were away: +{0}',
+ 'Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.':'New Mill! You now start right from the ore: blast furnace, torpedo cars and a Bessemer converter.',
+ 'Startbonus fra forrige verk: +{0}':'Starting bonus from your previous mill: +{0}','Fase 1: Masovn og Bessemer-konverter':'Phase 1: Blast furnace and Bessemer converter',
+ 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
+ /* status chips */
+ 'Flaskehals: skrap til ovnen':'Bottleneck: scrap to the furnace','Skrapkassa er full (litt kjøleskrap)':'Scrap box full (a little cooling scrap)','Chargering full':'Charging full',
+ 'Flaskehals: øse ({0})':'Bottleneck: ladle ({0})','Flaskehals: øse':'Bottleneck: ladle','blokkstøping':'ingot casting','streng':'caster','øseovn':'ladle furnace','kø':'queue','kran':'crane',
+ 'Klar – gå på TAPP':'Ready – step on TAP','Flaskehals: {0}':'Bottleneck: {0}','Flaskehals: {0} mangler':'Bottleneck: no {0}','Venter på elektroder':'Waiting for electrodes',
+ 'Råjernet går til salg (bryter)':'Hot metal goes to sale (switch)','Venter på råjern':'Waiting for hot metal','Flaskehals: ovnen':'Bottleneck: the furnace',
+ 'Venter på skrap':'Waiting for scrap','Venter på tom øse':'Waiting for an empty ladle','Flaskehals: venter på øse':'Bottleneck: waiting for a ladle','Chargerer':'Charging',
+ 'Raffinerer':'Refining','Tapper snart':'Tapping soon','v§Tapper':'Tapping','Blåser':'Blowing','Bryter: råjern til salg':'Switch: hot metal to sale',
+ 'Flaskehals: malm til ovnen':'Bottleneck: ore to the furnace','Flaskehals: torpedovogner':'Bottleneck: torpedo cars','Flaskehals: ovnseffekt (MVA)':'Bottleneck: furnace power (MVA)',
+ 'Flaskehals: masovnen':'Bottleneck: the blast furnace','Venter på malm':'Waiting for ore','Overskudd støpes til masseljern':'Surplus is cast into pig iron',
+ 'Venter på torpedovogn':'Waiting for a torpedo car','{0} t/min råjern':'{0} t/min hot metal','Mangler {0}':'Missing {0}','Nok forsyning':'Supply OK','Mangler {0}anlegg':'Missing {0} plant',
+ 'Flaskehals: øsekranen':'Bottleneck: the ladle crane','Behandler':'Treating','Flaskehals: øseovn':'Bottleneck: ladle furnace','Venter på stål':'Waiting for steel',
+ 'Mangler kokiller!':'No moulds!','Flaskehals: blokkstøping':'Bottleneck: ingot casting','Stigstøper':'Bottom pouring','Støper':'Casting',
+ 'Bryteren står på Streng':'The switch is set to Caster','Auto: stålet går til strengen':'Auto: the steel goes to the caster','Flaskehals: strenger':'Bottleneck: strands',
+ 'Støper · {0} strenger':'Casting · {0} strands','Bryteren står på Blokk':'The switch is set to Ingots','Flaskehals':'Bottleneck','Valseprogram: Armering':'Mill program: Rebar',
+ 'Valseprogram: Valstråd':'Mill program: Wire rod','Emner går til salg (meny)':'Billets go to sale (menu)','Bær {0} hit':'Carry {0} here','Venter på {0}':'Waiting for {0}',
+ /* goals */
+ 'skipet':'the skip','malmtoget':'the ore train','chargeringen':'the charging area','elektrodestativet':'the electrode rack','bunnplata':'the bottom plate',
+ 'kokillelageret':'the mould store','slaggplassen':'the slag yard','lastebilen':'the truck','lastebil 2':'truck 2','toget':'the train','kaia':'the quay',
+ 'gjennomvarmingsovnen':'the reheating furnace','nettverket':'the mesh welder','klipp og bøy':'cut & bend',
+ 'Bær {0} til {1}':'Carry {0} to {1}','Hent {0} fra malmlageret':'Fetch {0} from the ore yard','Hent {0} fra skraphaugen':'Fetch {0} from the scrap pile',
+ 'Hent {0} fra kokillelageret':'Fetch {0} from the mould store','Hent {0} ved bunnplata':'Fetch {0} at the bottom plate','Hent {0} fra slaggpotta':'Fetch {0} from the slag pot',
+ 'Hent {0} fra lageret':'Fetch {0} from the store','Hent {0}':'Fetch {0}',
+ 'Gå på <span>TAPP</span> for å tappe ovnen':'Step on <span>TAP</span> to tap the furnace','Selg støpeblokkene på <span>lastebilen</span>':'Sell the ingots at the <span>truck</span>',
+ 'Sett kokillene på <span>bunnplata</span>':'Put the moulds on the <span>bottom plate</span>','Bær varme kokiller til <span>kokillelageret</span>':'Carry hot moulds to the <span>mould store</span>',
+ 'Legg malmen i <span>skipet</span> – den går opp i masovnen':'Put the ore in the <span>skip</span> – it goes up into the blast furnace',
+ 'Legg skrapet i <span>{0}</span>':'Put the scrap in the <span>{0}</span>','skrapkassa':'scrap box','chargeringskassene':'charging boxes',
+ 'Hent <span>støpeblokkene</span>':'Pick up the <span>ingots</span>','Stigstøping: stålet stiger i kokillene!':'Bottom pouring: the steel rises in the moulds!',
+ 'Strippekranen løfter av kokillene':'The stripper crane lifts off the moulds','Blokkene størkner …':'The ingots are solidifying …',
+ 'Hent malm i <span>malmlageret</span>':'Fetch ore from the <span>ore yard</span>','Hent skrap fra <span>skraphaugen</span>':'Fetch scrap from the <span>scrap pile</span>',
+ 'Tapper stål i øsa!':'Tapping steel into the ladle!','Konverteren tippes: skrap og <span>råjern</span> chargeres':'The converter tilts: scrap and <span>hot metal</span> go in',
+ 'Konverteren blåser luft gjennom råjernet … <span>{0} °C</span>':'The converter blows air through the hot metal … <span>{0} °C</span>','Prøvetaking …':'Taking a sample …',
+ 'Venter på <span>råjern</span> fra masovnen ({0} t klart)':'Waiting for <span>hot metal</span> from the blast furnace ({0} t ready)',
+ 'Raffinerer … <span>{0} °C</span>':'Refining … <span>{0} °C</span>','Ovnen smelter … <span>{0} °C</span>':'The furnace is melting … <span>{0} °C</span>',
+ 'Mål: <span>Nytt verk</span> er klart':'Goal: <span>New Mill</span> is ready','Mål: tjen {0} → <span>Nytt verk</span>':'Goal: earn {0} → <span>New Mill</span>',
+ 'Mål: bygg <span>{0}</span> – gå på ruta':'Goal: build <span>{0}</span> – step on the pad','Mål: tjen {0} → <span>{1}</span>':'Goal: earn {0} → <span>{1}</span>',
+ 'Ovnen er klar – gå på TAPP':'The furnace is ready – step on TAP','Slaggpotta er full! {0} først':'The slag pot is full! {0} first','Ovnen står!':'The furnace has stopped!',
+ 'Slaggpotta er full – bær slagg til slaggplassen':'The slag pot is full – carry slag to the slag yard','fikser flaskehalsen':'fixes the bottleneck',
+ 'Ny stasjon: {0} {1}':'New station: {0} {1}','Kjøp: {0} – {1}':'Buy: {0} – {1}','Hent {0} ved {1}':'Collect {0} at {1}','Neste: {0} – {1}':'Next: {0} – {1}',
+ 'Fullt utbygd! Tjen mest mulig.':'Fully built! Earn as much as you can.',
+ /* HUD */
+ 'Fase {0} · Nivå {1}':'Phase {0} · Level {1}','chargerer':'charging','blåser {0} %':'blowing {0}%','venter på råjern':'waiting for hot metal','{0} %':'{0}%',
+ 'raffinerer':'refining','tapper snart':'tapping soon','tapper':'tapping','råjern {0} t':'hot metal {0} t','Slipp {0}':'Release {0}','Styr {0}':'Drive {0}',
+ 'skrapkran':'scrap crane','malmkran':'ore crane','øsekran':'ladle crane','magnetkran':'magnet crane','dobbel last':'double load','raskere':'faster',
+ /* menu */
+ 'Lyd':'Sound','Vibrasjon':'Vibration','På':'On','Av':'Off','Automatiske transporter: videre eller salg':'Automatic transport: onward or sale','Hjelpere leverer til':'Helpers deliver to',
+ 'Beste pris':'Best price','Lastebil':'Truck','Tog':'Train','Priser per tonn (lastebil)':'Prices per tonne (truck)','Statistikk':'Statistics','Nullstill spillet':'Reset the game',
+ 'Nullstill':'Reset','Slette alt?':'Delete everything?','Ja, slett':'Yes, delete','Avbryt':'Cancel','Meny':'Menu','Zoom ut':'Zoom out','Zoom inn':'Zoom in',
+ 'Råjern → stålverket':'Hot metal → melt shop','Emner → gjennomvarming':'Billets → reheating','Armering → klipp og bøy':'Rebar → cut & bend','Tempcore → klipp og bøy':'Tempcore → cut & bend',
+ 'Valstråd → nettverk':'Wire rod → mesh welding','Videre':'Onward','spesialstål':'special steel','låst':'locked','Leveres nå til {0} · ×{1} pris':'Delivering to the {0} now · ×{1} price',
+ 'lastebil':'truck','tog':'train','kai':'quay',
+ 'Spilletid':'Play time','{0} t {1} min':'{0} h {1} min','Ovn':'Furnace','{0} t laget':'{0} t made','Charger tappet':'Heats tapped','Skrap smeltet':'Scrap melted',
+ 'Støpeblokker':'Ingots','Emner':'Billets','Utbytte blokk':'Ingot yield','Solgt':'Sold','Inntekt':'Income','Tjent totalt':'Earned in total','Ekspertise':'Expertise',
+ 'Du trenger mer inntekt i dette verket. Tjen <b>{0}</b> totalt for første ekspertisepoeng.':'You need more income in this mill. Earn <b>{0}</b> in total for your first expertise point.',
+ 'Start nytt verk?':'Start a New Mill?','Start nytt verk':'Start New Mill',
+ 'Du bygger et nytt stålverk fra bunnen. Du får <b>+{0} ekspertise</b> – all inntekt blir <b>×{1}</b> for alltid.<br>Penger, stasjoner og oppgraderinger nullstilles.':'You build a new steel mill from scratch. You get <b>+{0} expertise</b> – all income becomes <b>×{1}</b> for good.<br>Money, stations and upgrades are reset.',
+ /* map */
+ 'KART':'MAP','Kart':'Map','Kart over linja':'Map of the line','Kart over produksjonslinja':'Map of the production line','Kartvisning':'Map view','Produktflyt':'Product flow',
+ 'Pengeflyt':'Money flow','Lukk kartet':'Close the map','Lukk':'Close','Linja fra skrap til salg':'The line from scrap to sale','Tilpass kartet':'Fit the map',
+ 'Malmlager':'Ore yard','Råjernsovn':'Iron furnace','Kalk / dolo':'Lime / dolo','Oksygen':'Oxygen','Skrapplass':'Scrap yard','kart§Stranggjuting':'Caster',
+ 'Blokkstøping':'Ingot casting','Gjennomvarming':'Reheating',
+ 'kart§BESSEMER':'BESSEMER','kart§SM':'OPEN HEARTH','kart§LD':'LD (BOF)','kart§EAF':'EAF','kart§UHP EAF':'UHP EAF','kart§CONSTEEL':'CONSTEEL','kart§MASOVN':'BLAST FURN.','kart§EL-RÅJERN':'EL. SMELTER',
+ 'Malm':'Ore','Råjern (flytende)':'Hot metal (liquid)','Skrap':'Scrap','Flytende stål':'Liquid steel','Slagg':'Slag',
+ 'nedlagt':'closed','neste bygg':'next build','neste · {0}':'next · {0}','{0} drift':'{0} to run','ut {0} t/min':'out {0} t/min','flaskehals':'bottleneck',
+ 'bil · tog · kai':'truck · train · quay','bil · tog':'truck · train','per min':'per min','ikke bygget':'not built','FLASKEHALS':'BOTTLENECK','VENTER':'WAITING',
+ 'målt · glidende snitt · per spillminutt':'measured · rolling average · per game minute','Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>':'Income <b>{0}</b> · Melting <b>{1} t/min</b>',
+ 'ingen flaskehals':'no bottleneck','Flaskehals: {0} – for liten kapasitet':'Bottleneck: {0} – too little capacity',
+ 'Råjernsverket ble lagt ned ved omleggingen. Stålet lages nå av skrap.':'The ironworks was closed at the conversion. Steel is now made from scrap.',
+ '{0} masseljern ligger igjen for salg.':'{0} pig iron are left for sale.','Neste bygg: <b>{0}</b> · {1}. Bygges på ruta i tomta.':'Next build: <b>{0}</b> · {1}. Built on the pad in the plot.',
+ 'Kapasitet':'Capacity','{0} t/min stål':'{0} t/min of steel','Ovnen vil':'Furnace wants','{0} t/min når den smelter':'{0} t/min while melting','Snitt bruk':'Avg. use',
+ 'Drift':'Running cost','{0} · kjøpes én gang':'{0} · paid once',
+ 'Mens ovnen smelter/blåser, trenger den mer enn anlegget klarer, så den går saktere. Snittet er lavere fordi ovnen også lader og tapper. Oppgrader anlegget til minst {0} t/min.':'While the furnace melts or blows it needs more than the plant can give, so it runs slower. The average is lower because the furnace also charges and taps. Upgrade the plant to at least {0} t/min.',
+ 'Anlegget holder følge med ovnen. Snittet er lavere enn kapasiteten fordi ovnen også lader og tapper.':'The plant keeps up with the furnace. The average is lower than the capacity because the furnace also charges and taps.',
+ 'Selges':'Sold','ingenting ennå':'nothing yet','Sum':'Total','{0} · {1} fra {2}':'{0} · {1} from {2}','mangler':'missing','Inn':'In','Ut':'Out',
+ 'Verdi inn {0} → ut {1}':'Value in {0} → out {1}','Utnyttelse':'Utilisation','Hjelpere':'Helpers','{0} av {1}':'{0} of {1}','Oppgr.':'Upgr.','kan kjøpes':'can be bought',
+ 'Hver oppgradering har sin egen rute i stasjonen – velg selv rekkefølgen. Låst = kommer med en senere ovn eller et nytt bygg.':'Every upgrade has its own pad in the station – you choose the order. Locked = comes with a later furnace or a new building.',
+ /* canvas labels */
+ 'KURV':'BUCKET','KASSER':'BOXES','SKRAP':'SCRAP','BÅND':'BELT','AUTO':'AUTO','TAPP':'TAP','MALM':'ORE','TOG':'TRAIN','KAI':'QUAY','SLAGG':'SLAG','PLATE':'PLATE',
+ 'EMNER':'BILLETS','KVEILER':'COILS','STENGER':'BARS','ELEKTRODER':'ELECTRODES','KANALSTEIN':'RUNNER BRICKS','HETTEPULVER':'HOT-TOP','Kanalstein klar':'Runner bricks ready',
+ 'Murer kanaler …':'Laying runners …','KOKILLER · {0} klare':'MOULDS · {0} ready','{0} kjøles':'{0} cooling','{0} varme':'{0} hot','RÅJERN':'HOT METAL',
+ 'KOKS KJØPES INN':'COKE IS BOUGHT IN','KALDBLÅST':'COLD BLAST','SKIP':'SKIP','KRANFØRER':'CRANE DRIVER','OPERATØR':'OPERATOR','TAPPER':'TAPPER',
+ 'STOPP':'STOPPED','v§TAPPER':'TAPPING','KOKER':'BOILING','PRØVE':'SAMPLE','VARMER':'HEATING','FORSYNING':'SUPPLY','CHARGERER':'CHARGING','BLÅSER':'BLOWING',
+ 'SMELTER':'MELTING','RÅJERN?':'IRON?','LADER':'LOADING',
+ /* short names for the phase chip */
+ 'fase§Masovn og Bessemer':'Iron & Bessemer','fase§LD-konverter':'LD converter','fase§El-råjernsovn':'El. smelter',
+ /* info bubbles */
+ 'neste: {0}':'next: {0}','{0} av {1} t/min':'{0} of {1} t/min','betalt {0}':'paid {0}','Nå: {0}':'Now: {0}','Fylt {0}/{1} t':'Filled {0}/{1} t','Pris ×{0}':'Price ×{0}',
+ '{0} å hente':'{0} to collect','{0} av {1} elektroder':'{0} of {1} electrodes','Kokiller {0}/{1}':'Moulds {0}/{1}','{0} klare · {1} kjøles':'{0} ready · {1} cooling',
+ 'Kø {0}/{1}':'Queue {0}/{1}','Slaggpotte {0}/{1}':'Slag pot {0}/{1}','{0} på lager':'{0} in store','{0} vogner':'{0} cars','{0} vogn':'{0} car','Trenger {0}.':'Needs {0}.','i ovnen {0} t':'in the furnace {0} t',
+ 'skrapkurv':'scrap bucket','Consteel-bånd':'Consteel conveyor','venter':'waiting','fylles':'filling','venter på kranen':'waiting for the crane','løftes':'being lifted',
+ 'i øseovnen':'in the ladle furnace','på øsetårnet':'on the ladle turret','støper':'casting',
+ 'Molten Mill spillområde. Dra eller bruk piltaster for å gå. Gå på rutene for å kjøpe. Trykk på ting for en forklaring.':'Molten Mill play area. Drag or use the arrow keys to walk. Stand on the pads to buy. Tap things for an explanation.'
+};
+/* static DOM text (data-i = text key, data-ia = aria-label key) */
+function applyLangDom(){try{for(const e of document.querySelectorAll('[data-i]'))e.textContent=t_(e.dataset.i);for(const e of document.querySelectorAll('[data-ia]'))e.setAttribute('aria-label',t_(e.dataset.ia));
+ document.documentElement.lang=NO_()?'nb':'en';$('cur').hidden=!NO_()}catch(e){}}
+/* switch language at once: DOM, HUD caches, cached canvas labels, the baked floor (zone plates), menu, map, info bubble */
+function setLang(l){if(l!=='en'&&l!=='no')return;LANG=l;try{localStorage.setItem('molten.lang',l)}catch(e){}
+ applyLangDom();for(const k in lastHud)delete lastHud[k];gCache={};hudT=0;for(const k in LABC)delete LABC[k];
+ try{bakeFloor()}catch(e){}syncMenu();if(G.mapOn)renderMap();refreshInfo();sfx('tick',300)}
