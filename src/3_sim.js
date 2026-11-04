@@ -11,7 +11,7 @@ function rebuildSolids(){SOLIDS=FURN_SOL().slice();
  /* supply plants: only what is built is solid */if(lv('kull'))SOLIDS.push({x:666,y:60,w:98,h:108});if(lv('o2'))SOLIDS.push({x:786,y:56,w:150,h:104});if(lv('kalk'))SOLIDS.push({x:928,y:68,w:112,h:56});
  if(B_('lf'))SOLIDS.push({x:POS.lf.x,y:POS.lf.y,r:62});
  SOLIDS.push({x:1415,y:216,w:240,h:168});/* bottom plate */
- if(B_('strang'))SOLIDS.push({x:1430,y:668,w:332,h:322},{x:1385,y:850,r:20});
+ if(B_('strang'))SOLIDS.push({x:1414,y:640,w:348,h:352},{x:1366,y:823,r:22});/* tundish car … cooling bed; turret pedestal */
  SOLIDS.push({x:1852,y:586,w:92,h:212});/* truck 1 */
  if(B_('vv'))SOLIDS.push({x:2035,y:520,w:240,h:160},{x:2318,y:540,w:304,h:120},{x:2648,y:420,w:240,h:362});
  if(B_('tc'))SOLIDS.push({x:2930,y:566,w:196,h:68});
@@ -343,7 +343,7 @@ const CRANES=[
   pick(c,j){const want=malmLoad()*(c.man?2:1),amt=min(want,yardT(j.y));if(amt<1)return false;S.yard.ore=yardT(j.y)-amt;c.load=amt;return true},
   drop(c){const r=min(c.load,skipCap()-S.rj.ore);if(r<=0)return false;S.rj.ore+=r;S.st.ore+=r;c.load-=r;rec('f:malm>rj',r);return c.load<=.01}}),
  mkCrane('ose',{n:'øsekran',built:()=>true,man_ok:()=>lv('osekran')>0,spd:()=>oseSpd()*(1+.6*0),bonus:'raskere',
-  find(c){let best=null;for(const L of LADLES){if(L.state!=='await')continue;const to=ladleDest(L);if(!to)continue;const pr=L.steel>0?2:1;if(!best||pr>best.pr)best={L,to,from:{x:L.x,y:L.y},pr}}return best},
+  find(c){let best=null;for(const L of LADLES){if(L.state!=='await'||L.arm!=null&&CAST.rf<1)continue;const to=ladleDest(L);if(!to)continue;const pr=L.steel>0?2:1;if(!best||pr>best.pr)best={L,to,from:{x:L.x,y:L.y},pr}}return best},
   pick(c,j){if(j.L.state!=='await')return false;const to=ladleDest(j.L);if(!to)return false;j.to=to;j.L.state='carried';c.pay=j.L;return true},
   drop(c,j){const L=c.pay;if(!L)return true;L.x=j.to.x;L.y=j.to.y;arriveLadle(L,j.to);c.pay=null;return true}}),
  mkCrane('mag',{n:'magnetkran',built:()=>B_('vv')&&lv('magkran')>0,spd:()=>150*(1+.08*lv('magkran')),bonus:'dobbel last',
@@ -359,11 +359,11 @@ function updCrane(c,dt,ix,iy){if(!c.built()){c.man=false;return}const sp=c.spd()
  switch(c.state){
  case'idle':{c.job=c.find(c);if(c.job){c.state='toPick';c.t=0}else if(!c.man)craneMove(c,c.d.park.x,c.d.park.y,dt,sp*.5);break}
  case'toPick':{const j=c.job,f=j.from;if(c.id==='ose'){if(j.L.state!=='await'){c.state='idle';break}f.x=j.L.x;f.y=j.L.y}
-  const d=c.man?hyp(f.x-c.x,f.y-c.y):craneMove(c,f.x,f.y,dt,sp);if(d<(c.man?30:2)){c.state='down';c.t=0}break}
+  const d=c.man?hyp(f.x-c.x,f.y-c.y):craneMove(c,f.x,f.y,dt,sp);if(d<(c.man?30:2)&&!(c.id==='ose'&&j.L.arm!=null&&CAST.rf<1)){c.state='down';c.t=0}break}
  case'down':{c.h=max(0,1-c.t/.35);if(c.t>=.35){if(c.pick(c,c.job)){c.state='up';c.t=0}else{c.state='up2';c.t=0}}break}
  case'up2':{c.h=min(1,c.t/.35);if(c.t>=.35){c.state='idle';c.job=null}break}
  case'up':{c.h=min(1,c.t/.35);if(c.t>=.35){c.state='toDrop';c.t=0}break}
- case'toDrop':{const t=c.job.to;const d=c.man?hyp(t.x-c.x,t.y-c.y):craneMove(c,t.x,t.y,dt,sp);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(d<(c.man?30:2)){c.state='lower';c.t=0}break}
+ case'toDrop':{const t=c.job.to;if(c.id==='ose'&&c.pay&&c.pay.next==='tur'&&c.pay.slot>=0){const q=armPt(c.pay.slot);t.x=q.x;t.y=q.y}const d=c.man?hyp(t.x-c.x,t.y-c.y):craneMove(c,t.x,t.y,dt,sp);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(d<(c.man?30:2)){c.state='lower';c.t=0}break}
  case'lower':{c.h=max(0,1-c.t/.35);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(c.t>=.35){if(c.drop(c,c.job)){c.state='rise';c.t=0}}break}
  case'rise':{c.h=min(1,c.t/.35);if(c.t>=.35){c.state='idle';c.job=null}break}}}
 
@@ -387,12 +387,15 @@ function ladleDest(L){const busy=st=>LADLES.some(l=>l!==L&&(l.state===st||(l.sta
  switch(L.next){
  case'lf':return busy('lf')?null:POS.lf;
  case'pit':return busy('pit')?null:POS.pitL;
- case'tur':{const n=lv('turret')?2:1;for(let s=0;s<n;s++){if(!LADLES.some(l=>l!==L&&((l.state==='tur'||l.state==='cast')&&l.slot===s||(l.state==='carried'&&l.next==='tur'&&l.slot===s)))){L.slot=s;return POS.tur[s]}}return null}
+ case'tur':{/* the turret: an arm is taken while a ladle sits on it (full, casting or empty) or is on its way to it.
+   With the turret upgrade the crane sets the ladle on the back (standby) arm; without it there is only the casting arm. */
+  const occ=s=>LADLES.some(l=>l!==L&&(l.arm===s&&l.state!=='carried'||l.state==='carried'&&l.next==='tur'&&l.slot===s));
+  const ord=lv('turret')?[1-CAST.arm,CAST.arm]:[CAST.arm];for(const s of ord)if(!occ(s)){L.slot=s;return armPt(s)}return null}
  case'park':{for(const p of PARKS())if(!LADLES.some(l=>l!==L&&l.state!=='carried'&&hyp(l.x-p.x,l.y-p.y)<24))return p;return null}}return null}
 function arriveLadle(L,p){const nx=L.next;L.wait=0;
  if(nx==='lf'){L.state='lf';L.lfT=lfTime();rec('f:'+L.from+'>lf',L.steel);L.from='lf'}
  else if(nx==='pit'){L.state='pit';rec('f:'+L.from+'>blokk',L.steel)}
- else if(nx==='tur'){L.state='tur';rec('f:'+L.from+'>strang',L.steel)}
+ else if(nx==='tur'){L.state='tur';L.arm=L.slot>=0?L.slot:CAST.arm;rec('f:'+L.from+'>strang',L.steel)}
  else{L.state='park';L.steel=0;L.atTap=null}}
 function updLadle(L,dt){
  switch(L.state){
@@ -425,9 +428,21 @@ function updPit(dt){const K=S.kok;
   PIT.n=0;PIT.fill=0;PIT.state='idle';PIT.L=null}break}}
 
 /* ---------- stranggjuting: turret, tundish, up to 8 strands, shear → torch cutting, cooling bed ---------- */
-const CAST={rot:0,gap:0,acc:[0,0,0,0,0,0,0,0],run:[],bed:[],cut:[]};
+const CAST={rot:0,gap:0,acc:[0,0,0,0,0,0,0,0],run:[],bed:[],cut:[],arm:0,ang:0,a0:0,rf:1,tlev:0,flow:false,pour:false};
+/* butterfly ladle turret: two arms 180° apart on one slewing ring. Arm s points at angle ang+s·π; angle 0 = over the tundish.
+   CAST.arm = the arm at (or slewing to) the casting position; rf = slewing progress 0…1. */
+const TUR={x:1366,y:823,R:40},ROTDUR=2.2;
+const armA=s=>CAST.ang+s*PI,armPt=s=>({x:TUR.x+Math.cos(armA(s))*TUR.R,y:TUR.y+Math.sin(armA(s))*TUR.R});
+function updTurret(dt){const Lc=LADLES.find(l=>l.state==='cast');
+ if(Lc&&Lc.arm!=null&&Lc.arm!==CAST.arm&&CAST.rf>=1){CAST.arm=Lc.arm;CAST.a0=CAST.ang;CAST.rf=0}
+ if(CAST.rf<1){CAST.rf=RM?1:min(1,CAST.rf+dt/ROTDUR);const k=CAST.rf,e=k*k*(3-2*k);CAST.ang=CAST.a0+PI*e;if(CAST.rf>=1)CAST.ang=(CAST.a0+PI)%TAU}
+ /* ladles on the turret ride on the arm ends */
+ for(const L of LADLES){if(L.arm==null)continue;if(L.state!=='tur'&&L.state!=='cast'&&L.state!=='await'){L.arm=null;continue}const p=armPt(L.arm);L.x=p.x;L.y=p.y}
+ /* tundish (visual): the level rises while the shroud pours, falls while the strands drain it during a ladle change */
+ const tur=lv('turret')>0;CAST.pour=!!(Lc&&CAST.rf>=1&&Lc.steel>.01);CAST.flow=!!Lc||tur&&CAST.gap>0&&CAST.tlev>.05;
+ CAST.tlev=CAST.pour?min(1,CAST.tlev+dt*.7):CAST.flow?max(0,CAST.tlev-dt*.18):max(0,CAST.tlev-dt*.6)}
 const SY=i=>POS.strang.y+i*38,CUTX=()=>lv('torch')?1620:1600,MOULDX=1462;
-function updCaster(dt){CAST.rot=max(0,CAST.rot-dt);CAST.gap=max(0,CAST.gap-dt);const L=LADLES.find(l=>l.state==='cast');const n=nStr(),sr=strandRate(),bt=billetT();
+function updCaster(dt){updTurret(dt);CAST.rot=max(0,CAST.rot-dt);CAST.gap=max(0,CAST.gap-dt);const L=LADLES.find(l=>l.state==='cast');const n=nStr(),sr=strandRate(),bt=billetT();
  if(L){const draw=min(L.steel,n*sr*dt);L.steel-=draw;const per=draw/n;
   for(let i=0;i<n;i++){CAST.acc[i]+=per;if(CAST.acc[i]>=bt){CAST.acc[i]-=bt;CAST.run.push({lane:i,x:MOULDX,t:bt*(lv('torch')?.995:.98),q:L.q,cut:0})}}
   if(L.steel<=.01){/* the strand tails out what is left */for(let i=0;i<n;i++){if(CAST.acc[i]>.2)CAST.run.push({lane:i,x:MOULDX,t:CAST.acc[i]*.98,q:L.q,cut:0});CAST.acc[i]=0}
@@ -436,7 +451,7 @@ function updCaster(dt){CAST.rot=max(0,CAST.rot-dt);CAST.gap=max(0,CAST.gap-dt);c
  for(let i=CAST.run.length-1;i>=0;i--){const r=CAST.run[i];r.x+=v*dt;if(r.x>=CUTX()&&!r.cut){r.cut=1;CAST.cut.push({lane:r.lane,t:0});if(near(P,1600,SY(r.lane),420)&&!lv('torch')&&Math.random()<.3)sfx('clank')}
   if(r.x>=1652){CAST.run.splice(i,1);CAST.bed.push({it:{k:'billet',t:r.t,q:r.q,hot:1},y:SY(r.lane),age:0});S.st.prod.billet=(S.st.prod.billet||0)+1;rec('o:strang',r.t)}}
  for(let i=CAST.cut.length-1;i>=0;i--){CAST.cut[i].t+=dt;if(CAST.cut[i].t>.6)CAST.cut.splice(i,1)}
- for(let i=CAST.bed.length-1;i>=0;i--){const b=CAST.bed[i];b.age+=dt;b.y=lerp(b.y,990,dt*.25);if(b.age>2.2){if(route('strang',b.it))CAST.bed.splice(i,1);else b.age=1.5}}
+ for(let i=CAST.bed.length-1;i>=0;i--){const b=CAST.bed[i];b.age+=dt;b.va=(b.va||0)+dt;/* va: visual cooling only */b.y=lerp(b.y,990,dt*.25);if(b.age>2.2){if(route('strang',b.it))CAST.bed.splice(i,1);else b.age=1.5}}
  if(CAST.bed.length>14){const b=CAST.bed.shift();addPile(b.it)}}
 
 /* ---------- product flow: processors with a capacity in t/s; items queue in front of each station ---------- */
@@ -640,7 +655,7 @@ const unpackIt=a=>Array.isArray(a)&&PR[a[0]]&&a[0]!=='slag'&&isFinite(a[1])&&a[1
 function initRun(){LADLES.length=0;syncLadles();
  for(const k of PRK){PILE[k]=(Array.isArray(S.piles[k])?S.piles[k]:[]).map(unpackIt).filter(Boolean).slice(-999)}
  for(const id in NODE){const n=NODE[id];n.cur=null;n.p=0;n.inc=0;n.in=(Array.isArray(S.nodes[id])?S.nodes[id]:[]).map(unpackIt).filter(Boolean).slice(0,n.cap)}
- movers.length=0;CAST.run.length=0;CAST.bed.length=0;CAST.cut.length=0;CAST.acc.fill(0);CAST.gap=0;
+ movers.length=0;CAST.run.length=0;CAST.bed.length=0;CAST.cut.length=0;CAST.acc.fill(0);CAST.gap=0;Object.assign(CAST,{arm:0,ang:0,a0:0,rf:1,tlev:0,flow:false,pour:false});
  Object.assign(F,{state:'melt',tilt:0,L:null,ch:null,hmCh:null,roof:0,slagAcc:0,starve:0,waitHM:0,SB:null,stop:false,lance:0});
  F.bath=clamp(num(S.F.bath),0,fcap()-1);F.solid=clamp(num(S.F.solid),0,max(0,fcap()-1-F.bath));F.scIn=clamp(num(S.F.scIn),0,fcap());F.hmIn=clamp(num(S.F.hmIn),0,fcap());
  TORPS.length=0;torpSeq=0;syncTorps();Object.assign(RJ,{rate:0,starve:0,stopT:0,overflow:0,pigAcc:0,tapping:false});

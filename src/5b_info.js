@@ -166,6 +166,16 @@ const IX={
   closed:['','Råjernsverket ble lagt ned ved omleggingen. Stålet lages nå av skrap.','','The ironworks was closed at the conversion. Steel is now made from scrap.'],
   gauge:['','','',''],
   helper:['Hjelper','','Helper','']},
+ /* the continuous caster's machines, upstream to downstream */
+ cast:{
+  turret:['Øsetårn','Et dreibart tårn med to armer. Kranen setter den fulle øsa på den ledige armen bak. Når øsa over fordeleren er tom, svinger tårnet 180°, og neste øse støper uten stopp. Den tomme løftes av bak.','Ladle turret','A slewing turret with two arms. The crane sets the full ladle on the free arm at the back. When the ladle over the tundish is empty, the turret swings 180° and the next ladle casts without a stop. The empty one is lifted off at the back.'],
+  shroud:['Skjermrør','Keramisk rør fra øsas glideluke ned i fordeleren. Det skjermer stålet mot lufta, så det ikke tar opp oksygen og nitrogen.','Ladle shroud','A ceramic tube from the ladle’s slide gate down into the tundish. It shields the steel from the air so it does not pick up oxygen and nitrogen.'],
+  tundish:['Fordeler','Et ildfast foret trau med lokk, på en vogn. Det fordeler stålet jevnt til alle strengene og holder et jevnt nivå, så slagg og urenheter flyter opp. Det holder støpingen i gang mens tårnet bytter øse.','Tundish','A refractory-lined trough with a lid, on a car. It spreads the steel evenly to all strands and keeps a steady level so slag and inclusions float up. It keeps casting going while the turret changes ladles.'],
+  mould:['Kokiller','Vannkjølte kobberrør, ett per streng. Stålet størkner til et skall mot kobberet, og kokilla oscillerer opp og ned så skallet ikke henger fast.','Moulds','Water-cooled copper tubes, one per strand. The steel freezes into a shell against the copper, and the mould oscillates up and down so the shell does not stick.'],
+  spray:['Sekundærkjøling','Vanndyser spruter på strengen under kokilla til den er størknet helt inn. Dampen stiger opp av kammeret.','Spray chamber','Water nozzles spray the strand below the mould until it is solid all the way through. Steam rises from the chamber.'],
+  wsu:['Uttrekk og retting','Drevne valsepar trekker strengen ut av kokilla med støpefarten og retter den ut fra buen til et rett emne.','Withdrawal and straightening','Driven roll pairs pull the strand out of the mould at casting speed and straighten it from the arc into a straight bar.'],
+  cutter:['Kapping','Strengen kappes i emnelengder mens den går. En hydraulisk saks klipper den; en skjærebrenner kjører med strengen og brenner den av med mindre tap av stål.','Cutting','The moving strand is cut into billet lengths. A hydraulic shear chops it; a cutting torch travels with the strand and burns through with less steel lost.'],
+  bed:['Kjøleseng','Hakkede bjelker flytter emnene steg for steg over senga mens de kjøles fra rødglødende til grå. Herfra går de til gjennomvarming eller salg.','Cooling bed','Notched beams walk the billets step by step across the bed while they cool from red-hot to grey. From here they go to reheating or to sale.']},
  crane:{
   skrap:['Traverskran med løftemagnet som henter skrap av seg selv. Du kan styre den selv for dobbel last.','An overhead crane with a lifting magnet that fetches scrap by itself. Drive it yourself for a double load.'],
   malm:['Gripekran som flytter malm til skipet av seg selv. Du kan styre den selv for dobbel last.','A grab crane that moves ore to the skip by itself. Drive it yourself for a double load.'],
@@ -203,6 +213,15 @@ function hitInfo(wx,wy){
  const eq=[['kalk',928,68,112,56,()=>lv('kalk')],['o2',786,56,150,104,()=>lv('o2')],['kull',666,60,98,108,()=>lv('kull')],['koks',-716,130,160,110,()=>lv('koks')],
   ['cowper',-500,110,300,160,()=>!rjEra()],['rjsize',-480,180,240,70,()=>rjEra()],['malmkran',CRN.malm.x0,CRN.malm.y0-10,CRN.malm.x1-CRN.malm.x0,14,()=>lv('malmkran')]];
  for(const[id,x,y,w,h,on]of eq)if(on()&&inR(wx,wy,x,y,w,h))return{type:'up',key:'up:'+id,u:UPm[id],x:x+w/2,y:y+h/2};
+ /* continuous caster machines */
+ if(B_('strang')&&wx>1300&&wx<1764&&wy>630&&wy<1000){const c=(id,x,y)=>({type:'cast',key:'cast:'+id,id,x,y});
+  if(hyp(wx-SHM.x,wy-SHM.y)<16)return c('shroud',SHM.x,SHM.y);if(hyp(wx-TUR.x,wy-TUR.y)<70&&wx<TD.x0-2)return c('turret',TUR.x,TUR.y);
+  if(inR(wx,wy,TD.x0-8,TD.y0-36,TD.x1-TD.x0+16,TD.y1-TD.y0+50))return c('tundish',(TD.x0+TD.x1)/2,TUR.y);
+  if(inR(wx,wy,TD.x1,TD.y0-8,MCX+14-TD.x1,TD.y1-TD.y0+16))return c('mould',MCX,TUR.y);
+  if(inR(wx,wy,1486,TD.y0-10,54,TD.y1-TD.y0+20))return c('spray',1512,TUR.y);
+  if(inR(wx,wy,WSX-2,TD.y0-8,30,TD.y1-TD.y0+16))return c('wsu',WSX+13,TUR.y);
+  if(inR(wx,wy,1570,TD.y0-8,82,TD.y1-TD.y0+16))return c('cutter',CUTX(),TUR.y);
+  if(inR(wx,wy,1652,668,110,326))return c('bed',1707,830)}
  if(!rjClosed()||PILE.pig.length){if(inR(wx,wy,-56,630,32,280))return{type:'misc',key:'misc:pigm',id:'pigm',x:-40,y:760}}
  if(!rjClosed()&&Math.abs(wy-POS.oreTrainY)<26&&wx>WX0+10&&wx<-150)return{type:'misc',key:'misc:train',id:'train',x:wx,y:POS.oreTrainY};
  if(inR(wx,wy,POS.truck1.x-48,POS.truck1.y-110,96,260))return{type:'ring',key:'ring:bil1',o:TGm.bil1,x:POS.truck1.x,y:POS.truck1.y};
@@ -245,6 +264,9 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'furnace':{const E=E_();return{t:t_(E.n),d:ixs(IX.era[era()]),n:furnNums()}}
  case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:t_(RJE[rjEra()].n),d:tx,n:t_('NEDLAGT')}}const st=status('rj');return{t:t_(RJE[rjEra()].n),d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
  case'up':{const u=h.u;return infoFor({type:'pad',d:PAD['u_'+u.id]})}
+ case'cast':{const[ti,tx]=ix4(IX.cast[h.id]);const n={turret:()=>upNums(UPm.turret),shroud:()=>t_(CAST.pour?'Skjermrør på':'Skjermrør parkert'),tundish:()=>t_('Stålnivå {0} %',Math.round(CAST.tlev*100)),
+   mould:()=>t_('{0} av {1} strenger i bruk',nStr(),8)+' · '+upNums(UPm.strands),spray:()=>upNums(UPm.caster),wsu:()=>upNums(UPm.caster),cutter:()=>upNums(UPm.torch),bed:()=>t_('{0} emner på kjølesenga',CAST.bed.length)}[h.id]();
+  return{t:ti,d:tx,n}}
  case'misc':{const[ti,tx]=ix4(IX.misc[h.id]);let n='',T2=ti;
   if(h.id==='hmL')n=t_('råjern {0} t',tf(S.hm))+' / '+Math.round(hmCap())+' t';
   else if(h.id==='pigm')n=PILE.pig.length+' '+t_('stk');

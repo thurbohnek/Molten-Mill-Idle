@@ -1,6 +1,6 @@
 {
   "name": "molten-mill-idle",
-  "version": "6.6.1",
+  "version": "6.7.0",
   "private": true,
   "description": "Molten Mill Idle: Steel Tycoon - a mobile steel-mill carry/tycoon game (single-file HTML5 canvas).",
   "scripts": {

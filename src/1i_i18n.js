@@ -9,6 +9,8 @@ function t_(s,...a){let o=s==null?'':''+s;
  else{const i=o.indexOf('§');if(i>=0)o=o.slice(i+1)}
  return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
 const EN={
+ /* --- continuous caster bubbles --- */
+ 'Skjermrør på':'Shroud attached','Skjermrør parkert':'Shroud parked','Stålnivå {0} %':'Steel level {0} %','{0} emner på kjølesenga':'{0} billets on the cooling bed','{0} av {1} strenger i bruk':'{0} of {1} strands in use',
  /* --- zones, plates, plants --- */
  'FORSYNING · RÅJERN':'SUPPLY · IRONMAKING','RÅJERNSVERK':'IRONMAKING','SKRAPPLASS':'SCRAP YARD','FORSYNING · OVN':'SUPPLY · FURNACE','SMELTEVERK':'MELT SHOP',
  'ØSEOVN':'LADLE FURNACE','BLOKKSTØPING':'INGOT CASTING','STRANGGJUTING':'CONTINUOUS CASTER','SALG':'SALE','SALG 2':'SALE 2','GJENNOMVARMING':'REHEATING',

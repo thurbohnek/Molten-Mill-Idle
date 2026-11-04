@@ -117,7 +117,7 @@ function drawStore(s){if(!s.open()||!inView(s.x,s.y,100))return;const x=s.x,y=s.
 /* ---- ladles on the ladle car / under the crane ---- */
 function drawLadle(L){if(!inView(L.x,L.y,60))return;const f=L.sm>0?clamp(L.steel/L.sm,0,1):0,car=L.state==='park'||L.state==='filling'||(L.state==='await'&&hyp(L.x-POS.tap.x,L.y-POS.tap.y)<30);
  if(car)SK.car(g,L.x,L.y,66,52);
- const sc=L.state==='carried'?1.12:1;SK.ladle(g,L.x,L.y,26*sc,T,{fill:L.steel>.01?max(.15,f):0,eye:L.state==='lf'||L.state==='cast'});
+ const sc=L.state==='carried'?1.12:1;SK.ladle(g,L.x,L.y,26*sc,T,{fill:L.steel>.01?max(.15,f):0,eye:L.state==='lf'||L.state==='cast',rot:L.arm!=null&&L.state!=='carried'?armA(L.arm)-PI/2:0});
  if(L.steel>.05&&L.state!=='filling'){const t=tf(L.steel)+' t';ctx.font=`800 11px ${FONT}`;const w=ctx.measureText(t).width+8;LBL.push({k:'L'+L.i,x:L.x-w/2,y:L.y-50,w,h:16,pr:0,f:(lx,ly)=>txt(t,lx+w/2,ly+8,11,C.moltenhi,800,'center',3)})}}
 function drawLF(){if(!B_('lf')||!inView(POS.lf.x,POS.lf.y,200))return;const cx=POS.lf.x,cy=POS.lf.y,L=LADLES.find(l=>l.state==='lf'),R=44;
  SK.rail(g,cx-70,cx+70,cy,40);
@@ -154,29 +154,110 @@ function drawKok(){const p=POS.koklag;if(inView(p.x,p.y,90)){SK.box(g,p.x-60,p.y
   for(let i=0;i<nc;i++)SK.mould(g,p.x-46+(i%6)*18.4,p.y+20,7.5,.8,clamp(cool[i]/coolT(),0,1)*.7,{top:false});
   txt(t_('KOKILLER · {0} klare',S.kok.ready)+(cool.length?' · '+t_('{0} kjøles',cool.length):''),p.x,p.y-42,9.5,C.ui,800,'center',3);LOBS.push({x:p.x-80,y:p.y-49,w:160,h:14})}
  const k=POS.kokv;if(inView(k.x,k.y,70)&&S.kok.hot){const n=min(S.kok.hot,12);for(let i=0;i<n;i++)SK.mould(g,k.x-30+(i%4)*20,k.y-12+floor(i/4)*16,7.5,.8,.75,{top:false});txt(t_('{0} varme',S.kok.hot),k.x,k.y+40,10,C.molten,800,'center',3);LOBS.push({x:k.x-30,y:k.y+33,w:60,h:14})}}
-/* ---- stranggjuting ---- */
-function drawCaster(){if(!B_('strang')||!inView(1540,830,300))return;const n=nStr(),Lc=LADLES.find(l=>l.state==='cast'),casting=!!Lc,mx=MOULDX;
- /* run-out table + cooling bed */
- g.fillStyle='#2a2d33';g.fillRect(1480,672,170,320);g.fillStyle='rgba(255,255,255,.05)';for(let x=1482;x<1650;x+=7)g.fillRect(x,672,2,320);
- SK.box(g,1652,668,110,326,'#30343b','#15171a',4);for(let x=1660;x<1760;x+=18){g.fillStyle='#4b5058';g.fillRect(x,672,3,318)}
- for(const b of CAST.bed){const k=clamp(.62-b.age*.15,.08,1);SK.billetBar(g,1660,b.y,96,7,b.it.hot?k:.08)}
- /* turret: two arms, ladles at the ends */
- const tx=1385,ty=850;g.fillStyle='#3b4048';g.fillRect(tx-5,ty-80,10,160);g.fillStyle='#4a4f57';circ(tx,ty,16);g.fill();g.strokeStyle=C.hazard;g.lineWidth=2;circ(tx,ty,16);g.stroke();
- /* tundish */
- SK.shadow(g,1453,830,14,170,.3);SK.box(g,1440,672,24,318,'#5a5f66','#22252a',4);g.fillStyle=casting?'#c2410c':'#3a2018';g.fillRect(1445,678,14,306);
+/* ---- stranggjuting, top-down: ladle turret → tundish on its car → copper moulds → spray chamber → withdrawal/straightener → torch/shear → run-out → cooling bed ---- */
+const TD={x0:1420,x1:1460,y0:670,y1:986},MCX=1474,PBX=1436,WSX=1542;/* tundish shell, mould centre x, shroud impact x, withdrawal units */
+const castV=()=>110*(1+.1*lv('caster'));
+/* butterfly turret: concrete plinth, slewing ring, two forked lifting arms (the ladles are drawn on top by the ladle pass) */
+function drawTurret(){const x=TUR.x,y=TUR.y,R=TUR.R,two=lv('turret')>0;
+ SK.shadow(g,x+4,y+6,34,31,.32);g.fillStyle='#4a4e55';circ(x,y,32);g.fill();g.strokeStyle='#2a2c30';g.lineWidth=2;circ(x,y,32);g.stroke();
+ g.fillStyle='#24272c';for(let i=0;i<8;i++){const a=i/8*TAU+PI/8;circ(x+Math.cos(a)*28,y+Math.sin(a)*28,1.7);g.fill()}
+ g.strokeStyle='#8b939e';g.lineWidth=3.2;circ(x,y,23);g.stroke();
+ g.strokeStyle='#4e535b';g.lineWidth=1.3;g.beginPath();for(let i=0;i<28;i++){const a=CAST.ang+i/28*TAU;g.moveTo(x+Math.cos(a)*20.5,y+Math.sin(a)*20.5);g.lineTo(x+Math.cos(a)*25.6,y+Math.sin(a)*25.6)}g.stroke();
+ g.lineCap='round';g.lineJoin='round';
+ for(let s=0;s<2;s++){const a=armA(s),ca=Math.cos(a),sa=Math.sin(a),P=(d,p)=>[x+ca*d-sa*p,y+sa*d+ca*p],live=two||s===CAST.arm;
+  const pth=()=>{g.beginPath();let q=P(R,-31);g.moveTo(q[0],q[1]);q=P(15,-31);g.lineTo(q[0],q[1]);q=P(15,31);g.lineTo(q[0],q[1]);q=P(R,31);g.lineTo(q[0],q[1])};
+  /* lifting cylinder from the column to the fork */const c0=P(4,0),c1=P(17,0);SK.line(g,c0[0],c0[1],c1[0],c1[1],'#2a2d31',9);SK.line(g,c0[0],c0[1],c1[0],c1[1],'#9aa2ad',4);
+  pth();g.strokeStyle=live?'#5a4510':'#2c2a26';g.lineWidth=9;g.stroke();pth();g.strokeStyle=live?'#c79a1e':'#6b6556';g.lineWidth=5.5;g.stroke();
+  for(const p of[-31,31]){const q=P(R,p);g.fillStyle='#1d1f23';circ(q[0],q[1],4.6);g.fill();g.fillStyle=live?'#8b939e':'#4a4e55';circ(q[0],q[1],2.2);g.fill()}
+  if(!live){/* parked arm: locking pin, no ladle position until the turret upgrade */const q=P(15,0);g.fillStyle='#d24b3a';circ(q[0],q[1],3);g.fill()}}
+ g.lineCap='butt';g.lineJoin='miter';
+ g.fillStyle='#3b4048';circ(x,y,13);g.fill();g.strokeStyle=C.hazard;g.lineWidth=2.4;g.setLineDash([4,3]);g.lineDashOffset=-CAST.ang*13;circ(x,y,11.5);g.stroke();g.setLineDash([]);
+ g.fillStyle='#6b7079';circ(x,y,5);g.fill()}
+/* tundish ("fordeler"): refractory-lined trough with lid on a car on rails; pouring box with dams at the shroud, a stopper per strand, overflow box */
+function drawTundish(n){const{x0,x1,y0,y1}=TD,lev=CAST.tlev,py=TUR.y,w=x1-x0,fl=RM?.8:.75+.25*Math.sin(T*9);
+ for(const rx of[x0+5,x1-5]){g.fillStyle='#24272c';g.fillRect(rx-2.5,y0-34,5,y1-y0+56);g.fillStyle='#9aa2ad';g.fillRect(rx-1,y0-34,2,y1-y0+56)}
+ /* car frame and wheels at both ends */
+ for(const by of[y0-10,y1+2]){SK.box(g,x0-7,by,w+14,9,'#3d434b','#15171a',2);g.fillStyle='#15171a';for(const rx of[x0+5,x1-5])g.fillRect(rx-3,by-3,6,15)}
+ /* overflow / emergency box at the north end */
+ SK.box(g,x0+4,y0-32,w-8,18,'#4a3a30','#1b1612',3);g.fillStyle='#2a1d18';g.fillRect(x0+8,y0-28,w-16,10);g.fillStyle='#7a5a48';g.fillRect(x0+w/2-3,y0-16,6,8);
+ SK.shadow(g,x0+w/2+4,(y0+y1)/2+6,w/2+4,(y1-y0)/2+2,.3);
+ SK.box(g,x0,y0,w,y1-y0,'#5d6168','#1d2024',5);g.fillStyle='#8a6450';SK.rr(g,x0+2.5,y0+2.5,w-5,y1-y0-5,4);g.fill();
+ /* lid in sections, lifting lugs on the shell */
+ g.fillStyle='#454a52';SK.rr(g,x0+4.5,y0+4.5,w-9,y1-y0-9,3);g.fill();g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1;
+ for(let yy=y0+80;yy<y1-20;yy+=80){g.beginPath();g.moveTo(x0+5,yy);g.lineTo(x1-5,yy);g.stroke()}
+ if(lev>.05){g.strokeStyle=rgba('#ff8a20',.25+.4*lev*fl);g.lineWidth=1.2;g.beginPath();for(let yy=y0+80;yy<y1-20;yy+=80){g.moveTo(x0+8,yy+1.2);g.lineTo(x1-8,yy+1.2)}g.stroke()}
+ g.fillStyle='#2a2d31';for(let yy=y0+40;yy<y1;yy+=80){g.fillRect(x0-3,yy-4,3,8);g.fillRect(x1,yy-4,3,8)}
+ /* pouring box: lid opening at the shroud, impact pad and two dams that calm the flow */
+ const ox=x0+6,ow=20,oy=py-16,oh=32;g.fillStyle='#2a1d18';g.fillRect(ox,oy,ow,oh);
+ if(lev>.02){g.fillStyle=heat(.55+.4*lev*fl);g.globalAlpha=.35+.65*lev;g.fillRect(ox+1,oy+1,ow-2,oh-2);g.globalAlpha=1}
+ g.fillStyle='#c9b08a';g.fillRect(ox,oy-2,ow,3);g.fillRect(ox,oy+oh-1,ow,3);
+ g.strokeStyle='rgba(60,40,30,.8)';g.lineWidth=1.4;g.strokeRect(PBX-6,py-6,12,12);
+ /* one nozzle per strand: stopper rod on a lever + mechanism at the inside edge; unused nozzles are plugged */
+ for(let i=0;i<8;i++){const y=SY(i),nx=x1-8,dn=y>py?1:-1;
+  if(i<n){g.fillStyle='#2a1d18';circ(nx,y,5);g.fill();if(lev>.02){g.fillStyle=heat(.6+.38*lev*fl);g.globalAlpha=.4+.6*lev;circ(nx,y,4.2);g.fill();g.globalAlpha=1}
+   SK.line(g,nx,y,x0+9,y+7*dn,'#1d1f23',2.6);SK.line(g,nx,y,x0+9,y+7*dn,'#9aa2ad',1.2);SK.box(g,x0+5,dn>0?y+3:y-12,8,9,'#3d4756','#14171c',2);g.fillStyle='#d24b3a';g.fillRect(x0+6.5,dn>0?y+4.5:y-10.5,2,2);
+   g.fillStyle='#2a2c30';circ(nx,y,2.6);g.fill();g.fillStyle='#8b939e';circ(nx-.7,y-.7,1);g.fill()}
+  else{g.fillStyle='#5a5f66';circ(nx,y,4);g.fill();g.strokeStyle='#2a2d31';g.lineWidth=1;circ(nx,y,4);g.stroke()}}}
+/* ladle shroud: a ceramic tube from the ladle's slide gate into the pouring box. While attached it is drawn after the ladles
+   (it hangs under the gate); otherwise the manipulator holds it parked beside the tundish (drawn in drawCaster). */
+const SHM={x:1404,y:902};
+function gatePt(L){const a=armA(L.arm==null?CAST.arm:L.arm)-PI/2,c=Math.cos(a),s=Math.sin(a);return[L.x+c*17-s*16,L.y+s*17+c*16]}
+function drawShroud(){if(!B_('strang')||!inView(TD.x0,TUR.y,140))return;const Lc=LADLES.find(l=>l.state==='cast');if(!Lc||CAST.rf<1)return;
+ const top=gatePt(Lc),bot=[PBX,TUR.y];g.lineCap='round';SK.line(g,top[0],top[1],bot[0],bot[1],'#3a3e45',7.5);SK.line(g,top[0],top[1],bot[0],bot[1],'#ddd8cc',4.6);g.lineCap='butt';
+ g.fillStyle='#6b7079';circ(top[0],top[1],4.2);g.fill();g.fillStyle='#2a2d31';circ(bot[0],bot[1],4.4);g.fill();
+ if(CAST.pour){g.fillStyle=`rgba(255,${210+35*(RM?.5:Math.sin(T*11))|0},120,.95)`;circ(bot[0],bot[1],2.8);g.fill()}}
+function drawShroudPark(){const on=LADLES.some(l=>l.state==='cast')&&CAST.rf>=1,x=SHM.x,y=SHM.y;
+ SK.shadow(g,x+2,y+3,8,7,.3);g.fillStyle='#2a2d31';circ(x,y,6);g.fill();g.fillStyle='#c79a1e';circ(x,y,3);g.fill();
+ if(on){SK.line(g,x,y,x+12,y-10,'#1d1f23',4);SK.line(g,x,y,x+12,y-10,'#c79a1e',2);return}
+ SK.line(g,x,y,x-9,y-7,'#1d1f23',4);SK.line(g,x,y,x-9,y-7,'#c79a1e',2);/* parked shroud in the manipulator fork, collar up */g.lineCap='round';SK.line(g,x-11,y-8,x-15,y+14,'#3a3e45',8);SK.line(g,x-11,y-8,x-15,y+14,'#cfc6b4',5);g.lineCap='butt';g.fillStyle='#6b7079';circ(x-11,y-8,4);g.fill();g.fillStyle='#2a2d31';circ(x-11,y-8,2);g.fill()}
+function drawCaster(){if(!B_('strang')||!inView(1540,830,320))return;const n=nStr(),flow=CAST.flow,cx=CUTX(),v=castV(),osc=RM?0:Math.sin(T*TAU*2.2);
+ /* floor: run-out table bed, spray chamber pit, cooling bed */
+ g.fillStyle='#1d2025';g.fillRect(1488,TD.y0-6,52,TD.y1-TD.y0+12);
+ g.fillStyle='#2a2d33';g.fillRect(1568,TD.y0+2,84,TD.y1-TD.y0-4);
+ SK.box(g,1652,668,110,326,'#30343b','#15171a',4);
+ const step=RM?0:Math.sin(T*2.4)*2.5;/* walking-beam cooling bed: fixed and moving notched rails */
+ g.strokeStyle='#565c65';g.lineWidth=2;g.beginPath();for(let r=0;r<6;r++){const xx=1662+r*18,dy=r%2?step:0;g.moveTo(xx,674+dy);for(let yy=674;yy<988;yy+=10){g.lineTo(xx+3,yy+5+dy);g.lineTo(xx,yy+10+dy)}}g.stroke();
+ drawTurret();drawTundish(n);drawShroudPark();
+ /* mould water manifold along the mould row */
+ g.fillStyle='#2f5f8a';g.fillRect(TD.x1+1,TD.y0+4,3,TD.y1-TD.y0-8);
+ /* the strand glow: one gradient from the mould exit to the cutter, shared by all strands */
+ let sg=null;if(flow){sg=g.createLinearGradient(MCX+11,0,cx,0);sg.addColorStop(0,heat(.97));sg.addColorStop(.3,heat(.8));sg.addColorStop(.62,heat(.66));sg.addColorStop(1,heat(.56))}
+ const off=RM?0:(T*v)%9;
  for(let i=0;i<8;i++){const y=SY(i),on=i<n;
-  if(on){g.fillStyle=casting?heat(1):'#3a2018';circ(1452,y,3);g.fill();const jx=RM||!casting?0:Math.sin(T*12+i)*.7;SK.box(g,mx-8+jx,y-9,18,18,'#b87333','#5a3418',3);g.fillStyle='#3a8fd0';g.fillRect(mx-7+jx,y-8,16,2.5);
-   /* the strand itself: continuous hot bar from the mould to the cutter */
-   if(casting){const cx=CUTX();const gr=g.createLinearGradient(mx,0,cx,0);gr.addColorStop(0,heat(.95));gr.addColorStop(.5,heat(.7));gr.addColorStop(1,heat(.45));g.fillStyle=gr;g.fillRect(mx+10,y-4.5,cx-mx-10,9)}
-   SK.box(g,1540,y-9,12,18,'#2b2e33','#111',2)}
-  else{g.strokeStyle='rgba(244,241,234,.16)';g.setLineDash([4,4]);g.strokeRect(mx-8,y-8,170,16);g.setLineDash([])}}
- if(casting)SK.parts(12,.6,9,T,(f,a,b)=>{g.fillStyle=`rgba(235,240,245,${.3*(1-f)})`;SK.circ(g,1480+a*60,SY(floor(b*n*.999))-f*16,3+f*8);g.fill()});
- for(const r of CAST.run){if(r.x>CUTX())SK.billetBar(g,r.x-40,SY(r.lane),40,9,.4)}
- /* cutters: shear (old) or torch machine (upgrade) */
- for(let i=0;i<n;i++){const y=SY(i),cut=CAST.cut.find(c=>c.lane===i),ph=cut?cut.t/.6:0,bx=CUTX();
-  if(!lv('torch')){SK.box(g,bx-8,y-15,16,30,'#6b6f76','#1d1f23',2);g.fillStyle='#2a2c30';g.fillRect(bx-1.5,y-12,3,24);if(cut&&ph<.3){g.fillStyle=`rgba(255,250,220,${1-ph/.3})`;g.fillRect(bx-3,y-10,6,20)}}
-  else{const carX=bx-6+(cut?ph*10:0);g.fillStyle='#6d6358';g.fillRect(bx-22,y-15,44,1.6);g.fillRect(bx-22,y+13.5,44,1.6);SK.box(g,carX-6,y-16,12,32,'#4a5058','#1b1e22',2);
-   if(cut&&ph<.8){const ny=lerp(y-6,y+6,ph/.8);g.fillStyle='#b87333';circ(carX+6,ny,2.4);g.fill();SK.parts(10,3,i*7,T,(ff,a,b)=>{g.fillStyle=`rgba(255,${190+60*a|0},${90+80*b|0},${1-ff})`;SK.circ(g,carX+6+(a-.3)*10*ff,ny+ff*16,1+1.2*(1-ff));g.fill()})}}}}
+  if(!on){/* not bought yet: covered mould position, bare floor */SK.box(g,MCX-11,y-11,22,22,'#2a2d33','#15171a',3);g.strokeStyle='rgba(255,255,255,.08)';g.lineWidth=1;g.beginPath();g.moveTo(MCX-7,y-7);g.lineTo(MCX+7,y+7);g.moveTo(MCX+7,y-7);g.lineTo(MCX-7,y+7);g.stroke();
+   SK.box(g,WSX,y-12,26,24,'#24272c',null,3);continue}
+  /* run-out rollers */
+  for(let rx=1572;rx<1650;rx+=10){g.fillStyle='#4f555e';g.fillRect(rx,y-8,4,16);g.fillStyle='rgba(255,255,255,.14)';g.fillRect(rx,y-8,1.4,16)}
+  /* strand from the mould through the spray chamber to the cutter, with moving oscillation marks */
+  if(flow){g.fillStyle=sg;g.fillRect(MCX+10,y-4.5,cx-MCX-10,9);g.fillStyle='rgba(60,20,10,.1)';for(let xx=1540+off;xx<cx;xx+=9)g.fillRect(xx,y-4.5,1,9);g.fillStyle='rgba(255,255,255,.12)';g.fillRect(MCX+10,y-4.5,cx-MCX-10,2)}
+  /* copper mould tube in its water jacket on the oscillating table */
+  const o=osc*.7;SK.box(g,MCX-11,y-11+o*.4,22,22,'#3d4756','#14171c',3);g.fillStyle='#b87333';g.fillRect(MCX-7-o*.3,y-7-o*.3,14+o*.6,14+o*.6);g.fillStyle='#e0a070';g.fillRect(MCX-7-o*.3,y-7-o*.3,14+o*.6,2);
+  g.fillStyle=flow?heat(.9+.08*(RM?.5:Math.sin(T*13+i))):'#2a1a14';g.fillRect(MCX-4.5,y-4.5,9,9);
+  g.fillStyle='#6fa8e8';g.fillRect(MCX-11,y-3,2.5,6);
+  if(flow&&CAST.tlev>.02){/* open stream from the metering nozzle into the mould */g.strokeStyle='rgba(255,236,170,.95)';g.lineWidth=2;g.beginPath();g.moveTo(TD.x1-8,y);g.lineTo(MCX,y);g.stroke()}
+  /* withdrawal & straightening unit: two driven roll pairs, drive motor below */
+  SK.box(g,WSX,y-13,26,5,'#3d4756','#14171c',2);SK.box(g,WSX,y+8,26,5,'#3d4756','#14171c',2);
+  for(const rx of[WSX+6,WSX+19]){g.fillStyle='#8b939e';g.fillRect(rx-3,y-8,6,16);g.fillStyle='rgba(0,0,0,.35)';const k=flow&&!RM?((T*v*.25)%4):0;g.fillRect(rx-3,y-8+k*4,6,1.5);g.fillRect(rx-3,y-8+((k*4+8)%16),6,1.5)}
+  SK.box(g,WSX+7,y+13,12,6,'#2f5f8a','#14171c',1.5)}
+ /* spray chamber: header pipes across the strands with spray fans, steam rising from the cooling water */
+ g.fillStyle='#3d434b';g.fillRect(1488,TD.y0-8,52,5);g.fillRect(1488,TD.y1+3,52,5);
+ /* water manifolds at both ends, spray headers along each strand with nozzles aimed at it */
+ g.fillStyle='#2f5f8a';g.fillRect(1488,TD.y0-4,3,TD.y1-TD.y0+8);g.fillRect(1537,TD.y0-4,3,TD.y1-TD.y0+8);
+ for(let i=0;i<n;i++){const y=SY(i);g.fillStyle='#3a6f9e';g.fillRect(1490,y-10,48,2);g.fillRect(1490,y+8,48,2);
+  if(flow){g.fillStyle='rgba(190,225,255,.3)';g.beginPath();for(let hx=1496;hx<1536;hx+=12){g.moveTo(hx,y-8);g.lineTo(hx-3,y-4.5);g.lineTo(hx+3,y-4.5);g.closePath();g.moveTo(hx,y+8);g.lineTo(hx-3,y+4.5);g.lineTo(hx+3,y+4.5);g.closePath()}g.fill()}}
+ if(flow){if(RM){g.fillStyle='rgba(235,240,245,.18)';for(let i=0;i<n;i++){SK.circ(g,1508,SY(i)-14,9);g.fill()}}
+  else SK.parts(10+n*2,.55,9,T,(f,a,b)=>{const y=SY(floor(b*n*.999));g.fillStyle=`rgba(235,240,245,${.3*(1-f)})`;SK.circ(g,1492+a*44+f*6,y-6-f*20,3+f*9);g.fill()})}
+ /* billets: cut pieces on the run-out; when the strand has stopped, the uncut tails */
+ for(const r of CAST.run){if(r.x>cx)SK.billetBar(g,r.x-40,SY(r.lane),40,9,.5);else if(!flow)SK.billetBar(g,max(MCX+12,r.x-40),SY(r.lane),min(40,r.x-MCX-12),9,.55)}
+ /* cooling bed: billets walk across and cool from orange to grey */
+ for(const b of CAST.bed){const k=b.it.hot?clamp(.62-(b.va||0)*.055,.07,.62):.07;SK.billetBar(g,1658,b.y,98,7,k)}
+ /* cutters: hydraulic shear (old) or torch cutting machine (upgrade) */
+ for(let i=0;i<n;i++){const y=SY(i),cut=CAST.cut.find(c=>c.lane===i),ph=cut?cut.t/.6:0,bx=cx;
+  if(!lv('torch')){SK.box(g,bx-9,y-16,18,32,'#6b6f76','#1d1f23',2);SK.hazardBar(g,bx-9,y-16,18,4);g.fillStyle='#2a2c30';g.fillRect(bx-1.5,y-11,3,22);if(cut&&ph<.3){g.fillStyle=`rgba(255,250,220,${1-ph/.3})`;g.fillRect(bx-3,y-10,6,20)}}
+  else{const carX=bx-6+(cut?ph*10:0);g.fillStyle='#6d6358';g.fillRect(bx-22,y-15,44,1.6);g.fillRect(bx-22,y+13.5,44,1.6);
+   SK.box(g,carX-6,y-16,12,32,'#4a5058','#1b1e22',2);SK.hazardBar(g,carX-6,y-16,12,3);SK.line(g,carX-3,y-16,carX-3,y-21,'#d24b3a',1.4);SK.line(g,carX+2,y-16,carX+2,y-21,'#3a8fd0',1.4);
+   if(cut&&ph<.8){const ny=lerp(y-6,y+6,ph/.8);g.fillStyle='#b87333';circ(carX+6,ny,2.4);g.fill();if(!RM)SK.parts(10,3,i*7,T,(ff,a,b)=>{g.fillStyle=`rgba(255,${190+60*a|0},${90+80*b|0},${1-ff})`;SK.circ(g,carX+6+(a-.3)*10*ff,ny+ff*16,1+1.2*(1-ff));g.fill()})}
+   else{g.fillStyle='#b87333';circ(carX+6,y-6,2);g.fill()}}}}
 /* ---- downstream stations ---- */
 function nodeQ(id){const n=NODE[id];return n.in.length+(n.cur?1:0)}
 function drawGjv(){if(!B_('vv')||!inView(POS.gjv.x,POS.gjv.y,200))return;const x0=2035,x1=2275,y0=520,h=160,walk=lv('bjelke')>0,fl=i=>RM?.7:.5+.5*Math.sin(T*9+i*1.7),busy=!!NODE.gjv.cur;
@@ -473,7 +554,7 @@ function draw(){
  if(inView(POS.truck1.x,POS.truck1.y,300))drawTruckV(POS.truck1.x,POS.truck1.y,VEH.bil1);if(B_('stel')&&inView(POS.truck2.x+200,POS.truck2.y,400))drawTruckH(POS.truck2.x,POS.truck2.y,VEH.bil2);
  drawTrain();drawShip();
  drawHMStation();drawFurnace();drawBucketFlight();drawHMPour();
- for(const L of LADLES)if(L.state!=='lf'&&L.state!=='carried')drawLadle(L);
+ for(const L of LADLES)if(L.state!=='lf'&&L.state!=='carried')drawLadle(L);drawShroud();
  drawLF();
  drawDesks();
  const ents=[[P,C.vest,C.helmet,capCarry()]];for(const h of helpers)if(inView(h.x,h.y,60)&&!inCab(h))ents.push([h,ROUTES[h.r].col,'#f8f6ee',0]);/* the MAX marker is for the player only */
@@ -491,7 +572,7 @@ function draw(){
   if(F.state==='tapping'&&F.tapT>.6&&F.L&&inView(F.x,F.y,240)){const D=tapDur(),w=F.tapT<.9?(F.tapT-.6)/.3:F.tapT>D-.7?max(0,(D-.4-F.tapT)/.3):1;glowC(F.L.x,F.L.y,110,C.molten,.4*w);{const sp=ET()==='conv'?convMouth():ET()==='sm'?[F.x+100,F.y]:[F.x+86,F.y];stream(sp[0],sp[1],F.L.x,F.L.y-6,max(0,w))}}}
  for(const L of LADLES)if(L.steel>0)glowC(L.x,L.y,90,C.molten,(L.state==='lf'?.1:.26)*(L.steel/max(1,L.sm))+.05);
  if(inView(POS.pit.x,POS.pit.y,200)){const st=PIT.state;if(st==='pour'){const L=PIT.L;if(L){const w=PIT.fill<.08?PIT.fill/.08:PIT.fill>.94?(1-PIT.fill)/.06:1;stream(L.x,L.y+12,POS.pit.x,POS.pit.y-4,w)}glowC(POS.pit.x,POS.pit.y,160,C.molten,.35)}else if(st==='solid'||st==='strip'){glowC(POS.pit.x,POS.pit.y,140,C.molten,.2)}}
- {const Lc=LADLES.find(l=>l.state==='cast');if(Lc&&inView(1450,830,260)){glowC(1452,830,130,C.molten,.22);stream(Lc.x,Lc.y,1452,Lc.y<850?760:920,.55)}}
+ if(B_('strang')&&inView(1500,830,260)){const k=CAST.tlev;if(k>.02)glowC(1450,830,150,C.molten,.14*k);if(CAST.pour)glowC(PBX,TUR.y,46,C.molten,.32);if(CAST.flow)glowC(1520,830,110,C.molten,.08)}
  if(LADLES.some(l=>l.state==='lf')&&inView(POS.lf.x,POS.lf.y,120)){const x=POS.lf.x,y=POS.lf.y;glowC(x,y,70,C.arc,.14);if(!RM){ctx.strokeStyle=rgba(C.arc,.9);ctx.lineWidth=2;for(let i=0;i<3;i++){const a=-PI/2+i*TAU/3;if(Math.random()<.6)bolt(x+Math.cos(a)*8,y+Math.sin(a)*8,rnd(6,14))}}}
  if(NODE.gjv.cur)glowC(POS.gjv.x,POS.gjv.y,130,C.molten,.16);if(NODE.vv.cur)glowC(2470,600,110,C.molten,.14);
  for(const p of parts){if(!inView(p.x,p.y,10))continue;const a=clamp(p.l/p.m,0,1);if(p.sq){ctx.globalCompositeOperation='source-over';ctx.fillStyle=p.c;ctx.globalAlpha=a;ctx.fillRect(p.x-3,p.y-3,6,6);ctx.globalAlpha=1;ctx.globalCompositeOperation='lighter'}else{ctx.strokeStyle=rgba(p.c.startsWith('#')?p.c:C.moltenhi,a);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*.04,p.y-p.vy*.04);ctx.stroke()}}
