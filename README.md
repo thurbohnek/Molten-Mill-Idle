@@ -8,7 +8,7 @@ to electric arc furnaces, continuous casting and the rolling mill.
 - Follows the history of steelmaking: blast furnace + Bessemer/LD converter → open-hearth → EAF → UHP EAF → continuous scrap charging.
 - English (default) and Norwegian; tap anything for an explanation bubble.
 
-The whole game is one self-contained HTML file (`index.html`) with no dependencies. Open it in a browser.
+The whole game is one self-contained HTML file (`index.html`) with no dependencies. Play it at https://thurbohnek.github.io/Molten-Mill-Idle/ or open the file in a browser.
 
 ## Development
 
