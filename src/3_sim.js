@@ -297,6 +297,8 @@ function mkTorp(i){return{i,st:'fill',x:POS.torpX0+150*i,load:0,t:0,wait:0,ord:t
 function syncTorps(){const want=nTorp();while(TORPS.length<want)TORPS.push(mkTorp(TORPS.length))}
 function rjRate(){let rp=rjPow(),r=rp,lim='';RJ.rp=rp;for(const s of rjReq()){const c=lv(s)>0?rjSupCap(s):.7*rp;RJ.sup[s]={cap:lv(s)>0?c:0,lim:c};if(c<r-1e-9){r=c;lim=s}}RJ.lim=lim;return r}
 const castTorp=()=>TORPS.find(t=>t.st==='fill'&&Math.abs(t.x-POS.torpX0)<4);
+/* the taphole and the car pour scale with the plant, so a big furnace and big cars are not held back by a fixed 4-5 t/s stream */
+const tapRate=()=>max(4,rjPow()*1.6,torpCap()/10),pourRate=()=>max(5,torpCap()/6);
 function updRJ(dt){if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.heat-dt*.05);return}
  /* ore train fills the ore yard */
  const oy=SRCm.ore;S.yard.ore=min(oreYardCap(),yardT(oy)+oreYardRate()*dt);RJ.trainT+=dt;
@@ -309,7 +311,7 @@ function updRJ(dt){if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.he
  RJ.heat=lerp(RJ.heat,m>0?1:.55,dt*.5);RJ.cow+=dt;
  /* tapping: into the torpedo car at the cast house, or to the pig-casting machine (sale switch, or no car there) */
  const tc=castTorp(),toSteel=S.tg.rj&&usesHM();RJ.tapping=false;RJ.overflow=0;
- if(tc&&toSteel&&S.rj.hearth>.05){const a=min(S.rj.hearth,4*dt,torpCap()-tc.load);if(a>0){tc.load+=a;S.rj.hearth-=a;RJ.tapping=true}}
+ if(tc&&toSteel&&S.rj.hearth>.05){const a=min(S.rj.hearth,tapRate()*dt,torpCap()-tc.load);if(a>0){tc.load+=a;S.rj.hearth-=a;RJ.tapping=true}}
  else if(S.rj.hearth>0&&(!toSteel||S.rj.hearth>=hearthCap()*.85)){const a=min(S.rj.hearth,max(toSteel?1.2:3,rjPow()*1.3)*dt);S.rj.hearth-=a;RJ.pigAcc+=a;RJ.overflow=a/dt;RJ.tapping=true;
   while(RJ.pigAcc>=PIG_T){RJ.pigAcc-=PIG_T;addPile({k:'pig',t:PIG_T,q:1});S.st.prod.pig=(S.st.prod.pig||0)+1;rec('o2:rj',PIG_T)}}
  RJ.tapT=RJ.tapping?RJ.tapT+dt:0;
@@ -327,7 +329,7 @@ function updTorps(dt){syncTorps();const sp=torpSpd(),X0=POS.torpX0,X1=POS.torpX1
     if(full||(t.load>0&&empty&&short&&(have+t.load>=need||t.wait>6||t.load>=cap*.6))){t.st='go';t.wait=0}else if(t.load>0&&empty&&short)t.wait+=dt;else t.wait=0}
    if(!S.tg.rj||!usesHM()){t.wait=0}break}
   case'go':{const ahead=TORPS.filter(o=>o!==t&&(o.st==='pour'||(o.st==='go'&&o.x>t.x)));const tx=X1-ahead.length*150;t.x=min(tx,t.x+sp*dt);if(t.x>=X1-1){t.x=X1;t.st='pour'}break}
-  case'pour':{if(!usesHM()){t.st='back';break}const room=max(0,hmCap()-S.hm),a=min(t.load,room,5*dt);if(a>0){t.load-=a;S.hm+=a;rec('f:rj>ovn',a);t.pouring=1}else t.pouring=0;
+  case'pour':{if(!usesHM()){t.st='back';break}const room=max(0,hmCap()-S.hm),a=min(t.load,room,pourRate()*dt);if(a>0){t.load-=a;S.hm+=a;rec('f:rj>ovn',a);t.pouring=1}else t.pouring=0;
    if(t.load<=.01){t.load=0;t.st='back';t.pouring=0}break}
   case'back':{const ahead=TORPS.filter(o=>o!==t&&o.st==='back'&&o.x<t.x).length,tx=X0+150*(fillQ().length+ahead);t.x=max(tx,t.x-sp*dt);if(t.x<=tx+.5){t.st='fill';t.wait=0;t.ord=torpSeq++}break}}}}
 
@@ -522,7 +524,7 @@ function layoutPads(){let key='';for(const u of UP)key+=upOpen(u)?1:0;if(key===l
 /* the upgrade a station pad shows: one already part-paid, else what limits the line, else the cheapest */
 /* which upgrades fix what this station is waiting on right now */
 function urgentIds(st){switch(st){
- case'rj':{if(RJ.starve>1.5)return['malmkran','malmtog','skip'];if(F.waitHM>1.5){if(!castTorp()&&S.rj.hearth>=hearthCap()*.6)return['torpn','torp'];if(!RJ.lim)return['rjsize']}return[]}
+ case'rj':{if(RJ.starve>1.5)return['malmkran','malmtog','skip'];if(F.waitHM>1.5){if((!castTorp()&&S.rj.hearth>=hearthCap()*.6)||RJ.stopT>1.5)return['torpn','torp'];if(!RJ.lim)return['rjsize']}return[]}
  case'rjsup':{const o=[];if(RJ.lim)o.push(RJ.lim);for(const q of rjReq())if(!lv(q))o.push(q);if(F.waitHM>1.5&&!RJ.lim)o.push('sinter');return o}
  case'sup':{const o=[];if(F.lim)o.push(F.lim);for(const s of E_().req)if(!lv(s))o.push(s);if(F.elekOut)o.push('elekkran');return o}
  case'skrap':return F.starve>1.5?['kran','charge','yard','yard2']:[];
@@ -608,7 +610,7 @@ function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>
   if(F.state==='ready'){if(!tapLadle()){const L=LADLES.find(l=>l.atTap)||LADLES[0],w=L?{pit:'blokkstøping',cast:'streng',lf:'øseovn',await:'kø',carried:'kran'}[L.state]:'';return{lv:2,t:w?t_('Flaskehals: øse ({0})',t_(w)):t_('Flaskehals: øse')}}if(!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')}}if(F.lim&&F.solid>0)return{lv:2,t:lv(F.lim)?t_('Flaskehals: {0}',sn(F.lim)):t_('Flaskehals: {0} mangler',sn(F.lim))};
   if(F.elekOut)return{lv:1,t:t_('Venter på elektroder')};if(F.waitHM>1.5)return{lv:1,t:!S.tg.rj?t_('Råjernet går til salg (bryter)'):t_('Venter på råjern')};if((G.chgFull||0)>.6&&!F.lim)return{lv:2,t:t_('Flaskehals: ovnen')};if(F.starve>1.5)return{lv:1,t:t_('Venter på skrap')};if(F.state==='ready'&&!tapLadle())return{lv:1,t:t_('Venter på tom øse')};
   if(F.state==='ready'&&!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')};if(F.waitLadle>2||G.ladleWait>.3)return{lv:2,t:t_('Flaskehals: venter på øse')};if(F.ch&&ET()==='conv')return{lv:0,t:t_('Chargerer')};return{lv:0,t:F.state==='refine'?(ET()==='sm'?t_('Raffinerer'):t_('Tapper snart')):F.state==='tapping'?t_('v§Tapper'):ET()==='conv'&&F.solid>0?t_('Blåser'):tf(F.rate*60)+' t/min'}}
- case'rj':{const tc=castTorp(),torpShort=!tc&&S.rj.hearth>=hearthCap()*.6;
+ case'rj':{const tc=castTorp(),torpShort=(!tc&&S.rj.hearth>=hearthCap()*.6)||RJ.stopT>1.5;
   if(!S.tg.rj)return{lv:1,t:t_('Bryter: råjern til salg')};
   if(F.waitHM>1.5){if(RJ.starve>1.5)return{lv:2,t:t_('Flaskehals: malm til ovnen')};if(torpShort)return{lv:2,t:t_('Flaskehals: torpedovogner')};if(RJ.lim)return{lv:2,t:t_('Flaskehals: {0}',sn(RJ.lim))};return{lv:2,t:rjEra()?t_('Flaskehals: ovnseffekt (MVA)'):t_('Flaskehals: masovnen')}}
   if(RJ.starve>1.5)return{lv:1,t:t_('Venter på malm')};if(RJ.overflow>0)return{lv:1,t:t_('Overskudd støpes til masseljern')};if(RJ.stopT>2)return{lv:1,t:t_('Venter på torpedovogn')};
