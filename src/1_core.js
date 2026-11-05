@@ -75,6 +75,15 @@ const CRN={
  skrap:{x0:56,x1:512,y0:330,y1:1100,park:{x:300,y:440}},
  ose:{x0:930,x1:1770,y0:40,y1:1100,park:{x:1240,y:470}},
  mag:{x0:1600,x1:2120,y0:590,y1:1100,park:{x:1860,y:1010}},malm:CRNX.malm};
+/* Consteel line (era 5), left → right along the spine: open charging section in the scrap yard (pan conveyor, loaded by the
+   magnet crane) → dynamic seal → preheating tunnel (the off-gas leaves at its charging end, dx) → connecting car into the shell.
+   The gas cleaning (drop-out box → bag filter → fan → stack) stands in the free strip above the scrap yard. */
+const CSG={x0:58,xc:344,xs:382,xt:672,xf:744,y:600,w:40,hw:34,dx:404,dw:34,gy:262};
+const TROBP={x:868,y:726};
+const SLAGP={x:800,y:812,w:96,h:72};/* slag pit under the slag door (Consteel) *//* temperature-measuring robot beside the slag door */
+/* scrap-yard layout per era: the Consteel line runs through the yard, so pile 1 moves up, the pads move down */
+const LAY0={y0:{x:150,y:500},drop:{x:440,y:600},post:{x:490,y:840},row:[[296,414],[374,414],[452,414],[296,506],[374,506],[452,506],[382,930]],x1:512,park:{x:300,y:440}},
+ LAY5={y0:{x:150,y:450},drop:{x:212,y:672},post:{x:486,y:1046},row:[[296,746],[374,746],[452,746],[296,838],[374,838],[452,838],[382,930]],x1:330,park:{x:96,y:600}};
 
 /* ---------- products (everything is sellable). Price per tonne follows the research ladder:
    masseljern ~0,75 → skrap 1,0 → emne ~1,4 → armering ~1,8 → valstråd ~1,85 → nett ~2,0 → klipp og bøy ~2,2 (× 7,5 kr) ---------- */
@@ -135,6 +144,7 @@ const UP=[
  {id:'kran',st:'skrap',n:'Skrapkran',max:20,base:180,m:1.52,req:()=>scrapUse()},
  {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere Consteel-bånd'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
  {id:'yard2',st:'skrap',n:'Skraphaug 2',max:1,costs:[900],req:()=>scrapUse()},
+ {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>era()===5},
  {id:'forvarm',st:'skrap',n:'Kurvforvarming',max:1,costs:[1e5],req:()=>era()===3||era()===4},
  {id:'furnace',st:'ovn',n:()=>ET()==='conv'?'Større konverter':'Større ovn',max:20,base:120,m:1.5},
  {id:'power',st:'ovn',n:()=>['Sterkere blåsemaskin','Sterkere brennere','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt'][era()],max:20,base:160,m:1.5},
@@ -284,7 +294,7 @@ const speed=()=>160*(1+.08*lv('speed'));
 const hspeed=()=>130*(1+.08*lv('hspeed'));
 const fcap=()=>Math.round(E_().cap*(1+.18*lv('furnace')));
 const MW=()=>(E_().P||0)*(1+.15*lv('power'));
-const kwh=()=>ET()==='conv'?0:Math.round(E_().E*(lv('forvarm')&&(era()===3||era()===4)?.88:1));
+const kwh=()=>ET()==='conv'?0:Math.round(E_().E*(lv('forvarm')&&(era()===3||era()===4)?.88:1)*(era()===5?csPreK():1));
 /* converters: the blow takes blowT seconds (blower / lance upgrades shorten it); no external energy */
 const blowT=()=>E_().blow/(1+.15*lv('power'));
 /* melting / blowing limit in t/s (game time): power / specific energy, or a full charge per blow */
@@ -297,6 +307,8 @@ const yardCap=()=>30+12*lv('yard');
 const yardRate=()=>.8*Math.pow(1.22,lv('yard'));
 const kranLoad=()=>4*(1+.38*max(0,lv('kran')-1));
 const kranSpd=()=>170*(1+.09*lv('kran'));
+/* Consteel: the charging crane carries a big lifting magnet (Større magnet adds lift) */
+const craneLift=()=>kranLoad()*(era()===5?1.5*(1+.15*lv('magnet')):1);
 const boxT=4,nBox=()=>3+lv('charge');
 const bucketT=()=>max(6,fcap()*.5)*(1+.06*lv('charge'));
 const chgCap=()=>{const e=E_().ch;return e==='conv'?max(2*SCRAP_T,Math.ceil(scrapMax()*1.6/SCRAP_T)*SCRAP_T)*(1+.15*lv('charge')):e==='box'?boxT*nBox():e==='bucket'?bucketT()*2:fcap()*.5*(1+.15*lv('charge'))};
@@ -368,7 +380,7 @@ const upOpen=u=>stOn(u.st)&&(!u.req||u.req())&&(u.intro||S.heats>=2||S.pres.n>0)
 const upAvail=u=>upOpen(u)&&lv(u.id)<u.max;
 function upSub(u){const l=lv(u.id),nx=l+1,ar=(a,b,un)=>a+' → '+b+(un?' '+un:''),pc=()=>t_('stk'),fa=n=>t_('+{0} % fart',n),ka=n=>t_('+{0} % kapasitet',n);switch(u.id){
  case'carry':return ar(capCarry(),capCarry()+2,pc());case'speed':return fa(8);
- case'yard':return t_('+{0} % skrap',22);case'kran':return l?ar(tf(kranLoad()),tf(4*(1+.38*l)),'t'):t_('Henter selv');
+ case'yard':return t_('+{0} % skrap',22);case'kran':{const e5=era()===5?1.5*(1+.15*lv('magnet')):1;return l?ar(tf(craneLift()),tf(4*(1+.38*l)*e5),'t'):era()===5?ar(tf(craneLift()),tf(4*e5),'t'):t_('Henter selv')}case'magnet':return ar(tf(craneLift()),tf(kranLoad()*1.5*(1+.15*(l+1))),'t');
  case'charge':return era()===1?ar(nBox(),nBox()+1,t_('kasser')):era()===5?fa(20):ET()==='conv'?t_('+{0} % kasse',15):t_('+{0} % kurv',6);
  case'furnace':return ar(fcap(),Math.round(E_().cap*(1+.18*nx)),'t');
  case'power':return ET()==='conv'?ar(L1(blowT()),L1(E_().blow/(1+.15*nx)),t_('s blåsing')):ar(Math.round(MW()),Math.round(E_().P*(1+.15*nx)),t_(E_().pu));

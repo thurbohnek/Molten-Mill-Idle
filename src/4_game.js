@@ -67,6 +67,7 @@ function srcPrio(s,n){const k=s.kind;
  if(k==='slag')return S.pot>=potMax()-1?12:S.pot>=3?5:1.5;
  if(k==='kokk')return pitRoom()>0?(PIT.state==='idle'&&LADLES.some(l=>l.state==='pit')?9:5):0;
  if(k==='kokv')return n>=3?5:2.5;
+ if(k==='scrap'&&era()===5)return csLim()==='kran'?3:0;/* Consteel: the charging crane does it; carry only when the crane cannot keep up */
  if(k==='scrap')return era()===0?(S.chg<SCRAP_T?2:.8):S.chg<chgCap()*.6?5:2.5;
  if(k==='ore')return S.rj.ore<skipCap()*.6?(F.waitHM>0?7:5.5):2.5;
  if(k==='elek')return S.elek<4?7:2;
@@ -134,7 +135,7 @@ function hud(){const mvT=NO_()?fmt(S.money):'$'+fmt(S.money);setT('mv',mvT);{con
  const E=E_(),cap=fcap();let s,c;
  if(F.stop){s=t_('Slaggpotta er full – ovnen står!');c=C.danger}
  else{const cv=E.type==='conv',pct=Math.floor(min(1,F.bath/cap)*100);s=t_(E.k)+' · '+(F.state==='melt'?(cv?(F.ch?t_('chargerer'):F.solid>0?t_('blåser {0} %',pct):t_('venter på råjern')):t_('{0} %',pct)):F.state==='refine'?t_(E.type==='sm'?'raffinerer':'tapper snart'):F.state==='ready'?t_('KLAR'):t_('tapper'))+' · '+Math.round(F.temp)+' °C · '+cap+' t'+(cv?'':' · '+tf(F.rate*60)+' t/min')+(usesHM()?' · '+t_('råjern {0} t',tf(S.hm)):'');
-  c=F.lim||F.waitHM>1.5?C.danger:F.state==='ready'?C.moltenhi:F.state==='tapping'||F.solid>0?C.molten:C.steel}
+  c=F.lim||F.waitHM>1.5||csLim()?C.danger:F.state==='ready'?C.moltenhi:F.state==='tapping'||F.solid>0?C.molten:C.steel}
  setT('st',s);if(lastHud.sc!==c){lastHud.sc=c;$('sdot').style.background=c}
  /* crane button: shown in a zone whose crane you can take over */
  const cz=craneHere();const cb=$('craneBtn');const ct=cz?t_(G.crane===cz.id?'Slipp {0}':'Styr {0}',t_(cz.n)):'';if(lastHud.cb!==ct){lastHud.cb=ct;cb.hidden=!cz;cb.textContent=ct;cb.classList.toggle('on',!!cz&&G.crane===cz.id);cb.setAttribute('aria-pressed',cz&&G.crane===cz.id?'true':'false')}}
@@ -263,6 +264,8 @@ function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel
   h+='<div class="prow"><div class="k">'+t_('Inn')+'</div><ul>'+(inL||'<li>—</li>')+'</ul></div><div class="prow"><div class="k">'+t_('Ut')+'</div><ul>'+(outs.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' → '+t_(MN[e[1]].n))).join('')||'<li>—</li>')+'</ul></div>';
   h+=row(CUR()+'/min',t_('Verdi inn {0} → ut {1}',kr(v.vin),kr(v.vout))+' · <b style="color:'+(v.va>=0?'var(--good)':'var(--danger)')+'">'+(v.va>=0?'+':'')+kr(v.va,'/min')+'</b>');
   const u=mUtil(id);if(u!=null){const p=Math.round(u*100);h+=row(t_('Utnyttelse'),t_('{0} %',p)+'<div class="util"><i style="width:'+p+'%;background:'+(p>=95?'var(--danger)':p>85?'var(--hazard)':'var(--good)')+'"></i></div>')}}
+ if(id==='skrap'&&era()===5){h+=row(t_('Kran'),t_('{0} t/min · løft {1} t',tf(flow('skrap','ovn')),tf(craneLift())))+row(t_('Bånd'),t_('{0} t/min · maks {1} t/min',tf(rate('csfeed')),tf(beltRate()*60)))+row(t_('Forvarming'),t_('Skrapet inn i ovnen: {0} °C',Math.round(CSB.pre)));
+  const l=csLim();if(l)h+='<p class="pnote">'+(l==='kran'?t_('Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.'):l==='band'?t_('Linja er full, men båndet går for sakte – kjøp Raskere Consteel-bånd.'):t_('Skrapplassen er tom – kjøp Skraptilførsel.'))+'</p>'}
  const zid=MZ[id]||id,hi=HIRE[zid];if(hi)h+=row(t_('Hjelpere'),t_('{0} av {1}',lv(hi.id),hi.costs.length));
  const ups=UP.filter(u=>u.st===zid);if(ups.length)h+='<div class="prow"><div class="k">'+t_('Oppgr.')+'</div><div class="lv">'+ups.map(u=>{const l=lv(u.id),on=upOpen(u),mx=l>=u.max,ok=on||l>0,urg=on&&!mx&&urgentIds(u.st).indexOf(u.id)>=0;return'<span'+(ok?'':' class="lk"')+'>'+upName(u)+(urg?' <i class="urg">'+t_('flaskehals')+'</i>':'')+'</span><b class="'+(mx?'mx':ok?'':'lk')+'">'+(mx?t_('MAKS'):!on?t_('låst'):(u.max>1?t_('Nivå {0}/{1}',l,u.max):t_('kan kjøpes'))+' · '+kr(upCost(u)))+'</b>'}).join('')+'</div></div>';
  h+='<p class="pnote">'+t_('Hver oppgradering har sin egen rute i stasjonen – velg selv rekkefølgen. Låst = kommer med en senere ovn eller et nytt bygg.')+'</p>';$('mapPanel').innerHTML=h}

@@ -9,6 +9,14 @@ function t_(s,...a){let o=s==null?'':''+s;
  else{const i=o.indexOf('§');if(i>=0)o=o.slice(i+1)}
  return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
 const EN={
+ /* --- Consteel line --- */
+ 'Større magnet':'Bigger magnet','SJAKT':'CHUTE','chargeringskran':'charging crane','Flaskehals: Consteel-båndet':'Bottleneck: Consteel conveyor','Flaskehals: chargeringskranen':'Bottleneck: charging crane',
+ 'Flaskehals: skraptilførsel':'Bottleneck: scrap supply','Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.':'The charging crane lays the scrap along the whole charging section – nobody needs to carry scrap.',
+ '{0} t/min inn i ovnen':'{0} t/min into the furnace','Skrapet inn i ovnen: {0} °C':'Scrap into the furnace: {0} °C','Avgass ved ovnen: ca. {0} °C':'Off-gas at the furnace: about {0} °C',
+ 'Avgass ved uttaket: ca. {0} °C':'Off-gas at the takeoff: about {0} °C','Siste måling: {0} °C':'Last reading: {0} °C','Venter på første måling':'Waiting for the first reading','{0} målinger':'{0} readings',
+ 'Slagg {0}/{1}':'Slag {0}/{1}','Løft {0} t':'Lift {0} t','Kran':'Crane','Bånd':'Conveyor','Forvarming':'Preheating','{0} t/min · løft {1} t':'{0} t/min · lift {1} t','{0} t/min · maks {1} t/min':'{0} t/min · max {1} t/min',
+ 'Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.':'The crane cannot keep the line full – buy Scrap crane or Bigger magnet.','Linja er full, men båndet går for sakte – kjøp Raskere Consteel-bånd.':'The line is full but the conveyor runs too slowly – buy Faster Consteel belt.',
+ 'Skrapplassen er tom – kjøp Skraptilførsel.':'The scrap yard is empty – buy Scrap supply.',
  /* --- continuous caster bubbles --- */
  'Skjermrør på':'Shroud attached','Skjermrør parkert':'Shroud parked','Stålnivå {0} %':'Steel level {0} %','{0} emner på kjølesenga':'{0} billets on the cooling bed','{0} av {1} strenger i bruk':'{0} of {1} strands in use',
  /* --- zones, plates, plants --- */
@@ -51,7 +59,7 @@ const EN={
  'Skip gir best pris for eksport.':'Ships pay the best price, for export.',
  /* --- upgrades (full names; pad titles use the same keys) --- */
  'Større bæring':'Carry more','Raskere gange':'Walk faster','Skraptilførsel':'Scrap supply','Skrapkran':'Scrap crane','Større skrapkasse':'Bigger scrap box',
- 'Flere chargeringskasser':'More charging boxes','Større skrapkurv':'Bigger scrap bucket','Raskere Consteel-bånd':'Faster Consteel belt','Skraphaug 2':'Scrap pile 2',
+ 'Flere chargeringskasser':'More charging boxes','Større skrapkurv':'Bigger scrap bucket','Raskere Consteel-bånd':'Faster Consteel conveyor','Skraphaug 2':'Scrap pile 2',
  'Kurvforvarming':'Bucket preheating','Større konverter':'Bigger converter','Større ovn':'Bigger furnace','Sterkere blåsemaskin':'Stronger blowing engine',
  'Sterkere brennere':'Stronger burners','Kraftigere O₂-lanse':'Stronger O₂ lance','Mer effekt':'More power','Raskere raffinering':'Faster refining','Raskere tapping':'Faster tapping',
  'Tapper':'Tapper','Ekstra øse':'Extra ladle','Større slaggpotte':'Bigger slag pot','Slaggbil':'Slag pot carrier','Kalk og dolo':'Lime & dolomite','Oksygenanlegg':'Oxygen plant',
@@ -65,7 +73,7 @@ const EN={
  'Bjelkeovn':'Walking-beam furnace','Magnetkran':'Magnet crane','Varminnsetting':'Hot charging','Valsefart':'Rolling speed','Splittvalsing':'Slit rolling',
  'Rullebane til klipp og bøy':'Roller table to cut & bend','Tempcore-kapasitet':'Tempcore capacity','Finverksfart':'Finishing-block speed','Stelmor-vifter':'Stelmor fans',
  'Kveiletransport':'Coil conveyor','Sveisefart':'Welding speed','Bøyefart':'Bending speed','Togavtale':'Rail contract','Kaiavtale':'Shipping contract',
- 'Vegginjektorer':'Wall injectors','Dørlanse':'Door lance','Flere kasser':'More boxes','Raskere bånd':'Faster belt','Større bånd':'Bigger belt',
+ 'Vegginjektorer':'Wall injectors','Dørlanse':'Door lance','Flere kasser':'More boxes','Raskere bånd':'Faster conveyor','Større bånd':'Bigger belt',
  /* upgrade effects */
  'stk':'pcs','+{0} % fart':'+{0}% speed','+{0} % kapasitet':'+{0}% capacity','+{0} % skrap':'+{0}% scrap','Henter selv':'Fetches by itself','kasser':'boxes',
  '+{0} % kasse':'+{0}% box','+{0} % kurv':'+{0}% bucket','−{0} % tid':'−{0}% time','Tapper ovnen for deg':'Taps the furnace for you','øser':'ladles',

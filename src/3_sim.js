@@ -2,13 +2,16 @@
 /* ---------- solids + navigation ---------- */
 let SOLIDS=[];
 const FURN_SOL=()=>ET()==='sm'?[{x:688,y:416,w:226,h:370}]:ET()==='conv'?[{x:POS.F.x,y:POS.F.y+6,r:90},{x:POS.F.x-50,y:POS.F.y-136,w:100,h:70}]:[{x:POS.F.x,y:POS.F.y,r:98}];
-function rebuildSolids(){SOLIDS=FURN_SOL().slice();
+function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
  /* råjernsverk: furnace, cowpers / transformers, coke plant, dust catcher (they stay standing after the Omlegging) */
  /* tall equipment is drawn rising up the screen, so its solid covers the whole drawn body (no walking "behind" it) */
  SOLIDS.push({x:POS.rjF.x,y:POS.rjF.y,r:86},rjEra()?{x:POS.rjF.x-44,y:POS.rjF.y-158,w:88,h:90}:{x:POS.rjF.x-62,y:POS.rjF.y-196,w:124,h:130},{x:-150,y:426,r:28},{x:-174,y:330,w:48,h:100});
  if(rjEra())SOLIDS.push({x:-480,y:190,w:216,h:46});else if(lv('cowper')){const n=min(4,1+floor(lv('cowper')/5));SOLIDS.push({x:-496,y:118,w:48+70*(n-1),h:146})}else SOLIDS.push({x:-300,y:200,w:64,h:40});
  if(lv('koks')){const n=min(3,1+floor(lv('koks')/6));SOLIDS.push({x:-714,y:140,w:44+52*(n-1),h:96})}
  /* supply plants: only what is built is solid */if(lv('kull'))SOLIDS.push({x:666,y:60,w:98,h:108});if(lv('o2'))SOLIDS.push({x:786,y:56,w:150,h:104});if(lv('kalk'))SOLIDS.push({x:928,y:68,w:112,h:56});
+ if(era()===5){const C=CSG,t=C.y-C.hw;/* Consteel: seal + tunnel + connecting car, off-gas duct, gas cleaning, slag chute, measuring robot */
+  SOLIDS.push({x:C.xc,y:t+6,w:C.xs-C.xc,h:2*C.hw-12},{x:C.xs,y:t,w:C.xt-C.xs,h:2*C.hw},{x:C.xt,y:C.y-22,w:32,h:44},{x:C.dx-C.dw/2,y:C.gy,w:C.dw,h:t-C.gy},
+   {x:C.dx-40,y:150,w:80,h:C.gy-150},{x:150,y:56,w:206,h:178},{x:60,y:96,w:96,h:96},{x:786,y:POS.F.y+96,w:28,h:58},{x:TROBP.x,y:TROBP.y,r:20})}
  if(B_('lf'))SOLIDS.push({x:POS.lf.x,y:POS.lf.y,r:62});
  SOLIDS.push({x:1415,y:216,w:240,h:168});/* bottom plate */
  if(B_('strang'))SOLIDS.push({x:1414,y:640,w:348,h:352},{x:1366,y:823,r:22});/* tundish car … cooling bed; turret pedestal */
@@ -19,6 +22,17 @@ function rebuildSolids(){SOLIDS=FURN_SOL().slice();
  if(B_('nett'))SOLIDS.push({x:3240,y:90,w:160,h:176});
  if(B_('kob'))SOLIDS.push({x:3262,y:878,w:156,h:110});
  navDirty=true}
+/* the scrap yard is laid out per era (the Consteel line runs through it): pile 1, the hand-charging ring, the pad rows,
+   the desk and the crane's reach move; everything that copied a position is updated here */
+let layEra=-1;
+function eraLayout(){const L=era()===5?LAY5:LAY0;if(layEra===era())return;layEra=era();
+ POS.y0.x=L.y0.x;POS.y0.y=L.y0.y;const y=SRCm.y0;y.x=L.y0.x;y.y=L.y0.y;
+ POS.drop.x=L.drop.x;POS.drop.y=L.drop.y;const d=TGm.drop;d.x=L.drop.x;d.y=L.drop.y;d.fx={x:L.drop.x+(era()===5?0:30),y:L.drop.y-(era()===5?40:0)};
+ POSTS.skrap.x=L.post.x;POSTS.skrap.y=L.post.y;CRN.skrap.x1=L.x1;CRN.skrap.park=L.park;
+ UPROW.skrap.s.length=0;for(const q of L.row)UPROW.skrap.s.push(q.slice());PADPOS.skrap.up={x:L.row[0][0],y:L.row[0][1]};
+ try{for(const k in YC)YC[k].n=-1}catch(e){}layKey='';
+ /* a scrap helper caught unloading at the old charging point finishes at the new one */
+ for(const h of helpers)if(h.r==='skrap'&&h.state==='unload'&&h.tg===d){const[sx,sy]=slot(d,h.gi);h.x=sx;h.y=sy;h.vx=h.vy=0}}
 const NC=20,GW=Math.ceil((WW-WX0)/NC),GH=Math.ceil(WH/NC);
 const BLK=new Uint8Array(GW*GH);let navDirty=true;let FIELDS={},nFields=0;const QUE=new Int32Array(GW*GH);
 function blockedPt(x,y,m){if(x<WX0+26||y<26||x>WW-26||y>WH-26||(x>QX-16&&y>QY-16))return true;
@@ -93,7 +107,7 @@ const HOPK=6;
 const NODE={};
 const nodeRoom=id=>{const n=NODE[id];return n?max(0,n.cap-n.in.length-n.inc):0};
 const TG=[
- {id:'drop',kind:'scrap',x:POS.drop.x,y:POS.drop.y,r:56,open:()=>true,free:()=>floor((chgCap()-S.chg)/SCRAP_T+1e-6),give:it=>{S.chg+=it.t||SCRAP_T;rec('f:skrap>ovn',it.t||SCRAP_T)},fx:{x:POS.drop.x+30,y:POS.drop.y}},
+ {id:'drop',kind:'scrap',x:POS.drop.x,y:POS.drop.y,r:56,open:()=>true,free:()=>floor((era()===5?csRoomAt(POS.drop.x,26):chgCap()-S.chg)/SCRAP_T+1e-6),give:it=>{if(era()===5)csAdd(POS.drop.x,it.t||SCRAP_T,26,20);else S.chg+=it.t||SCRAP_T;rec('f:skrap>ovn',it.t||SCRAP_T)},fx:{x:POS.drop.x+30,y:POS.drop.y}},
  {id:'skip',kind:'ore',x:POS.skip.x,y:POS.skip.y,r:56,open:()=>!rjClosed(),free:()=>floor((skipCap()-S.rj.ore)/ORE_T+1e-6),give:it=>{S.rj.ore+=it.t||ORE_T;rec('f:malm>rj',it.t||ORE_T);S.st.ore+=it.t||ORE_T},fx:{x:POS.skip.x+20,y:POS.skip.y-20}},
  {id:'rjsale',sell:'dock',x:POS.rjsale.x,y:POS.rjsale.y,r:56,open:()=>!rjClosed()||PILE.pig.length>0||P.stack.some(i=>i.k==='pig')||helpers.some(h=>h.stack.some(i=>i.k==='pig'))},
  {id:'rack',kind:'elek',x:POS.rack.x,y:POS.rack.y,r:44,open:()=>isEAF(),free:()=>floor(12-S.elek+1e-6),give:()=>{S.elek=min(12,S.elek+1)}},
@@ -222,6 +236,62 @@ function scrapRoom(){return max(0,min(furnRoom(),scrapMax()-F.scIn))}
 /* råjern still needed this heat */
 function hmNeed(){if(!usesHM())return 0;const cap=fcap();if(ET()==='conv')return max(0,cap-F.bath-F.solid-max(0,min(S.chg,scrapMax()-F.scIn)));return max(0,cap*E_().hm[1]-F.hmIn)}
 function addSolid(m){F.solid+=m;F.scIn+=m}
+/* ---------- Consteel: an oscillating pan conveyor carries a real scrap layer (tonnes per cell) from the open charging section
+   through the preheating tunnel and over the connecting car into the bath. The crane drops its lifts along the charging section;
+   the conveyor moves the whole layer at one speed (fed to the melting rate, stopped while the furnace cannot take scrap);
+   the off-gas flowing back through the tunnel heats the layer before it falls into the hot heel. ---------- */
+const CSN=64,CSB={m:new Float32Array(CSN),tc:new Float32Array(CSN).fill(20),v:0,vmax:0,pos:0,feed:0,pre:380,gasK:.5,slot:0,lim:{band:0,kran:0,yard:0},drops:[]};
+const csL=()=>(CSG.xf-CSG.x0)/CSN;
+const csX=i=>CSG.x0+(i+.5)*csL();
+const csI=x=>clamp(floor((x-CSG.x0)/csL()),0,CSN-1);
+const csCap=()=>chgCap()/CSN;
+const CSI1=()=>csI(CSG.xc-4);/* last cell of the open charging section */
+function csSum(){let s=0;for(let i=0;i<CSN;i++)s+=CSB.m[i];return s}
+/* put t tonnes on the open section centred at x (a magnet lift spreads over its footprint); returns what did not fit */
+function csAdd(x,t,half,temp){half=half||18;const i0=csI(x-half),i1=min(CSI1(),csI(x+half)),cap=csCap();let left=t;
+ for(let pass=0;pass<3&&left>1e-6;pass++){const a=max(0,i0-pass*2),b=min(CSI1(),i1+pass*2);let room=0;for(let i=a;i<=b;i++)room+=max(0,cap-CSB.m[i]);if(room<=1e-6)continue;const k=min(1,left/room);
+  for(let i=a;i<=b;i++){const r=max(0,cap-CSB.m[i])*k;if(r<=0)continue;const m0=CSB.m[i];CSB.m[i]+=r;CSB.tc[i]=(m0*CSB.tc[i]+r*(temp==null?20:temp))/CSB.m[i];left-=r}}
+ S.chg=csSum();return max(0,left)}
+function csRoomAt(x,half){half=half||18;const i0=csI(x-half),i1=min(CSI1(),csI(x+half)),cap=csCap();let r=0;for(let i=i0;i<=i1;i++)r+=max(0,cap-CSB.m[i]);return r}
+/* the crane lays its lifts over the whole charging section in a strided order (an even layer, like a crane driver does);
+   it holds a lift over its spot until the layer below has moved on, and only then picks another spot */
+const CSSLOT=7,CSORD=[0,4,1,5,2,6,3];
+const csSlotX=k=>lerp(CSG.x0+24,CSG.xc-24,k/(CSSLOT-1));
+function csRoomAll(){const cap=csCap();let r=0;for(let i=0;i<=CSI1();i++)r+=max(0,cap-CSB.m[i]);return r}
+function csNextDrop(need){if(csRoomAll()<min(need,csCap()*2))return null;const x=csSlotX(CSORD[CSB.slot]);CSB.slot=(CSB.slot+1)%CSSLOT;return x}
+function csBestDrop(){let b=null,bv=csCap()*.6;for(let k=0;k<CSSLOT;k++){const x=csSlotX(k),r=csRoomAt(x,30);if(r>bv){bv=r;b=x}}return b}
+/* a new save, or Consteel just built: what was waiting at the furnace is spread on the conveyor from the furnace end */
+function csInit(t){CSB.m.fill(0);CSB.tc.fill(20);const cap=csCap();for(let i=CSN-1;i>=0&&t>1e-6;i--){const a=min(cap*.8,t);CSB.m[i]=a;t-=a;CSB.tc[i]=csX(i)>CSG.xs?csGasT(csX(i))*.7:20}S.chg=csSum()}
+/* off-gas temperature along the tunnel: about 1200 °C where it leaves the furnace, kept up by post-combustion, cooler at the takeoff */
+function csGasT(x){if(x<CSG.xs)return 20;const k=clamp((x-CSG.xs)/(CSG.xf-CSG.xs),0,1),g=CSB.gasK;return 20+g*(300+880*Math.pow(k,.7))+g*110*Math.sin(PI*k)}
+/* preheated scrap needs less electricity: about 340 kWh/t at a typical ~450 °C, more when it arrives cold */
+const csPreK=()=>1+.2*(500-clamp(CSB.pre,20,650))/600;
+function csStep(dt,can,sr){const L=csL(),cap=csCap(),m=CSB.m,tc=CSB.tc,N=CSN;
+ CSB.gasK=lerp(CSB.gasK,F.state==='tapping'?.45:F.arc>0?clamp(.5+.5*F.arc,0,1):.4,min(1,dt*.4));
+ CSB.vmax=beltRate()*L/cap;
+ /* feed control: run at full speed until the bath holds some scrap, then match the melting rate */
+ let v=0;if(can){const want=F.solid>fcap()*.08?furnRate():1e9,lim=min(want,sr/max(dt,1e-3));v=m[N-1]>1e-4?min(CSB.vmax,lim*L/m[N-1]):CSB.vmax}
+ CSB.v=can?lerp(CSB.v,v,min(1,dt*6)):0;
+ let f=CSB.v*dt/L,steps=1;while(f>.5){f/=2;steps*=2}let out=0,outT=0;
+ for(let st=0;st<steps;st++){const o=m[N-1]*f;out+=o;outT+=o*tc[N-1];
+  for(let i=N-1;i>=1;i--){const dm=m[i-1]*f,keep=m[i]*(1-f),nm=keep+dm;tc[i]=nm>1e-9?(keep*tc[i]+dm*tc[i-1])/nm:tc[i];m[i]=nm}m[0]*=1-f}
+ CSB.pos+=CSB.v*dt;
+ /* heat transfer: counter-current off-gas over the layer in the tunnel; the open section only cools a little */
+ const kx=1-Math.exp(-.2*dt),kc=1-Math.exp(-.02*dt);for(let i=0;i<N;i++){if(m[i]<=1e-6){m[i]=0;tc[i]=20;continue}const x=csX(i);tc[i]+=x>=CSG.xs?(csGasT(x)-tc[i])*kx:(20-tc[i])*kc}
+ if(out>0){addSolid(out);CSB.pre=lerp(CSB.pre,outT/out,min(1,out/max(1,fcap()*.04)))}
+ CSB.feed=out/max(dt,1e-6);if(out>0)rec('csfeed',out);S.chg=csSum();
+ /* what holds the feed back while the furnace could melt more: conveyor speed (full layer at full speed), the crane, or the yard */
+ const hungry=can&&F.state==='melt'&&F.solid<fcap()*.03&&sr>1,yardLow=count(SRCm.y0)+(SRCm.y1.open()?count(SRCm.y1):0)<3;
+ const tgt=!hungry?'':m[N-1]>=cap*.8&&CSB.v>=CSB.vmax*.95?'band':yardLow?'yard':'kran',a=min(1,dt*.25);for(const k in CSB.lim)CSB.lim[k]+=((k===tgt?1:0)-CSB.lim[k])*a}
+const csLim=()=>{if(era()!==5)return'';let b='',bv=.55;for(const k in CSB.lim)if(CSB.lim[k]>bv){bv=CSB.lim[k];b=k}return b};
+/* temperature-measuring robot at the slag door: probe from the magazine → lance in through the door → reading → burnt probe to the bin */
+const TROB={st:'park',t:0,n:0,val:0,show:0,wait:5,done:0};
+const TROBD={fetch:1.1,mount:.7,go:1.2,in:2.6,out:1.1,eject:.9,home:1.1};
+const TROBN={park:'fetch',fetch:'mount',mount:'go',go:'in',in:'out',out:'eject',eject:'home',home:'park'};
+function updTRob(dt){if(era()!==5){TROB.st='park';TROB.t=0;return}TROB.t+=dt;CSB.slk=lerp(CSB.slk||0,F.rate>0&&!F.stop?1:0,min(1,dt*.8));TROB.show=max(0,TROB.show-dt);
+ if(TROB.st==='park'){if(TROB.t>=TROB.wait&&F.state!=='tapping'&&F.bath>fcap()*.2){TROB.st='fetch';TROB.t=0}return}
+ if(TROB.st==='in'&&!TROB.done&&TROB.t>=TROBD.in*.55){TROB.done=1;TROB.val=Math.round(F.temp+rnd(-4,4));TROB.n++;TROB.show=3.4;if(near(P,POS.F.x,POS.F.y,520))sfx('tick',900)}
+ if(TROB.t>=TROBD[TROB.st]){TROB.st=TROBN[TROB.st];TROB.t=0;if(TROB.st==='park'){TROB.wait=13+rnd(0,4);TROB.done=0}}}
 function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
  /* ----- charging ----- */
  const room=furnRoom(),canCharge=F.state==='melt'||(E.ch==='belt'&&F.state==='refine');
@@ -229,6 +299,7 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
  else if(F.ch){F.ch.t+=dt;const c=F.ch;
   if(E.ch==='bucket'){F.roof=c.t<c.dur*.3?ease(c.t/(c.dur*.3)):c.t<c.dur*.7?1:1-ease((c.t-c.dur*.7)/(c.dur*.3));if(!c.done&&c.t>=c.dur*.5){c.done=1;addSolid(c.amt);if(near(P,F.x,F.y,600))sfx('clank');spark(F.x,F.y,20,160,C.moltenhi,.6)}}
   if(c.t>=c.dur){if(!c.done){addSolid(c.amt)}F.ch=null;F.roof=0;F.smDoor=-1}}
+ else if(E.ch==='belt'){const sr=scrapRoom();csStep(dt,canCharge&&room>.01&&sr>.01&&!F.stop,sr)}
  else if(canCharge&&room>.01&&S.chg>.01){const sr=scrapRoom();
   if(sr>.01){if(E.ch==='box'){F.chT+=dt;if(F.chT>=boxIv()&&(S.chg>=min(boxT,sr)-1e-6)){F.chT=0;const amt=min(boxT,S.chg,sr);S.chg-=amt;F.ch={t:0,dur:boxIv()*.85,amt,done:0};F.smDoor=(S.heats+floor(T))%3}}
   else if(E.ch==='bucket'){const bt=bucketT();if(F.solid<=cap*.3&&(S.chg>=min(bt,sr)-1e-6)){const amt=min(bt,S.chg,sr);S.chg-=amt;F.ch={t:0,dur:E.cd,amt,done:0}}}
@@ -248,12 +319,12 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
   if(isEAF()){S.elek=max(0,S.elek-m/E.elek)}
   if(slagOn()){F.slagAcc+=m/E.slag;while(F.slagAcc>=1){F.slagAcc-=1;if(S.pot<potMax())S.pot++}}
   if(typ!=='conv'&&Math.random()<dt*30)spark(F.x+rnd(-30,30),F.y-20+rnd(-20,20),2,120,C.arc,.35)}
- G.chgFull=(G.chgFull||0)*(1-dt*.1)+(F.state!=='ready'&&!F.stop&&!F.waitHM&&(typ==='conv'?S.hm>=hmCap()*.95&&S.chg>=scrapMin():S.chg>=chgCap()-SCRAP_T-.01)?dt*.1:0);
+ G.chgFull=(G.chgFull||0)*(1-dt*.1)+(F.state!=='ready'&&!F.stop&&!F.waitHM&&(typ==='conv'?S.hm>=hmCap()*.95&&S.chg>=scrapMin():E.ch==='belt'?S.chg>=chgCap()*.8&&!csLim():S.chg>=chgCap()-SCRAP_T-.01)?dt*.1:0);
  /* waiting reasons: no scrap (starve) or no råjern (waitHM) */
  const waiting=F.state==='melt'&&F.solid<=1e-6&&!F.ch&&!F.hmCh&&F.bath<cap-.01;
  let needScrap=false,needHM=false;
  if(waiting){if(typ==='conv'){needScrap=S.chg<scrapMin()-1e-6;needHM=!needScrap&&S.hm<cap-min(S.chg,scrapMax())-1e-6}
-  else{const sr=scrapRoom();needScrap=sr>.5&&S.chg<.5;needHM=!needScrap&&usesHM()&&S.hm<.5&&F.hmIn<cap*E.hm[1]-.05}}
+  else{const sr=scrapRoom();needScrap=sr>.5&&(E.ch==='belt'?CSB.m[CSN-1]<.05&&CSB.feed<.05:S.chg<.5);needHM=!needScrap&&usesHM()&&S.hm<.5&&F.hmIn<cap*E.hm[1]-.05}}
  F.starve=needScrap?F.starve+dt:0;F.waitHM=needHM?F.waitHM+dt:0;
  if(F.waitHM>0)G.hmwAcc=(G.hmwAcc||0)+dt;
  if(F.state==='melt'){F.arc=F.solid>0&&!F.stop&&!paused?1:F.bath>0?.25:0;
@@ -268,6 +339,7 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
   if(t>.6&&t<D-.4){L.steel=min(L.sm,L.steel+L.sm*dt/(D-1));if(Math.random()<.9)spark(L.x,L.y-14,3,170,C.moltenhi,.6,-PI/2)}
   if(t>=D)finishTap()}
  F.flick=F.arc>0?(RM?.95:.72+Math.random()*.38*F.arc):1;
+ updTRob(dt);
  /* ----- electrodes: crane keeps the rack full once bought ----- */
  if(isEAF()&&lv('elekkran')&&S.elek<10&&ST.elek>0){G.ekT=(G.ekT||0)+dt;if(G.ekT>1.5){G.ekT=0;ST.elek--;S.elek++}}
  /* ----- slag truck empties the pot by itself ----- */
@@ -336,10 +408,19 @@ function updTorps(dt){syncTorps();const sp=torpSpd(),X0=POS.torpX0,X1=POS.torpX1
 /* ---------- overhead cranes: automatic, with manual override (joystick steers the hook) ---------- */
 function mkCrane(id,o){const d=CRN[id];return Object.assign({id,d,x:d.park.x,y:d.park.y,h:1,state:'idle',job:null,load:0,pay:null,t:0,man:false},o)}
 const CRANES=[
- mkCrane('skrap',{n:'skrapkran',built:()=>lv('kran')>0,spd:()=>kranSpd(),bonus:'dobbel last',
-  find(c){if(chgCap()-S.chg<1)return null;const y=bestYard(null);if(count(y)<=0)return null;return{from:{x:y.x,y:y.y},to:{x:POS.drop.x-10,y:POS.drop.y},y}},
-  pick(c,j){const want=kranLoad()*(c.man?2:1),amt=min(want,yardT(j.y));if(amt<1)return false;S.yard[j.y.id]=yardT(j.y)-amt;c.load=amt;return true},
-  drop(c){const r=min(c.load,chgCap()-S.chg);if(r<=0)return false;S.chg+=r;c.load-=r;rec('f:skrap>ovn',r);spark(POS.drop.x,POS.drop.y,8,120,'#a8d4ff',.4);return c.load<=.01}}),
+ /* scrap crane; with Consteel it is the charging crane: a big lifting magnet that lays its lifts along the charging section */
+ mkCrane('skrap',{n:'skrapkran',built:()=>lv('kran')>0||era()===5,spd:()=>kranSpd(),bonus:'dobbel last',ht:()=>era()===5?.24:.35,
+  dropAny:c=>era()===5&&c.x>CSG.x0-4&&c.x<CSG.xc+4&&Math.abs(c.y-CSG.y)<34,
+  find(c){const y=bestYard(null);if(count(y)<=0)return null;
+   if(era()===5){const tx=csNextDrop(craneLift()*(c.man?2:1)*.3);if(tx==null)return null;return{from:c.man?{x:y.x,y:y.y}:{x:y.x+rnd(-40,40),y:y.y+rnd(-56,56)},to:{x:tx,y:CSG.y},y}}
+   if(chgCap()-S.chg<1)return null;return{from:{x:y.x,y:y.y},to:{x:POS.drop.x-10,y:POS.drop.y},y}},
+  pick(c,j){const want=craneLift()*(c.man?2:1),amt=min(want,yardT(j.y),era()===5&&!c.man?max(csCap()*4,csRoomAll()*.5):1e9);if(amt<1)return false;S.yard[j.y.id]=yardT(j.y)-amt;c.load=amt;return true},
+  drop(c,j){if(era()===5){const x=c.man?clamp(c.x,CSG.x0+12,CSG.xc-12):j.to.x;
+    if(!c.man&&csRoomAt(x,30)<min(c.load,csCap()*1.5)){j.w0=j.w0||T;if(T-j.w0>min(9,1.5+(x-CSG.x0)/max(1,CSB.vmax*.6))){j.w0=0;const nx=csBestDrop();if(nx!=null&&Math.abs(nx-x)>8){j.to={x:nx,y:CSG.y};return'move'}}return false}
+    const left=csAdd(x,c.load,22,20),put=c.load-left;
+    if(put>0){rec('f:skrap>ovn',put);CSB.drops.push({x,t:T,a:put});if(CSB.drops.length>40)CSB.drops.shift();spark(x,CSG.y,10,120,'#a8d4ff',.4);if(near(P,x,CSG.y,500))sfx('clank')}
+    c.load=left;if(left<=.01){c.load=0;return true}if(!c.man){j.w0=0;const nx=csBestDrop();if(nx!=null&&Math.abs(nx-x)>8){j.to={x:nx,y:CSG.y};return'move'}}return false}
+   const r=min(c.load,chgCap()-S.chg);if(r<=0)return false;S.chg+=r;c.load-=r;rec('f:skrap>ovn',r);spark(POS.drop.x,POS.drop.y,8,120,'#a8d4ff',.4);return c.load<=.01}}),
  mkCrane('malm',{n:'malmkran',built:()=>lv('malmkran')>0&&!rjClosed(),spd:()=>malmSpd(),bonus:'dobbel last',
   find(c){if(skipCap()-S.rj.ore<1)return null;const y=SRCm.ore;if(count(y)<=0)return null;return{from:{x:y.x,y:y.y},to:{x:POS.skip.x-10,y:POS.skip.y},y}},
   pick(c,j){const want=malmLoad()*(c.man?2:1),amt=min(want,yardT(j.y));if(amt<1)return false;S.yard.ore=yardT(j.y)-amt;c.load=amt;return true},
@@ -353,21 +434,22 @@ const CRANES=[
   pick(c){const n=min(magLoad()*(c.man?2:1),PILE.billet.length,nodeRoom('gjv'));if(n<=0)return false;c.pay=PILE.billet.splice(PILE.billet.length-n,n);return true},
   drop(c){const a=c.pay||[];while(a.length&&nodeRoom('gjv')>0){const it=a.shift();NODE.gjv.in.push(it);rec('f:strang>gjv',it.t)}if(a.length)return false;c.pay=null;return true}})];
 const CRm=Object.fromEntries(CRANES.map(c=>[c.id,c]));
+Object.defineProperty(CRm.skrap,'n',{get:()=>era()===5?'chargeringskran':'skrapkran'});
 const canMan=c=>c.built()&&(!c.man_ok||c.man_ok());
 function craneMove(c,tx,ty,dt,sp){const dx=tx-c.x,dy=ty-c.y,d=hyp(dx,dy);if(d<1)return 0;const s=min(d,sp*dt);c.x+=dx/d*s;c.y+=dy/d*s;return d-s}
-function updCrane(c,dt,ix,iy){if(!c.built()){c.man=false;return}const sp=c.spd()*(c.man?1.6:1);c.t+=dt;
+function updCrane(c,dt,ix,iy){if(!c.built()){c.man=false;return}const sp=c.spd()*(c.man?1.6:1),ht=c.ht?c.ht():.35;c.t+=dt;c.busy=(c.busy||0)*(1-min(1,dt*.2))+(c.state!=='idle'?min(1,dt*.2):0);
  if(c.id==='ose'){const q=LADLES.filter(l=>l.state==='await'&&ladleDest(l)).length-(c.state==='toPick'?1:0);G.oseQ=q>0?(G.oseQ||0)+dt:max(0,(G.oseQ||0)-dt*2);G.lwT=(G.lwT||0)+dt;if(G.lwT>8){G.ladleWait=(G.ladleWait||0)*.6+((G.lwAcc||0)/G.lwT)*.4;G.lwAcc=0;G.lwT=0}}
  if(c.man){c.x=clamp(c.x+ix*sp*dt,c.d.x0,c.d.x1);c.y=clamp(c.y+iy*sp*dt,c.d.y0,c.d.y1)}
  switch(c.state){
  case'idle':{c.job=c.find(c);if(c.job){c.state='toPick';c.t=0}else if(!c.man)craneMove(c,c.d.park.x,c.d.park.y,dt,sp*.5);break}
  case'toPick':{const j=c.job,f=j.from;if(c.id==='ose'){if(j.L.state!=='await'){c.state='idle';break}f.x=j.L.x;f.y=j.L.y}
   const d=c.man?hyp(f.x-c.x,f.y-c.y):craneMove(c,f.x,f.y,dt,sp);if(d<(c.man?30:2)&&!(c.id==='ose'&&j.L.arm!=null&&CAST.rf<1)){c.state='down';c.t=0}break}
- case'down':{c.h=max(0,1-c.t/.35);if(c.t>=.35){if(c.pick(c,c.job)){c.state='up';c.t=0}else{c.state='up2';c.t=0}}break}
- case'up2':{c.h=min(1,c.t/.35);if(c.t>=.35){c.state='idle';c.job=null}break}
- case'up':{c.h=min(1,c.t/.35);if(c.t>=.35){c.state='toDrop';c.t=0}break}
- case'toDrop':{const t=c.job.to;if(c.id==='ose'&&c.pay&&c.pay.next==='tur'&&c.pay.slot>=0){const q=armPt(c.pay.slot);t.x=q.x;t.y=q.y}const d=c.man?hyp(t.x-c.x,t.y-c.y):craneMove(c,t.x,t.y,dt,sp);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(d<(c.man?30:2)){c.state='lower';c.t=0}break}
- case'lower':{c.h=max(0,1-c.t/.35);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(c.t>=.35){if(c.drop(c,c.job)){c.state='rise';c.t=0}}break}
- case'rise':{c.h=min(1,c.t/.35);if(c.t>=.35){c.state='idle';c.job=null}break}}}
+ case'down':{c.h=max(0,1-c.t/ht);if(c.t>=ht){if(c.pick(c,c.job)){c.state='up';c.t=0}else{c.state='up2';c.t=0}}break}
+ case'up2':{c.h=min(1,c.t/ht);if(c.t>=ht){c.state='idle';c.job=null}break}
+ case'up':{c.h=min(1,c.t/ht);if(c.t>=ht){c.state='toDrop';c.t=0}break}
+ case'toDrop':{const t=c.job.to;if(c.id==='ose'&&c.pay&&c.pay.next==='tur'&&c.pay.slot>=0){const q=armPt(c.pay.slot);t.x=q.x;t.y=q.y}const d=c.man?hyp(t.x-c.x,t.y-c.y):craneMove(c,t.x,t.y,dt,sp);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(d<(c.man?30:2)||(c.man&&c.dropAny&&c.dropAny(c))){c.state='lower';c.t=0}break}
+ case'lower':{c.h=max(0,1-c.t/ht);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(c.t>=ht){const r=c.drop(c,c.job);if(r==='move'){c.state='toDrop';c.t=0;c.h=.4}else if(r){c.state='rise';c.t=0}}break}
+ case'rise':{c.h=min(1,c.t/ht);if(c.t>=ht){c.state='idle';c.job=null}break}}}
 
 /* ---------- støpeøser (ladles): the ladle car brings an empty ladle under the tap, the ladle crane does the rest ---------- */
 const LADLES=[];
@@ -527,7 +609,7 @@ function urgentIds(st){switch(st){
  case'rj':{if(RJ.starve>1.5)return['malmkran','malmtog','skip'];if(F.waitHM>1.5){if((!castTorp()&&S.rj.hearth>=hearthCap()*.6)||RJ.stopT>1.5)return['torpn','torp'];if(!RJ.lim)return['rjsize']}return[]}
  case'rjsup':{const o=[];if(RJ.lim)o.push(RJ.lim);for(const q of rjReq())if(!lv(q))o.push(q);if(F.waitHM>1.5&&!RJ.lim)o.push('sinter');return o}
  case'sup':{const o=[];if(F.lim)o.push(F.lim);for(const s of E_().req)if(!lv(s))o.push(s);if(F.elekOut)o.push('elekkran');return o}
- case'skrap':return F.starve>1.5?['kran','charge','yard','yard2']:[];
+ case'skrap':{const l=csLim();if(l==='band')return['charge'];if(l==='kran')return['kran','magnet'];if(l==='yard')return['yard','yard2'];return F.starve>1.5?['kran','charge','yard','yard2']:[]}
  case'ovn':return F.waitLadle>2?['ladle']:F.stop?['slaggbil','slagcap']:(G.chgFull||0)>.6&&!F.lim?['furnace','power','refine']:[];
  case'lf':return G.oseQ>3?['osekran']:LADLES.some(l=>l.state==='await'&&l.next==='lf')?['lft']:[];
  case'blokk':return LADLES.some(l=>l.state==='await'&&l.next==='pit'&&l.steel>.01)?['kokup','solid','kokbig']:[];
@@ -566,7 +648,7 @@ function onBuild(b){S.st.eraT[b.id]=S.st.play;rebuildSolids();bakeFloor();layout
   if(b.id==='eaf1')closeRJ();
   toast(t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
   if(usesHM())toast(t_('Chargen: {0}–{1} % råjern, resten skrap',Math.round(E.hm[0]*100),Math.round(E.hm[1]*100)));
-  if(b.id==='eaf1'){ST.elek=max(ST.elek,12);S.elek=12}G.chFx=2;sfx('mile');buzz([30,40,30,40,60])}
+  if(b.id==='eaf1'){ST.elek=max(ST.elek,12);S.elek=12}if(b.id==='consteel'){csInit(S.chg);if(G.crane==='skrap'){CRm.skrap.man=false;G.crane=null}const c=CRm.skrap;c.state='idle';c.job=null;c.load=0;toast(t_('Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.'))}G.chFx=2;sfx('mile');buzz([30,40,30,40,60])}
  else if(b.rjEra){toast(t_('Ny råjernsovn: {0}!',t_(RJE[rjEra()].n)),true);toast(t_(b.d));G.chFx=2;sfx('mile')}
  else{toast(t_('{0} er bygget!',t_(b.n)),true);if(b.d)toast(t_(b.d))}
  G.chGuide=T+30;
@@ -605,7 +687,8 @@ const swTxt=id=>id==='cast'?t_('Støping')+': '+t_(CASTN[S.cast]):id==='mix'?t_(
 const NODEZ={gjv:'gjv',vv:'vv',tc:'tc',stel:'stel',nett:'nett',kob:'kob'};
 function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>t_(SUPN[x]);
  switch(id){
- case'skrap':{if(F.starve>1.5)return{lv:2,t:t_('Flaskehals: skrap til ovnen')};if(S.chg>=chgCap()-1)return{lv:1,t:era()===0?t_('Skrapkassa er full (litt kjøleskrap)'):t_('Chargering full')};return{lv:0,t:tf(flow('skrap','ovn'))+' t/min'}}
+ case'skrap':{const l=csLim();if(l==='band')return{lv:2,t:t_('Flaskehals: Consteel-båndet')};if(l==='kran')return{lv:2,t:t_('Flaskehals: chargeringskranen')};if(l==='yard')return{lv:2,t:t_('Flaskehals: skraptilførsel')};
+  if(F.starve>1.5)return{lv:2,t:t_('Flaskehals: skrap til ovnen')};if(S.chg>=chgCap()-1)return{lv:1,t:era()===0?t_('Skrapkassa er full (litt kjøleskrap)'):t_('Chargering full')};return{lv:0,t:tf(flow('skrap','ovn'))+' t/min'}}
  case'ovn':{if(F.stop)return{lv:2,t:t_('Slaggpotta er full – ovnen står!')};
   if(F.state==='ready'){if(!tapLadle()){const L=LADLES.find(l=>l.atTap)||LADLES[0],w=L?{pit:'blokkstøping',cast:'streng',lf:'øseovn',await:'kø',carried:'kran'}[L.state]:'';return{lv:2,t:w?t_('Flaskehals: øse ({0})',t_(w)):t_('Flaskehals: øse')}}if(!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')}}if(F.lim&&F.solid>0)return{lv:2,t:lv(F.lim)?t_('Flaskehals: {0}',sn(F.lim)):t_('Flaskehals: {0} mangler',sn(F.lim))};
   if(F.elekOut)return{lv:1,t:t_('Venter på elektroder')};if(F.waitHM>1.5)return{lv:1,t:!S.tg.rj?t_('Råjernet går til salg (bryter)'):t_('Venter på råjern')};if((G.chgFull||0)>.6&&!F.lim)return{lv:2,t:t_('Flaskehals: ovnen')};if(F.starve>1.5)return{lv:1,t:t_('Venter på skrap')};if(F.state==='ready'&&!tapLadle())return{lv:1,t:t_('Venter på tom øse')};
@@ -662,7 +745,7 @@ function initRun(){LADLES.length=0;syncLadles();
  F.bath=clamp(num(S.F.bath),0,fcap()-1);F.solid=clamp(num(S.F.solid),0,max(0,fcap()-1-F.bath));F.scIn=clamp(num(S.F.scIn),0,fcap());F.hmIn=clamp(num(S.F.hmIn),0,fcap());
  TORPS.length=0;torpSeq=0;syncTorps();Object.assign(RJ,{rate:0,starve:0,stopT:0,overflow:0,pigAcc:0,tapping:false});
  S.rj.hearth=clamp(num(S.rj.hearth),0,hearthCap());S.rj.ore=clamp(num(S.rj.ore),0,skipCap());S.hm=clamp(num(S.hm),0,hmCap());if(rjClosed()){S.rj.hearth=0;S.rj.ore=0;S.hm=0}
- S.chg=clamp(num(S.chg),0,chgCap());
+ S.chg=clamp(num(S.chg),0,chgCap());layEra=-1;if(era()===5)csInit(S.chg);Object.assign(TROB,{st:'park',t:0,show:0,wait:5,done:0});
  const K=S.kok;K.slots=clamp(K.slots|0,0,slotsMax());K.hot=clamp(K.hot|0,0,40);K.ready=clamp(K.ready|0,0,40);K.cool=K.cool.filter(isFinite).slice(0,40);
  if(K.slots+K.hot+K.ready+K.cool.length<4)K.ready=6;
  S.pot=clamp(S.pot|0,0,potMax());S.elek=clamp(num(S.elek),0,12);S.kanal=clamp(S.kanal|0,0,HOPK);S.hette=clamp(S.hette|0,0,HOPK);

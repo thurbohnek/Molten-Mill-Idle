@@ -8,6 +8,7 @@ const IX={
   yard:['Flere skrapleveranser til skraphaugen: den fylles raskere og rommer mer.','More scrap deliveries to the scrap pile: it refills faster and holds more.'],
   kran:['En traverskran med løftemagnet flytter skrap fra haugen til chargeringen av seg selv. Hvert nivå løfter mer og kjører raskere.','An overhead crane with a lifting magnet moves scrap from the pile to the charging area by itself. Each level lifts more and moves faster.'],
   charge:['Mer plass til skrap ved ovnen: større skrapkasse (konverter), flere chargeringskasser (SM-ovn), større skrapkurv (lysbueovn) eller raskere Consteel-bånd.','More room for scrap at the furnace: a bigger scrap box (converter), more charging boxes (open hearth), a bigger scrap bucket (arc furnace) or a faster Consteel belt.'],
+  magnet:['Større løftemagnet på chargeringskranen (Consteel): hvert nivå løfter mer skrap per tur.','A bigger lifting magnet on the charging crane (Consteel): each level lifts more scrap per trip.'],
   yard2:['En skraphaug til, med egne leveranser – dobbelt så mye skrap å hente fra.','A second scrap pile with its own deliveries – twice as much scrap to pick from.'],
   forvarm:['Skrapkurven forvarmes med varm avgass før chargering. Varmt skrap smelter med mindre strøm.','The scrap bucket is preheated with hot off-gas before charging. Warm scrap melts with less electricity.'],
   furnace:['Større ovn eller konverter: mer stål per charge. Den trenger også mer skrap, råjern og forsyning.','A bigger furnace or converter: more steel per heat. It also needs more scrap, hot metal and supplies.'],
@@ -115,7 +116,7 @@ const IX={
   ['LD-konverteren (1952) blåser rent oksygen ovenfra gjennom en lanse. Rundt 40 minutter per charge, 75–85 % råjern og resten skrap. Trenger kalk og oksygen.','The LD (BOF) converter (1952) blows pure oxygen from above through a lance. About 40 minutes per heat, 75–85% hot metal and the rest scrap. Needs lime and oxygen.'],
   ['Lysbueovnen smelter skrap med lysbuer fra tre grafittelektroder – uten råjern. Her: skrapkurv, strøm, kalk og oksygen.','The electric arc furnace melts scrap with arcs from three graphite electrodes – no hot metal needed. Here: scrap bucket, power, lime and oxygen.'],
   ['UHP-lysbueovnen (ultrahøy effekt) har vannkjølte paneler, stor transformator, oksygenlanser og kullinjeksjon for skumslagg. Under en time fra tapping til tapping.','The UHP (ultra-high power) arc furnace has water-cooled panels, a big transformer, oxygen lances and coal injection for foaming slag. Under an hour from tap to tap.'],
-  ['Consteel: skrapet mates kontinuerlig på et bånd gjennom en forvarmingstunnel, og ovnen går med flatt bad og en rest flytende stål igjen i ovnen. Jevn drift og mindre flimmer.','Consteel: scrap is fed continuously on a conveyor through a preheating tunnel, and the furnace runs a flat bath with a hot heel of liquid steel left inside. Steady running and less flicker.']],
+  ['Consteel: skrapet mates kontinuerlig gjennom en forvarmingstunnel rett i et flatt bad. Rundt 45 % av stålet blir igjen i ovnen (varm rest), så skrapet smelter ved å synke i flytende stål. Taket er lukket, lysbuen er dekket av skumslagg, og den varme resten gjør drifta jevn med lite flimmer. Tappes gjennom bunnen (EBT).','Consteel: scrap is fed continuously through a preheating tunnel straight into a flat bath. About 45% of the steel stays in the furnace (the hot heel), so the scrap melts by sinking into liquid steel. The roof stays closed, the arc is buried in foaming slag, and the hot heel keeps the running steady with little flicker. Tapped through the bottom (EBT).']],
  rje:[
   ['Masovnen: malm, koks og kalk chargeres på toppen, og varm blåst blåses inn nederst. Koksen brenner og reduserer malmen til flytende råjern med rundt 4 % karbon.','The blast furnace: ore, coke and limestone go in at the top, hot blast is blown in at the bottom. The coke burns and reduces the ore to liquid hot metal with about 4% carbon.'],
   ['Elektrisk råjernsovn: tre Söderberg-elektroder gir varmen, og koksen er bare reduksjonsmiddel. Ingen cowpere – mer effekt (MVA) gir mer råjern.','Electric pig-iron furnace: three Söderberg electrodes supply the heat and the coke is only the reducing agent. No hot stoves – more power (MVA) gives more iron.']],
@@ -123,7 +124,7 @@ const IX={
   conv:['Skrapkasse: skrap til konverteren. Bessemer tar bare litt kjøleskrap; LD tar rundt en femtedel skrap.','Scrap box: scrap for the converter. Bessemer only takes a little cooling scrap; LD takes about one fifth scrap.'],
   box:['Chargeringskasser: skrapet lastes i kasser som chargeringsmaskinen tømmer inn gjennom ovnsdørene.','Charging boxes: scrap is loaded into boxes that the charging machine tips in through the furnace doors.'],
   bucket:['Skrapkurv: kranen løfter kurven over ovnen, taket svinges til side og skrapet slippes ned.','Scrap bucket: the crane lifts the bucket over the furnace, the roof swings aside and the scrap drops in.'],
-  belt:['Consteel-båndet mater skrap kontinuerlig gjennom forvarmingstunnelen inn i ovnen, uten å åpne taket.','The Consteel conveyor feeds scrap continuously through the preheating tunnel into the furnace, without opening the roof.']},
+  belt:['Sjakt ned på chargeringsseksjonen: skrap som bæres hit, havner på Consteel-transportøren. Chargeringskranen gjør jobben av seg selv.','A chute onto the charging section: scrap carried here ends up on the Consteel conveyor. The charging crane does this job by itself.']},
  /* [Norwegian title, Norwegian text, English title, English text] */
  ring:{
   tap:['TAPP','Stå her når ovnen er klar, så tappes stålet i øsa.','TAP','Stand here when the furnace is ready and the steel is tapped into the ladle.'],
@@ -176,6 +177,20 @@ const IX={
   wsu:['Uttrekk og retting','Drevne valsepar trekker strengen ut av kokilla med støpefarten og retter den ut fra buen til et rett emne.','Withdrawal and straightening','Driven roll pairs pull the strand out of the mould at casting speed and straighten it from the arc into a straight bar.'],
   cutter:['Kapping','Strengen kappes i emnelengder mens den går. En hydraulisk saks klipper den; en skjærebrenner kjører med strengen og brenner den av med mindre tap av stål.','Cutting','The moving strand is cut into billet lengths. A hydraulic shear chops it; a cutting torch travels with the strand and burns through with less steel lost.'],
   bed:['Kjøleseng','Hakkede bjelker flytter emnene steg for steg over senga mens de kjøles fra rødglødende til grå. Herfra går de til gjennomvarming eller salg.','Cooling bed','Notched beams walk the billets step by step across the bed while they cool from red-hot to grey. From here they go to reheating or to sale.']},
+ /* the Consteel line: [Norwegian title, Norwegian text, English title, English text] */
+ cs:{
+  charge:['Chargeringsseksjon','Den åpne delen av Consteel-transportøren, langs skrapplassen. Magnetkranen legger skrapet i jevne løft over hele lengden, og laget kryper videre mot tunnelen.','Charging section','The open part of the Consteel conveyor, alongside the scrap yard. The magnet crane lays the scrap in even lifts over its whole length, and the layer creeps on toward the tunnel.'],
+  conveyor:['Oscillerende transportør','Ikke et bånd på ruller, men et langt stålkar som ristes av en drivenhet: langsomt fram, raskt tilbake. Skrapet glir litt fram for hvert slag. Farten følger hvor fort ovnen smelter.','Oscillating conveyor','Not a belt on rollers but a long steel pan shaken by a drive unit: slowly forward, quickly back. The scrap slides a little further with every stroke. The speed follows how fast the furnace melts.'],
+  seal:['Dynamisk tetning','Ved tunnelinngangen holder en vifte og tunge kjettinggardiner falsk luft ute, så avgassen ikke blandes med kald luft.','Dynamic seal','At the tunnel entry a fan and heavy chain curtains keep false air out, so the off-gas is not diluted with cold air.'],
+  tunnel:['Forvarmingstunnel','Avgassen fra ovnen (rundt 1200 °C) strømmer tilbake gjennom tunnelen, mot skrapet. Skrapet blir varmt – mørkerødt mot ovnsenden – og trenger mindre strøm for å smelte. Raskere bånd gir kortere tid i tunnelen.','Preheating tunnel','The off-gas from the furnace (about 1200 °C) flows back through the tunnel, against the scrap. The scrap heats up – dull red toward the furnace end – and needs less electricity to melt. A faster conveyor means less time in the tunnel.'],
+  inj:['Etterforbrenning','Seks injektorer blåser luft inn i tunnelen. CO i avgassen brenner til CO₂ og gir ekstra varme til skrapet. Lufta styres etter oksygenet i gassen ut av tunnelen.','Post-combustion','Six injectors blow air into the tunnel. The CO in the off-gas burns to CO₂ and gives the scrap extra heat. The air is set by the oxygen in the gas leaving the tunnel.'],
+  duct:['Avgasskanal','Avgassen går ut i chargeringsenden av tunnelen – ikke gjennom ovnstaket – og opp en vannkjølt kanal til et utskillerkammer, der gnister og grovt støv faller ut.','Off-gas duct','The off-gas leaves at the charging end of the tunnel – not through the furnace roof – and goes up a water-cooled duct to a drop-out box, where sparks and coarse dust fall out.'],
+  filter:['Posefilter og pipe','Gassen renses i et posefilter: støvet fanges på tekstilposer som blåses rene med trykkluftstøt. En sugevifte trekker gassen gjennom hele anlegget og ut i pipa.','Bag filter and stack','The gas is cleaned in a bag filter: the dust is caught on fabric bags that are cleaned by pulses of compressed air. An induced-draught fan pulls the gas through the whole plant and out of the stack.'],
+  car:['Koblingsvogn','Den siste, teleskopiske delen av transportøren, på egen vogn. Den går inn gjennom en åpning i ovnsveggen, og skrapet faller rett i det flytende badet. Tuppen er den mest utsatte delen.','Connecting car','The last, telescopic part of the conveyor, on its own carriage. It runs in through an opening in the furnace shell, and the scrap drops straight into the liquid bath. Its tip is the hardest-worked part.'],
+  door:['Slaggdør','Skumslagget renner hele tiden over terskelen i slaggdøra og ned i slagg-gropa. Oksygen og kull holder slagget skummende, så lysbuen er dekket.','Slag door','The foaming slag runs over the slag door sill all the time and down into the slag pit. Oxygen and carbon keep the slag foaming, so the arc stays covered.'],
+  pit:['Slagg-grop','Slagget renner hit og stivner. En hjullaster tømmer gropa, og slagget selges som pukk. Full grop stopper ovnen!','Slag pit','The slag runs in here and solidifies. A wheel loader clears the pit, and the slag is sold as aggregate. A full pit stops the furnace!'],
+  robot:['Temperaturrobot','Roboten henter en sonde med papphylse fra magasinet, skyver lansen inn gjennom slaggdøra og ned i badet i noen sekunder, leser temperaturen og slipper den brente sonden i en kasse.','Temperature robot','The robot takes a probe with a cardboard sleeve from the magazine, pushes the lance in through the slag door into the bath for a few seconds, reads the temperature and drops the burnt probe in a bin.'],
+  crane:['Chargeringskran','Traverskran med stor løftemagnet. Den henter skrap i skrapplassen og legger løftene jevnt langs chargeringsseksjonen – ingen trenger å bære skrap. Du kan styre den selv for dobbel last.','Charging crane','An overhead crane with a big lifting magnet. It takes scrap from the yard and lays the lifts evenly along the charging section – nobody needs to carry scrap. Drive it yourself for a double load.']},
  crane:{
   skrap:['Traverskran med løftemagnet som henter skrap av seg selv. Du kan styre den selv for dobbel last.','An overhead crane with a lifting magnet that fetches scrap by itself. Drive it yourself for a double load.'],
   malm:['Gripekran som flytter malm til skipet av seg selv. Du kan styre den selv for dobbel last.','A grab crane that moves ore to the skip by itself. Drive it yourself for a double load.'],
@@ -204,6 +219,17 @@ function hitInfo(wx,wy){
   if(Math.abs(wx-t.x)<70&&Math.abs(wy-y)<26)return{type:'torp',key:'torp:'+t.i,t,x:t.x,y}}
  for(const c of CRANES){if(c.built()&&hyp(wx-c.x,wy-c.y)<30)return{type:'crane',key:'crane:'+c.id,c,x:c.x,y:c.y}}
  for(const h of helpers){if(!inCab(h)&&hyp(wx-h.x,wy-(h.y-14))<18)return{type:'helper',key:'helper:'+h.gi,h,x:h.x,y:h.y}}
+ if(era()===5){const C=CSG,cs=(id,x,y)=>({type:'cs',key:'cs:'+id,id,x,y});
+  if(hyp(wx-TROBP.x,wy-TROBP.y)<28||inR(wx,wy,882,686,30,76))return cs('robot',TROBP.x,TROBP.y);
+  if(inR(wx,wy,POS.F.x-16,POS.F.y+84,32,SLAGP.y-SLAGP.h/2-POS.F.y-80))return cs('door',POS.F.x,POS.F.y+96);
+  if(inR(wx,wy,C.xt,C.y-30,708-C.xt,60))return cs('car',C.xt+18,C.y);
+  if(inR(wx,wy,C.xs,C.y-C.hw-30,C.xt-C.xs,26))return cs('inj',wx,C.y-C.hw-12);
+  if(inR(wx,wy,C.xs,C.y-C.hw-4,C.xt-C.xs,2*C.hw+16))return cs('tunnel',wx,C.y);
+  if(inR(wx,wy,C.xc,C.y-C.hw,C.xs-C.xc,2*C.hw+30))return cs('seal',(C.xc+C.xs)/2,C.y);
+  if(inR(wx,wy,24,C.y-30,C.x0-24+6,60))return cs('conveyor',40,C.y);
+  if(inR(wx,wy,C.x0,C.y-28,C.xc-C.x0,56))return cs('charge',wx,C.y);
+  if(inR(wx,wy,C.dx-C.dw/2-8,140,C.dw+16,C.y-C.hw-140)||inR(wx,wy,364,150,90,120))return cs('duct',C.dx,wy);
+  if(inR(wx,wy,60,40,300,200))return cs('filter',wx,wy)}
  if(inR(wx,wy,GAUGE.x-60,GAUGE.y-22,120,48)||(ET()==='sm'?inR(wx,wy,676,404,250,394):hyp(wx-POS.F.x,wy-POS.F.y)<112))return{type:'furnace',key:'furnace',x:POS.F.x,y:POS.F.y};
  if(Math.abs(wx-POS.rjF.x)<95&&wy>POS.rjF.y-260&&wy<POS.rjF.y+92)return{type:'rjf',key:'rjf',x:POS.rjF.x,y:POS.rjF.y};
  if(usesHM()&&hyp(wx-POS.hmL.x,wy-POS.hmL.y)<40)return{type:'misc',key:'misc:hmL',id:'hmL',x:POS.hmL.x,y:POS.hmL.y};
@@ -252,14 +278,20 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
   else if(NODE[{gjvIn:'gjv',nettIn:'nett',kobIn:'kob'}[z.id]]){const N=NODE[{gjvIn:'gjv',nettIn:'nett',kobIn:'kob'}[z.id]];n=t_('Kø {0}/{1}',N.in.length+N.inc,N.cap)}
   else if(z.id==='slagp')n=t_('Slaggpotte {0}/{1}',S.pot,potMax());
   return{t:ti,d:tx,n}}
- case'src':{const s=h.o;if(s.id==='koklag')return infoFor({type:'ring',o:TGm.koklag});const[ti,tx]=ix4(IX.ring[s.id]);let n='';
+ case'src':{const s=h.o;if(s.id==='koklag')return infoFor({type:'ring',o:TGm.koklag});if(s.id==='pot'&&era()===5)return infoFor({type:'cs',id:'pit'});const[ti,tx]=ix4(IX.ring[s.id]);let n='';
   if(s.yard)n=tf(yardT(s))+'/'+(s.id==='ore'?oreYardCap():yardCap())+' t';else if(s.store)n=t_('{0} på lager',ST[s.store]|0);else if(s.id==='kokv')n=t_('{0} varme',S.kok.hot);else if(s.id==='pot')n=S.pot+'/'+potMax()+(lv('slaggbil')?' · '+t_('Slaggbil'):'');
   return{t:ti,d:tx,n}}
  case'pile':{const k=h.o.pile,a=PILE[k],top=a.length?a[a.length-1]:{k,t:1,q:qLF()},pr=val(top)*BASEP()*gm()/max(.001,top.t);return{t:t_(PR[k].n),d:ixs(IX.kind[k]),n:a.length+' '+t_('stk')+' · '+kr(pr,'/t')}}
  case'ladle':{const L=h.L,[ti,tx]=ix4(IX.misc.ladle),stx={park:'venter',filling:'fylles',await:'venter på kranen',carried:'løftes',lf:'i øseovnen',pit:'blokkstøping',tur:'på øsetårnet',cast:'støper'}[L.state]||'';
   return{t:ti,d:tx,n:(L.steel>.05?tf(L.steel)+' t · ':'')+t_(stx)+(L.q>1.001?' · '+t_('Kvalitet ×{0}',L1(L.q)):'')}}
  case'torp':{const t=h.t,[ti,tx]=ix4(IX.misc.torp);return{t:ti,d:tx,n:tf(t.load)+'/'+torpCap()+' t · '+t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())}}
- case'crane':{const c=h.c,u={skrap:'kran',malm:'malmkran',ose:'osekran',mag:'magkran'}[c.id];return{t:cap1(t_(c.n)),d:ixs(IX.crane[c.id]),n:upNums(UPm[u])}}
+ case'crane':{const c=h.c,u={skrap:'kran',malm:'malmkran',ose:'osekran',mag:'magkran'}[c.id];if(c.id==='skrap'&&era()===5){const[ti,tx]=ix4(IX.cs.crane);return{t:ti,d:tx,n:t_('Løft {0} t',tf(craneLift()))+' · '+upNums(UPm.kran)}}return{t:cap1(t_(c.n)),d:ixs(IX.crane[c.id]),n:upNums(UPm[u])}}
+ case'cs':{const[ti,tx]=ix4(IX.cs[h.id]);const fd=t_('{0} t/min inn i ovnen',tf(CSB.feed*60));
+  const n={charge:()=>t_('Fylt {0}/{1} t',tf(S.chg),tf(chgCap())),conveyor:()=>fd+' · '+upNums(UPm.charge),seal:()=>t_('Avgass ved uttaket: ca. {0} °C',Math.round(csGasT(CSG.xs+6))),
+   tunnel:()=>t_('Skrapet inn i ovnen: {0} °C',Math.round(CSB.pre))+' · '+kwh()+' kWh/t',inj:()=>t_('Avgass ved ovnen: ca. {0} °C',Math.round(csGasT(CSG.xf))),duct:()=>t_('Avgass ved uttaket: ca. {0} °C',Math.round(csGasT(CSG.xs+6))),
+   filter:()=>'',car:()=>fd,door:()=>t_('Slagg {0}/{1}',S.pot,potMax()),pit:()=>S.pot+'/'+potMax()+(lv('slaggbil')?' · '+t_('Slaggbil'):''),
+   robot:()=>(TROB.n?t_('Siste måling: {0} °C',TROB.val)+' · '+t_('{0} målinger',TROB.n):t_('Venter på første måling'))}[h.id]();
+  return{t:ti,d:tx,n}}
  case'helper':{const r=h.h.r,hi=HIRE[r];return{t:hName(hi),d:ixs(IX.hire[r])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}}
  case'furnace':{const E=E_();return{t:t_(E.n),d:ixs(IX.era[era()]),n:furnNums()}}
  case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:t_(RJE[rjEra()].n),d:tx,n:t_('NEDLAGT')}}const st=status('rj');return{t:t_(RJE[rjEra()].n),d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}

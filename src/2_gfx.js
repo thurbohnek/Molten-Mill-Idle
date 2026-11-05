@@ -408,8 +408,10 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   const ty=POS.oreTrainY;f.fillStyle='#2b2826';f.fillRect(WX0+10,ty-20,640,40);for(let x=WX0+14;x<WX0+650;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=cl?'#5a4a40':C.rail;f.fillRect(WX0+10,ty-11,640,4);f.fillRect(WX0+10,ty+7,640,4);
   f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,-236,590,200,70,8);f.fill();f.fillStyle='rgba(0,0,0,.25)';SK.rr(f,POS.skip.x-54,POS.skip.y-48,108,96,10);f.fill();
   const rail=(y,x0,x1)=>{f.fillStyle='#2b2620';for(let x=x0;x<x1;x+=8)f.fillRect(x,y-13,3.4,26);f.fillStyle=cl?'#5a4e44':'#7d7064';f.fillRect(x0,y-9,x1-x0,2.6);f.fillRect(x0,y+7,x1-x0,2.6)};
-  rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
+  /* Consteel: the old torpedo tracks are gone, the line's foundation runs through the yard */
+  if(era()<5){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
   if(cl){f.fillStyle='rgba(55,60,68,.55)';f.fillRect(-340,POS.torpA-16,POS.torpX1+410,54)}}
+  else{f.fillStyle='rgba(0,0,0,.22)';f.fillRect(20,CSG.y-34,CSG.xf-20,68);f.fillStyle='rgba(0,0,0,.18)';SK.rr(f,SLAGP.x-60,SLAGP.y-50,120,104,10);f.fill()}}
  /* crane rails */
  f.fillStyle='#22252b';{const c=CRN.skrap;f.fillRect(c.x0-6,c.y0-8,c.x1-c.x0+12,6);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,6)}
  {const c=CRN.ose;f.fillRect(c.x0-6,c.y0-10,c.x1-c.x0+12,5);f.fillRect(c.x0-6,c.y1+4,c.x1-c.x0+12,5)}
