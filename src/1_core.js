@@ -110,7 +110,7 @@ const ERA=[
  {n:'LD-konverter',k:'LD-KONVERTER',yr:1960,type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
  {n:'Lysbueovn',k:'LYSBUEOVN',yr:1975,type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
  {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',yr:1985,cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
- {n:'Consteel-ovn',k:'CONSTEEL-OVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
+ {n:'Båndchargert ovn',k:'CONSTEEL-OVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
 const RJE=[{n:'Koksmasovn',k:'MASOVN',yr:1880,rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',yr:1965,rate:.75}];
@@ -132,7 +132,7 @@ const BUILDS=[
  {id:'tc',sn:'Bråkjøling',n:'Bråkjøling',z:'tc',cost:9e6,x:3028,y:600,d:'Bråkjøling gir B500-armering uten dyre legeringer.'},
  {id:'stel',sn:'Valstråd',n:'Valstråd',z:'stel',cost:2.2e7,x:2700,y:150,d:'Ferdigblokk, leggehode og kjølebane. Med egen lastebil.'},
  {id:'nett',sn:'Nettverk',n:'Nettverk',z:'nett',cost:5.5e7,x:3330,y:200,d:'Valstråd sveises til armeringsnett.'},
- {id:'consteel',sn:'Consteel',n:'Consteel-ovn',z:'ovn',cost:1.3e8,x:990,y:1040,era:5,d:'Kontinuerlig chargering med forvarmingstunnel og flat bad.'},
+ {id:'consteel',sn:'Båndchargering',n:'Båndchargert ovn',z:'ovn',cost:1.3e8,x:990,y:1040,era:5,d:'Kontinuerlig chargering med forvarmingstunnel og flat bad.'},
  {id:'kob',sn:'Klipp og bøy',n:'Klipp og bøy',z:'kob',cost:3.2e8,x:3330,y:950,d:'Ferdig bøyd armering per byggeprosjekt.'},
  {id:'kai',sn:'Kai',n:'Kai',z:'utlast',cost:7.5e8,x:3700,y:764,d:'Skip gir best pris for eksport.'}];
 const BLD=Object.fromEntries(BUILDS.map(b=>[b.id,b]));
@@ -145,7 +145,7 @@ const UP=[
  {id:'speed',st:'skrap',n:'Raskere gange',max:12,base:45,m:1.6},
  {id:'yard',st:'skrap',n:'Skraptilførsel',max:20,base:70,m:1.55,req:()=>scrapUse()},
  {id:'kran',st:'skrap',n:'Skrapkran',max:20,base:180,m:1.52,req:()=>scrapUse()},
- {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere Consteel-bånd'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
+ {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere chargeringsbånd'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
  {id:'yard2',st:'skrap',n:'Skraphaug 2',max:1,costs:[900],req:()=>scrapUse()},
  {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>era()===5},
  {id:'forvarm',st:'skrap',n:'Kurvforvarming',max:1,costs:[1e5],req:()=>era()===3||era()===4},

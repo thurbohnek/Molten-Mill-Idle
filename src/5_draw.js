@@ -33,7 +33,7 @@ function drawYard(s){if(!s.open()||!inView(s.x,s.y,170))return;const n=min(170,M
  g.drawImage(c.cv,s.x-110,s.y-130,220,260);
  txt(tf(yardT(s))+' t',s.x,s.y+112,10,C.ui,800,'center',3);LOBS.push({x:s.x-26,y:s.y+105,w:52,h:14})}
 /* ---- charging: chargeringskasser (SM), skrapkurv (EAF/UHP), Consteel trough with preheat tunnel ---- */
-function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&era()===5){drawConsteel();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
+function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&era()===5){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
  if(E.ch==='conv'){/* converter: one scrap charging box on a rail car between the yard and the vessel */
   SK.rail(g,cx+40,640,cy,26);const fl=F.ch&&F.ch.s>0&&F.ch.t/F.ch.dur>.1&&F.ch.t/F.ch.dur<.5;SK.car(g,cx+84,cy,70,40);
   if(!fl){SK.box(g,cx+56,cy-14,56,28,'#4a5058','#1b1e22',3);const n=Math.round(fillK*8);for(let q=0;q<n;q++)SK.chunk(g,cx+64+(q%4)*13,cy-6+floor(q/4)*11,4,hsh(q),SK.SCRAPC[q%5])}}
@@ -48,7 +48,7 @@ function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&
    for(let k=0;k<Math.round(f*16);k++){const a=hsh(k*3+i)*TAU,r=17*Math.sqrt(hsh(k*7+i));SK.chunk(g,bx+Math.cos(a)*r,by+Math.sin(a)*r,3+hsh(k)*2.5,hsh(k*2),SK.SCRAPC[k%5])}
    g.fillStyle='#55595f';g.fillRect(bx-34,by-5,8,10);g.fillRect(bx+26,by-5,8,10)}
   txt(t_('KURV'),cx,cy+1,10.5,C.ui,800,'center',3)}
- else if(era()===5)drawConsteel();
+ else if(era()===5)drawBeltLine();
  else{/* Consteel: open charging section → dynamic seal → preheating tunnel → connecting car */
   const x0=262,x1=POS.F.x-86,y=cy,w=30,T0=494;/* scrap lies from the furnace end back as far as the belt is filled */
   g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x0+2,y-w/2+3,x1-x0,w);g.fillStyle='#575c64';g.fillRect(x0,y-w/2-3,x1-x0,w+6);g.fillStyle='#1d1f23';g.fillRect(x0,y-w/2,x1-x0,w);
@@ -649,7 +649,7 @@ function csScrap(xa,xb,yc,w,lanes,dim){const sp=4.6,cap=csCap(),pos=CSB.pos,o=((
   for(let l=0;l<lanes;l++){const h=hsh(key*3.17+l*11.31);if(h>d*1.12)continue;const a=hsh(key*5.13+l*2.37),b=hsh(key*1.7+l*7.9),yy=yc+((l+.5)/lanes-.5)*w*.88+(b-.5)*w*.16;
    const s=2+a*2.6+(d>.6?.8:0);let col=SK.SCRAPC[floor(a*4.99)%5];if(dim)col=mix(col,'#101114',dim);if(hc&&b<clamp((CSB.tc[ci]-280)/160,0,1)*.9+.1)col=heat(clamp(.2+(CSB.tc[ci]-280)/600*.65,0,.7)*(.8+.3*a));SK.chunk(g,x+(a-.5)*2,yy,s,a*2,col)}
   if(d>.55&&hsh(key*9.7)<d-.4){const a=hsh(key*2.9);let col=a>.5?'#8b8f96':'#9a6a45';if(hc)col=hc;SK.chunk(g,x,yc+(a-.5)*w*.5,3.2+a*2,a*1.6,col)}}}
-function drawConsteel(){const C=CSG,y=C.y,w=C.w,hw=C.hw,osc=csOsc();
+function drawBeltLine(){const C=CSG,y=C.y,w=C.w,hw=C.hw,osc=csOsc();
  if(inView((C.x0+C.xf)/2,y,(C.xf-C.x0)/2+60)){
  /* foundation + trench under the whole line */
  g.fillStyle='rgba(0,0,0,.3)';g.fillRect(C.x0-30,y-w/2-9,C.xt-C.x0+34,w+22);

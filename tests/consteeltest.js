@@ -42,7 +42,7 @@ function max1(v){return Math.max(1e-9,v)}
  ok(W.curUp('skrap')&&['kran','magnet'].includes(W.curUp('skrap').id),'scrap-yard pad suggests the crane: '+(W.curUp('skrap')||{}).id);
  ok(W.bottlenecks().some(b=>b[0]==='skrap'),'map/bottleneck list has the scrap yard');}
 {const W=boot(Object.assign({},LV,{kran:20,magnet:6,charge:0,furnace:16,power:16}));for(let i=0;i<30*90;i++)W.update(1/30);
- const s=W.status('skrap');ok(W.csLim()==='band'&&s.t===W.t_('Flaskehals: Consteel-båndet'),'slow conveyor → chip "'+(s&&s.t)+'"');ok((W.curUp('skrap')||{}).id==='charge','pad suggests the faster conveyor');}
+ const s=W.status('skrap');ok(W.csLim()==='band'&&s.t===W.t_('Flaskehals: chargeringsbåndet'),'slow conveyor → chip "'+(s&&s.t)+'"');ok((W.curUp('skrap')||{}).id==='charge','pad suggests the faster conveyor');}
 {const W=boot(Object.assign({},LV,{kran:20,magnet:4,charge:16,furnace:16,power:16,yard:0,yard2:0}));W.S.yard.y0=0;for(let i=0;i<30*90;i++)W.update(1/30);
  const s=W.status('skrap');ok(W.csLim()==='yard'&&s.t===W.t_('Flaskehals: skraptilførsel'),'empty yard → chip "'+(s&&s.t)+'"');}
 {const W=boot(Object.assign({},LV,{kran:20,magnet:10,charge:20,furnace:6,power:6}));for(let i=0;i<30*90;i++)W.update(1/30);ok(W.csLim()==='','strong line: no scrap-yard bottleneck ('+W.csLim()+')')}

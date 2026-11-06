@@ -303,7 +303,7 @@ const ERA=[
  {n:'LD-konverter',k:'LD-KONVERTER',yr:1960,type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
  {n:'Lysbueovn',k:'LYSBUEOVN',yr:1975,type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
  {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',yr:1985,cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
- {n:'Consteel-ovn',k:'CONSTEEL-OVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
+ {n:'Båndchargert ovn',k:'CONSTEEL-OVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
 const RJE=[{n:'Koksmasovn',k:'MASOVN',yr:1880,rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',yr:1965,rate:.75}];
@@ -325,7 +325,7 @@ const BUILDS=[
  {id:'tc',sn:'Bråkjøling',n:'Bråkjøling',z:'tc',cost:9e6,x:3028,y:600,d:'Bråkjøling gir B500-armering uten dyre legeringer.'},
  {id:'stel',sn:'Valstråd',n:'Valstråd',z:'stel',cost:2.2e7,x:2700,y:150,d:'Ferdigblokk, leggehode og kjølebane. Med egen lastebil.'},
  {id:'nett',sn:'Nettverk',n:'Nettverk',z:'nett',cost:5.5e7,x:3330,y:200,d:'Valstråd sveises til armeringsnett.'},
- {id:'consteel',sn:'Consteel',n:'Consteel-ovn',z:'ovn',cost:1.3e8,x:990,y:1040,era:5,d:'Kontinuerlig chargering med forvarmingstunnel og flat bad.'},
+ {id:'consteel',sn:'Båndchargering',n:'Båndchargert ovn',z:'ovn',cost:1.3e8,x:990,y:1040,era:5,d:'Kontinuerlig chargering med forvarmingstunnel og flat bad.'},
  {id:'kob',sn:'Klipp og bøy',n:'Klipp og bøy',z:'kob',cost:3.2e8,x:3330,y:950,d:'Ferdig bøyd armering per byggeprosjekt.'},
  {id:'kai',sn:'Kai',n:'Kai',z:'utlast',cost:7.5e8,x:3700,y:764,d:'Skip gir best pris for eksport.'}];
 const BLD=Object.fromEntries(BUILDS.map(b=>[b.id,b]));
@@ -338,7 +338,7 @@ const UP=[
  {id:'speed',st:'skrap',n:'Raskere gange',max:12,base:45,m:1.6},
  {id:'yard',st:'skrap',n:'Skraptilførsel',max:20,base:70,m:1.55,req:()=>scrapUse()},
  {id:'kran',st:'skrap',n:'Skrapkran',max:20,base:180,m:1.52,req:()=>scrapUse()},
- {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere Consteel-bånd'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
+ {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere chargeringsbånd'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
  {id:'yard2',st:'skrap',n:'Skraphaug 2',max:1,costs:[900],req:()=>scrapUse()},
  {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>era()===5},
  {id:'forvarm',st:'skrap',n:'Kurvforvarming',max:1,costs:[1e5],req:()=>era()===3||era()===4},
@@ -615,12 +615,12 @@ function t_(s,...a){let o=s==null?'':''+s;
  return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
 const EN={
  /* --- Consteel line --- */
- 'Større magnet':'Bigger magnet','SJAKT':'CHUTE','chargeringskran':'charging crane','Flaskehals: Consteel-båndet':'Bottleneck: Consteel conveyor','Flaskehals: chargeringskranen':'Bottleneck: charging crane',
+ 'Større magnet':'Bigger magnet','SJAKT':'CHUTE','chargeringskran':'charging crane','Flaskehals: chargeringsbåndet':'Bottleneck: charging conveyor','Flaskehals: chargeringskranen':'Bottleneck: charging crane',
  'Flaskehals: skraptilførsel':'Bottleneck: scrap supply','Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.':'The charging crane lays the scrap along the whole charging section – nobody needs to carry scrap.',
  '{0} t/min inn i ovnen':'{0} t/min into the furnace','Skrapet inn i ovnen: {0} °C':'Scrap into the furnace: {0} °C','Avgass ved ovnen: ca. {0} °C':'Off-gas at the furnace: about {0} °C',
  'Avgass ved uttaket: ca. {0} °C':'Off-gas at the takeoff: about {0} °C','Siste måling: {0} °C':'Last reading: {0} °C','Venter på første måling':'Waiting for the first reading','{0} målinger':'{0} readings',
  'Slagg {0}/{1}':'Slag {0}/{1}','Løft {0} t':'Lift {0} t','Kran':'Crane','Bånd':'Conveyor','Forvarming':'Preheating','{0} t/min · løft {1} t':'{0} t/min · lift {1} t','{0} t/min · maks {1} t/min':'{0} t/min · max {1} t/min',
- 'Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.':'The crane cannot keep the line full – buy Scrap crane or Bigger magnet.','Linja er full, men båndet går for sakte – kjøp Raskere Consteel-bånd.':'The line is full but the conveyor runs too slowly – buy Faster Consteel belt.',
+ 'Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.':'The crane cannot keep the line full – buy Scrap crane or Bigger magnet.','Linja er full, men båndet går for sakte – kjøp Raskere chargeringsbånd.':'The line is full but the conveyor runs too slowly – buy Faster charging conveyor.',
  'Skrapplassen er tom – kjøp Skraptilførsel.':'The scrap yard is empty – buy Scrap supply.',
  /* --- continuous caster bubbles --- */
  'Skjermrør på':'Shroud attached','Skjermrør parkert':'Shroud parked','Stålnivå {0} %':'Steel level {0} %','{0} emner på kjølesenga':'{0} billets on the cooling bed','{0} av {1} strenger i bruk':'{0} of {1} strands in use',
@@ -639,14 +639,14 @@ const EN={
  'stenger':'bars','armering':'rebar',
  /* --- furnaces --- */
  'Bessemer-konverter':'Bessemer converter','Siemens-Martin-ovn':'Open-hearth (Siemens-Martin) furnace','LD-konverter':'LD (BOF) converter','Lysbueovn':'Electric arc furnace',
- 'UHP-lysbueovn':'UHP electric arc furnace','Consteel-ovn':'Consteel arc furnace','s blåsing':'s blow','MW gass':'MW gas','MVA':'MVA',
+ 'UHP-lysbueovn':'UHP electric arc furnace','Båndchargert ovn':'Conveyor-fed arc furnace','s blåsing':'s blow','MW gass':'MW gas','MVA':'MVA',
  '≈20 min':'≈20 min','≈8 t':'≈8 h','≈40 min':'≈40 min','≈2 t':'≈2 h','<60 min':'<60 min',
  'kalk/dolo':'lime/dolomite','oksygen':'oxygen','kull':'coal','koks':'coke','cowpere':'hot stoves',
  'Koksmasovn':'Coke blast furnace','Elektrisk råjernsovn':'Electric iron smelter',
  /* --- builds --- */
  'SM-ovn':'Open hearth','Øseovn':'Ladle furnace','Strang':'Caster','Stranggjuting':'Continuous caster','Valseverk':'Rolling mill','El-råjernsovn':'Electric smelter',
  'Jernbane':'Railway','Omlegging':'Conversion','Omlegging: lysbueovn':'Conversion: arc furnace','UHP-ovn':'UHP furnace','Bråkjøling':'Quench line','Nettverk':'Mesh welding',
- 'Consteel':'Consteel','Klipp og bøy':'Cut & bend','Kai':'Quay','Masovn og Bessemer':'Blast furnace & Bessemer',
+ 'Båndchargering':'Conveyor charging','Klipp og bøy':'Cut & bend','Kai':'Quay','Masovn og Bessemer':'Blast furnace & Bessemer',
  'Råjern og skrap i kasser – større charger, men trenger kalk.':'Hot metal and scrap charged in boxes – bigger heats, but it needs lime.',
  'Legeringer og temperatur i øsa gir bedre kvalitet og høyere pris.':'Alloying and temperature control in the ladle give better quality and a higher price.',
  'Rent oksygen gjennom en lanse ovenfra. Mye råjern, litt skrap.':'Pure oxygen blown through a lance from above. Mostly hot metal, a little scrap.',
@@ -664,7 +664,7 @@ const EN={
  'Skip gir best pris for eksport.':'Ships pay the best price, for export.',
  /* --- upgrades (full names; pad titles use the same keys) --- */
  'Større bæring':'Carry more','Raskere gange':'Walk faster','Skraptilførsel':'Scrap supply','Skrapkran':'Scrap crane','Større skrapkasse':'Bigger scrap box',
- 'Flere chargeringskasser':'More charging boxes','Større skrapkurv':'Bigger scrap bucket','Raskere Consteel-bånd':'Faster Consteel conveyor','Skraphaug 2':'Scrap pile 2',
+ 'Flere chargeringskasser':'More charging boxes','Større skrapkurv':'Bigger scrap bucket','Raskere chargeringsbånd':'Faster charging conveyor','Skraphaug 2':'Scrap pile 2',
  'Kurvforvarming':'Bucket preheating','Større konverter':'Bigger converter','Større ovn':'Bigger furnace','Sterkere blåsemaskin':'Stronger blowing engine',
  'Sterkere brennere':'Stronger burners','Kraftigere O₂-lanse':'Stronger O₂ lance','Mer effekt':'More power','Raskere raffinering':'Faster refining','Raskere tapping':'Faster tapping',
  'Tapper':'Tapper','Ekstra øse':'Extra ladle','Større slaggpotte':'Bigger slag pot','Slaggbil':'Slag pot carrier','Kalk og dolo':'Lime & dolomite','Oksygenanlegg':'Oxygen plant',
@@ -805,7 +805,7 @@ const EN={
  'neste: {0}':'next: {0}','{0} av {1} t/min':'{0} of {1} t/min','betalt {0}':'paid {0}','Nå: {0}':'Now: {0}','Fylt {0}/{1} t':'Filled {0}/{1} t','Pris ×{0}':'Price ×{0}',
  '{0} å hente':'{0} to collect','{0} av {1} elektroder':'{0} of {1} electrodes','Kokiller {0}/{1}':'Moulds {0}/{1}','{0} klare · {1} kjøles':'{0} ready · {1} cooling',
  'Kø {0}/{1}':'Queue {0}/{1}','Slaggpotte {0}/{1}':'Slag pot {0}/{1}','{0} på lager':'{0} in store','{0} vogner':'{0} cars','{0} vogn':'{0} car','Trenger {0}.':'Needs {0}.','i ovnen {0} t':'in the furnace {0} t',
- 'skrapkurv':'scrap bucket','Consteel-bånd':'Consteel conveyor','venter':'waiting','fylles':'filling','venter på kranen':'waiting for the crane','løftes':'being lifted',
+ 'skrapkurv':'scrap bucket','Chargeringsbånd':'Charging conveyor','venter':'waiting','fylles':'filling','venter på kranen':'waiting for the crane','løftes':'being lifted',
  'i øseovnen':'in the ladle furnace','på øsetårnet':'on the ladle turret','støper':'casting',
  'Molten Mill spillområde. Dra eller bruk piltaster for å gå. Gå på rutene for å kjøpe. Trykk på ting for en forklaring.':'Molten Mill play area. Drag or use the arrow keys to walk. Stand on the pads to buy. Tap things for an explanation.'
 };
@@ -1955,7 +1955,7 @@ const swTxt=id=>id==='cast'?t_('Støping')+': '+t_(CASTN[S.cast]):id==='mix'?t_(
 const NODEZ={gjv:'gjv',vv:'vv',tc:'tc',stel:'stel',nett:'nett',kob:'kob'};
 function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>t_(SUPN[x]);
  switch(id){
- case'skrap':{const l=csLim();if(l==='band')return{lv:2,t:t_('Flaskehals: Consteel-båndet')};if(l==='kran')return{lv:2,t:t_('Flaskehals: chargeringskranen')};if(l==='yard')return{lv:2,t:t_('Flaskehals: skraptilførsel')};
+ case'skrap':{const l=csLim();if(l==='band')return{lv:2,t:t_('Flaskehals: chargeringsbåndet')};if(l==='kran')return{lv:2,t:t_('Flaskehals: chargeringskranen')};if(l==='yard')return{lv:2,t:t_('Flaskehals: skraptilførsel')};
   if(F.starve>1.5)return{lv:2,t:t_('Flaskehals: skrap til ovnen')};if(S.chg>=chgCap()-1)return{lv:1,t:era()===0?t_('Skrapkassa er full (litt kjøleskrap)'):t_('Chargering full')};return{lv:0,t:tf(flow('skrap','ovn'))+' t/min'}}
  case'ovn':{if(F.stop)return{lv:2,t:t_('Slaggpotta er full – ovnen står!')};
   if(F.state==='ready'){if(!tapLadle()){const L=LADLES.find(l=>l.atTap)||LADLES[0],w=L?{pit:'blokkstøping',cast:'streng',lf:'øseovn',await:'kø',carried:'kran'}[L.state]:'';return{lv:2,t:w?t_('Flaskehals: øse ({0})',t_(w)):t_('Flaskehals: øse')}}if(!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')}}if(F.lim&&F.solid>0)return{lv:2,t:lv(F.lim)?t_('Flaskehals: {0}',sn(F.lim)):t_('Flaskehals: {0} mangler',sn(F.lim))};
@@ -2327,7 +2327,7 @@ function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel
   h+=row(CUR()+'/min',t_('Verdi inn {0} → ut {1}',kr(v.vin),kr(v.vout))+' · <b style="color:'+(v.va>=0?'var(--good)':'var(--danger)')+'">'+(v.va>=0?'+':'')+kr(v.va,'/min')+'</b>');
   const u=mUtil(id);if(u!=null){const p=Math.round(u*100);h+=row(t_('Utnyttelse'),t_('{0} %',p)+'<div class="util"><i style="width:'+p+'%;background:'+(p>=95?'var(--danger)':p>85?'var(--hazard)':'var(--good)')+'"></i></div>')}}
  if(id==='skrap'&&era()===5){h+=row(t_('Kran'),t_('{0} t/min · løft {1} t',tf(flow('skrap','ovn')),tf(craneLift())))+row(t_('Bånd'),t_('{0} t/min · maks {1} t/min',tf(rate('csfeed')),tf(beltRate()*60)))+row(t_('Forvarming'),t_('Skrapet inn i ovnen: {0} °C',Math.round(CSB.pre)));
-  const l=csLim();if(l)h+='<p class="pnote">'+(l==='kran'?t_('Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.'):l==='band'?t_('Linja er full, men båndet går for sakte – kjøp Raskere Consteel-bånd.'):t_('Skrapplassen er tom – kjøp Skraptilførsel.'))+'</p>'}
+  const l=csLim();if(l)h+='<p class="pnote">'+(l==='kran'?t_('Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.'):l==='band'?t_('Linja er full, men båndet går for sakte – kjøp Raskere chargeringsbånd.'):t_('Skrapplassen er tom – kjøp Skraptilførsel.'))+'</p>'}
  const zid=MZ[id]||id,hi=HIRE[zid];if(hi)h+=row(t_('Hjelpere'),t_('{0} av {1}',lv(hi.id),hi.costs.length));
  const ups=UP.filter(u=>u.st===zid);if(ups.length)h+='<div class="prow"><div class="k">'+t_('Oppgr.')+'</div><div class="lv">'+ups.map(u=>{const l=lv(u.id),on=upOpen(u),mx=l>=u.max,ok=on||l>0,urg=on&&!mx&&urgentIds(u.st).indexOf(u.id)>=0;return'<span'+(ok?'':' class="lk"')+'>'+upName(u)+(urg?' <i class="urg">'+t_('flaskehals')+'</i>':'')+'</span><b class="'+(mx?'mx':ok?'':'lk')+'">'+(mx?t_('MAKS'):!on?t_('låst'):(u.max>1?t_('Nivå {0}/{1}',l,u.max):t_('kan kjøpes'))+' · '+kr(upCost(u)))+'</b>'}).join('')+'</div></div>';
  h+='<p class="pnote">'+t_('Hver oppgradering har sin egen rute i stasjonen – velg selv rekkefølgen. Låst = kommer med en senere ovn eller et nytt bygg.')+'</p>';$('mapPanel').innerHTML=h}
@@ -2392,7 +2392,7 @@ function drawYard(s){if(!s.open()||!inView(s.x,s.y,170))return;const n=min(170,M
  g.drawImage(c.cv,s.x-110,s.y-130,220,260);
  txt(tf(yardT(s))+' t',s.x,s.y+112,10,C.ui,800,'center',3);LOBS.push({x:s.x-26,y:s.y+105,w:52,h:14})}
 /* ---- charging: chargeringskasser (SM), skrapkurv (EAF/UHP), Consteel trough with preheat tunnel ---- */
-function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&era()===5){drawConsteel();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
+function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&era()===5){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
  if(E.ch==='conv'){/* converter: one scrap charging box on a rail car between the yard and the vessel */
   SK.rail(g,cx+40,640,cy,26);const fl=F.ch&&F.ch.s>0&&F.ch.t/F.ch.dur>.1&&F.ch.t/F.ch.dur<.5;SK.car(g,cx+84,cy,70,40);
   if(!fl){SK.box(g,cx+56,cy-14,56,28,'#4a5058','#1b1e22',3);const n=Math.round(fillK*8);for(let q=0;q<n;q++)SK.chunk(g,cx+64+(q%4)*13,cy-6+floor(q/4)*11,4,hsh(q),SK.SCRAPC[q%5])}}
@@ -2407,7 +2407,7 @@ function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&
    for(let k=0;k<Math.round(f*16);k++){const a=hsh(k*3+i)*TAU,r=17*Math.sqrt(hsh(k*7+i));SK.chunk(g,bx+Math.cos(a)*r,by+Math.sin(a)*r,3+hsh(k)*2.5,hsh(k*2),SK.SCRAPC[k%5])}
    g.fillStyle='#55595f';g.fillRect(bx-34,by-5,8,10);g.fillRect(bx+26,by-5,8,10)}
   txt(t_('KURV'),cx,cy+1,10.5,C.ui,800,'center',3)}
- else if(era()===5)drawConsteel();
+ else if(era()===5)drawBeltLine();
  else{/* Consteel: open charging section → dynamic seal → preheating tunnel → connecting car */
   const x0=262,x1=POS.F.x-86,y=cy,w=30,T0=494;/* scrap lies from the furnace end back as far as the belt is filled */
   g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x0+2,y-w/2+3,x1-x0,w);g.fillStyle='#575c64';g.fillRect(x0,y-w/2-3,x1-x0,w+6);g.fillStyle='#1d1f23';g.fillRect(x0,y-w/2,x1-x0,w);
@@ -3008,7 +3008,7 @@ function csScrap(xa,xb,yc,w,lanes,dim){const sp=4.6,cap=csCap(),pos=CSB.pos,o=((
   for(let l=0;l<lanes;l++){const h=hsh(key*3.17+l*11.31);if(h>d*1.12)continue;const a=hsh(key*5.13+l*2.37),b=hsh(key*1.7+l*7.9),yy=yc+((l+.5)/lanes-.5)*w*.88+(b-.5)*w*.16;
    const s=2+a*2.6+(d>.6?.8:0);let col=SK.SCRAPC[floor(a*4.99)%5];if(dim)col=mix(col,'#101114',dim);if(hc&&b<clamp((CSB.tc[ci]-280)/160,0,1)*.9+.1)col=heat(clamp(.2+(CSB.tc[ci]-280)/600*.65,0,.7)*(.8+.3*a));SK.chunk(g,x+(a-.5)*2,yy,s,a*2,col)}
   if(d>.55&&hsh(key*9.7)<d-.4){const a=hsh(key*2.9);let col=a>.5?'#8b8f96':'#9a6a45';if(hc)col=hc;SK.chunk(g,x,yc+(a-.5)*w*.5,3.2+a*2,a*1.6,col)}}}
-function drawConsteel(){const C=CSG,y=C.y,w=C.w,hw=C.hw,osc=csOsc();
+function drawBeltLine(){const C=CSG,y=C.y,w=C.w,hw=C.hw,osc=csOsc();
  if(inView((C.x0+C.xf)/2,y,(C.xf-C.x0)/2+60)){
  /* foundation + trench under the whole line */
  g.fillStyle='rgba(0,0,0,.3)';g.fillRect(C.x0-30,y-w/2-9,C.xt-C.x0+34,w+22);
@@ -3160,8 +3160,8 @@ const IX={
   speed:['Du går raskere mellom stasjonene.','You walk faster between the stations.'],
   yard:['Flere skrapleveranser til skraphaugen: den fylles raskere og rommer mer.','More scrap deliveries to the scrap pile: it refills faster and holds more.'],
   kran:['En traverskran med løftemagnet flytter skrap fra haugen til chargeringen av seg selv. Hvert nivå løfter mer og kjører raskere.','An overhead crane with a lifting magnet moves scrap from the pile to the charging area by itself. Each level lifts more and moves faster.'],
-  charge:['Mer plass til skrap ved ovnen: større skrapkasse (konverter), flere chargeringskasser (SM-ovn), større skrapkurv (lysbueovn) eller raskere Consteel-bånd.','More room for scrap at the furnace: a bigger scrap box (converter), more charging boxes (open hearth), a bigger scrap bucket (arc furnace) or a faster Consteel belt.'],
-  magnet:['Større løftemagnet på chargeringskranen (Consteel): hvert nivå løfter mer skrap per tur.','A bigger lifting magnet on the charging crane (Consteel): each level lifts more scrap per trip.'],
+  charge:['Mer plass til skrap ved ovnen: større skrapkasse (konverter), flere chargeringskasser (SM-ovn), større skrapkurv (lysbueovn) eller raskere chargeringsbånd.','More room for scrap at the furnace: a bigger scrap box (converter), more charging boxes (open hearth), a bigger scrap bucket (arc furnace) or a faster charging conveyor.'],
+  magnet:['Større løftemagnet på chargeringskranen (båndchargering): hvert nivå løfter mer skrap per tur.','A bigger lifting magnet on the charging crane (conveyor charging): each level lifts more scrap per trip.'],
   yard2:['En skraphaug til, med egne leveranser – dobbelt så mye skrap å hente fra.','A second scrap pile with its own deliveries – twice as much scrap to pick from.'],
   forvarm:['Skrapkurven forvarmes med varm avgass før chargering. Varmt skrap smelter med mindre strøm.','The scrap bucket is preheated with hot off-gas before charging. Warm scrap melts with less electricity.'],
   furnace:['Større ovn eller konverter: mer stål per charge. Den trenger også mer skrap, råjern og forsyning.','A bigger furnace or converter: more steel per heat. It also needs more scrap, hot metal and supplies.'],
@@ -3269,7 +3269,7 @@ const IX={
   ['LD-konverteren (1952) blåser rent oksygen ovenfra gjennom en lanse. Rundt 40 minutter per charge, 75–85 % råjern og resten skrap. Trenger kalk og oksygen.','The LD (BOF) converter (1952) blows pure oxygen from above through a lance. About 40 minutes per heat, 75–85% hot metal and the rest scrap. Needs lime and oxygen.'],
   ['Lysbueovnen smelter skrap med lysbuer fra tre grafittelektroder – uten råjern. Her: skrapkurv, strøm, kalk og oksygen.','The electric arc furnace melts scrap with arcs from three graphite electrodes – no hot metal needed. Here: scrap bucket, power, lime and oxygen.'],
   ['UHP-lysbueovnen (ultrahøy effekt) har vannkjølte paneler, stor transformator, oksygenlanser og kullinjeksjon for skumslagg. Under en time fra tapping til tapping.','The UHP (ultra-high power) arc furnace has water-cooled panels, a big transformer, oxygen lances and coal injection for foaming slag. Under an hour from tap to tap.'],
-  ['Consteel: skrapet mates kontinuerlig gjennom en forvarmingstunnel rett i et flatt bad. Rundt 45 % av stålet blir igjen i ovnen (varm rest), så skrapet smelter ved å synke i flytende stål. Taket er lukket, lysbuen er dekket av skumslagg, og den varme resten gjør drifta jevn med lite flimmer. Tappes gjennom bunnen (EBT).','Consteel: scrap is fed continuously through a preheating tunnel straight into a flat bath. About 45% of the steel stays in the furnace (the hot heel), so the scrap melts by sinking into liquid steel. The roof stays closed, the arc is buried in foaming slag, and the hot heel keeps the running steady with little flicker. Tapped through the bottom (EBT).']],
+  ['Båndchargering: skrapet mates kontinuerlig gjennom en forvarmingstunnel rett i et flatt bad. Rundt 45 % av stålet blir igjen i ovnen (varm rest), så skrapet smelter ved å synke i flytende stål. Taket er lukket, lysbuen er dekket av skumslagg, og den varme resten gjør drifta jevn med lite flimmer. Tappes gjennom bunnen (EBT).','Conveyor charging: scrap is fed continuously through a preheating tunnel straight into a flat bath. About 45% of the steel stays in the furnace (the hot heel), so the scrap melts by sinking into liquid steel. The roof stays closed, the arc is buried in foaming slag, and the hot heel keeps the running steady with little flicker. Tapped through the bottom (EBT).']],
  rje:[
   ['Masovnen: malm, koks og kalk chargeres på toppen, og varm blåst blåses inn nederst. Koksen brenner og reduserer malmen til flytende råjern med rundt 4 % karbon.','The blast furnace: ore, coke and limestone go in at the top, hot blast is blown in at the bottom. The coke burns and reduces the ore to liquid hot metal with about 4% carbon.'],
   ['Elektrisk råjernsovn: tre Söderberg-elektroder gir varmen, og koksen er bare reduksjonsmiddel. Ingen cowpere – mer effekt (MVA) gir mer råjern.','Electric pig-iron furnace: three Söderberg electrodes supply the heat and the coke is only the reducing agent. No hot stoves – more power (MVA) gives more iron.']],
@@ -3277,7 +3277,7 @@ const IX={
   conv:['Skrapkasse: skrap til konverteren. Bessemer tar bare litt kjøleskrap; LD tar rundt en femtedel skrap.','Scrap box: scrap for the converter. Bessemer only takes a little cooling scrap; LD takes about one fifth scrap.'],
   box:['Chargeringskasser: skrapet lastes i kasser som chargeringsmaskinen tømmer inn gjennom ovnsdørene.','Charging boxes: scrap is loaded into boxes that the charging machine tips in through the furnace doors.'],
   bucket:['Skrapkurv: kranen løfter kurven over ovnen, taket svinges til side og skrapet slippes ned.','Scrap bucket: the crane lifts the bucket over the furnace, the roof swings aside and the scrap drops in.'],
-  belt:['Sjakt ned på chargeringsseksjonen: skrap som bæres hit, havner på Consteel-transportøren. Chargeringskranen gjør jobben av seg selv.','A chute onto the charging section: scrap carried here ends up on the Consteel conveyor. The charging crane does this job by itself.']},
+  belt:['Sjakt ned på chargeringsseksjonen: skrap som bæres hit, havner på chargeringstransportøren. Chargeringskranen gjør jobben av seg selv.','A chute onto the charging section: scrap carried here ends up on the charging conveyor. The charging crane does this job by itself.']},
  /* [Norwegian title, Norwegian text, English title, English text] */
  ring:{
   tap:['TAPP','Stå her når ovnen er klar, så tappes stålet i øsa.','TAP','Stand here when the furnace is ready and the steel is tapped into the ladle.'],
@@ -3332,7 +3332,7 @@ const IX={
   bed:['Kjøleseng','Hakkede bjelker flytter emnene steg for steg over senga mens de kjøles fra rødglødende til grå. Herfra går de til gjennomvarming eller salg.','Cooling bed','Notched beams walk the billets step by step across the bed while they cool from red-hot to grey. From here they go to reheating or to sale.']},
  /* the Consteel line: [Norwegian title, Norwegian text, English title, English text] */
  cs:{
-  charge:['Chargeringsseksjon','Den åpne delen av Consteel-transportøren, langs skrapplassen. Magnetkranen legger skrapet i jevne løft over hele lengden, og laget kryper videre mot tunnelen.','Charging section','The open part of the Consteel conveyor, alongside the scrap yard. The magnet crane lays the scrap in even lifts over its whole length, and the layer creeps on toward the tunnel.'],
+  charge:['Chargeringsseksjon','Den åpne delen av chargeringstransportøren, langs skrapplassen. Magnetkranen legger skrapet i jevne løft over hele lengden, og laget kryper videre mot tunnelen.','Charging section','The open part of the charging conveyor, alongside the scrap yard. The magnet crane lays the scrap in even lifts over its whole length, and the layer creeps on toward the tunnel.'],
   conveyor:['Oscillerende transportør','Ikke et bånd på ruller, men et langt stålkar som ristes av en drivenhet: langsomt fram, raskt tilbake. Skrapet glir litt fram for hvert slag. Farten følger hvor fort ovnen smelter.','Oscillating conveyor','Not a belt on rollers but a long steel pan shaken by a drive unit: slowly forward, quickly back. The scrap slides a little further with every stroke. The speed follows how fast the furnace melts.'],
   seal:['Dynamisk tetning','Ved tunnelinngangen holder en vifte og tunge kjettinggardiner falsk luft ute, så avgassen ikke blandes med kald luft.','Dynamic seal','At the tunnel entry a fan and heavy chain curtains keep false air out, so the off-gas is not diluted with cold air.'],
   tunnel:['Forvarmingstunnel','Avgassen fra ovnen (rundt 1200 °C) strømmer tilbake gjennom tunnelen, mot skrapet. Skrapet blir varmt – mørkerødt mot ovnsenden – og trenger mindre strøm for å smelte. Raskere bånd gir kortere tid i tunnelen.','Preheating tunnel','The off-gas from the furnace (about 1200 °C) flows back through the tunnel, against the scrap. The scrap heats up – dull red toward the furnace end – and needs less electricity to melt. A faster conveyor means less time in the tunnel.'],
@@ -3422,7 +3422,7 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
   if(d.kind==='prestige'){const[ti,tx]=ix4(IX.misc.prestige);return{t:ti,d:tx,n:presGain()>0?t_('+{0} ekspertise',presGain()):t_('Tjen {0} totalt',kr(PRES_NEED))+' · '+kr(S.earned)}}return null}
  case'sw':{const s=h.s;return{t:t_(s.lab),d:ixs(IX.sw[s.id]),n:t_('Nå: {0}',swTxt(s.id).replace(/^[^:]*: /,''))}}
  case'tap':{const[ti,tx]=ix4(IX.ring.tap);return{t:ti,d:tx+(lv('operator')?' '+ixs(IX.up.operator):''),n:furnNums()}}
- case'drop':{const E=E_();return{t:cap1(t_(E.ch==='conv'?'skrapkassa':E.ch==='box'?'chargeringskassene':E.ch==='bucket'?'skrapkurv':'Consteel-bånd')),d:ixs(IX.drop[E.ch]),n:t_('Fylt {0}/{1} t',tf(S.chg),tf(chgCap()))}}
+ case'drop':{const E=E_();return{t:cap1(t_(E.ch==='conv'?'skrapkassa':E.ch==='box'?'chargeringskassene':E.ch==='bucket'?'skrapkurv':'Chargeringsbånd')),d:ixs(IX.drop[E.ch]),n:t_('Fylt {0}/{1} t',tf(S.chg),tf(chgCap()))}}
  case'ring':{const z=h.o,[ti,tx]=ix4(IX.ring[z.id]);let n='';
   if(z.sell)n=t_('Pris ×{0}',L1(SELLM[z.sell]()))+(z.cash>=1?' · '+t_('{0} å hente',kr(z.cash)):'');
   else if(z.id==='skip')n=tf(S.rj.ore)+'/'+skipCap()+' t';else if(z.id==='rack')n=t_('{0} av {1} elektroder',Math.round(S.elek),12);

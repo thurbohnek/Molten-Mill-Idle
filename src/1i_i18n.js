@@ -10,12 +10,12 @@ function t_(s,...a){let o=s==null?'':''+s;
  return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
 const EN={
  /* --- Consteel line --- */
- 'Større magnet':'Bigger magnet','SJAKT':'CHUTE','chargeringskran':'charging crane','Flaskehals: Consteel-båndet':'Bottleneck: Consteel conveyor','Flaskehals: chargeringskranen':'Bottleneck: charging crane',
+ 'Større magnet':'Bigger magnet','SJAKT':'CHUTE','chargeringskran':'charging crane','Flaskehals: chargeringsbåndet':'Bottleneck: charging conveyor','Flaskehals: chargeringskranen':'Bottleneck: charging crane',
  'Flaskehals: skraptilførsel':'Bottleneck: scrap supply','Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.':'The charging crane lays the scrap along the whole charging section – nobody needs to carry scrap.',
  '{0} t/min inn i ovnen':'{0} t/min into the furnace','Skrapet inn i ovnen: {0} °C':'Scrap into the furnace: {0} °C','Avgass ved ovnen: ca. {0} °C':'Off-gas at the furnace: about {0} °C',
  'Avgass ved uttaket: ca. {0} °C':'Off-gas at the takeoff: about {0} °C','Siste måling: {0} °C':'Last reading: {0} °C','Venter på første måling':'Waiting for the first reading','{0} målinger':'{0} readings',
  'Slagg {0}/{1}':'Slag {0}/{1}','Løft {0} t':'Lift {0} t','Kran':'Crane','Bånd':'Conveyor','Forvarming':'Preheating','{0} t/min · løft {1} t':'{0} t/min · lift {1} t','{0} t/min · maks {1} t/min':'{0} t/min · max {1} t/min',
- 'Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.':'The crane cannot keep the line full – buy Scrap crane or Bigger magnet.','Linja er full, men båndet går for sakte – kjøp Raskere Consteel-bånd.':'The line is full but the conveyor runs too slowly – buy Faster Consteel belt.',
+ 'Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.':'The crane cannot keep the line full – buy Scrap crane or Bigger magnet.','Linja er full, men båndet går for sakte – kjøp Raskere chargeringsbånd.':'The line is full but the conveyor runs too slowly – buy Faster charging conveyor.',
  'Skrapplassen er tom – kjøp Skraptilførsel.':'The scrap yard is empty – buy Scrap supply.',
  /* --- continuous caster bubbles --- */
  'Skjermrør på':'Shroud attached','Skjermrør parkert':'Shroud parked','Stålnivå {0} %':'Steel level {0} %','{0} emner på kjølesenga':'{0} billets on the cooling bed','{0} av {1} strenger i bruk':'{0} of {1} strands in use',
@@ -34,14 +34,14 @@ const EN={
  'stenger':'bars','armering':'rebar',
  /* --- furnaces --- */
  'Bessemer-konverter':'Bessemer converter','Siemens-Martin-ovn':'Open-hearth (Siemens-Martin) furnace','LD-konverter':'LD (BOF) converter','Lysbueovn':'Electric arc furnace',
- 'UHP-lysbueovn':'UHP electric arc furnace','Consteel-ovn':'Consteel arc furnace','s blåsing':'s blow','MW gass':'MW gas','MVA':'MVA',
+ 'UHP-lysbueovn':'UHP electric arc furnace','Båndchargert ovn':'Conveyor-fed arc furnace','s blåsing':'s blow','MW gass':'MW gas','MVA':'MVA',
  '≈20 min':'≈20 min','≈8 t':'≈8 h','≈40 min':'≈40 min','≈2 t':'≈2 h','<60 min':'<60 min',
  'kalk/dolo':'lime/dolomite','oksygen':'oxygen','kull':'coal','koks':'coke','cowpere':'hot stoves',
  'Koksmasovn':'Coke blast furnace','Elektrisk råjernsovn':'Electric iron smelter',
  /* --- builds --- */
  'SM-ovn':'Open hearth','Øseovn':'Ladle furnace','Strang':'Caster','Stranggjuting':'Continuous caster','Valseverk':'Rolling mill','El-råjernsovn':'Electric smelter',
  'Jernbane':'Railway','Omlegging':'Conversion','Omlegging: lysbueovn':'Conversion: arc furnace','UHP-ovn':'UHP furnace','Bråkjøling':'Quench line','Nettverk':'Mesh welding',
- 'Consteel':'Consteel','Klipp og bøy':'Cut & bend','Kai':'Quay','Masovn og Bessemer':'Blast furnace & Bessemer',
+ 'Båndchargering':'Conveyor charging','Klipp og bøy':'Cut & bend','Kai':'Quay','Masovn og Bessemer':'Blast furnace & Bessemer',
  'Råjern og skrap i kasser – større charger, men trenger kalk.':'Hot metal and scrap charged in boxes – bigger heats, but it needs lime.',
  'Legeringer og temperatur i øsa gir bedre kvalitet og høyere pris.':'Alloying and temperature control in the ladle give better quality and a higher price.',
  'Rent oksygen gjennom en lanse ovenfra. Mye råjern, litt skrap.':'Pure oxygen blown through a lance from above. Mostly hot metal, a little scrap.',
@@ -59,7 +59,7 @@ const EN={
  'Skip gir best pris for eksport.':'Ships pay the best price, for export.',
  /* --- upgrades (full names; pad titles use the same keys) --- */
  'Større bæring':'Carry more','Raskere gange':'Walk faster','Skraptilførsel':'Scrap supply','Skrapkran':'Scrap crane','Større skrapkasse':'Bigger scrap box',
- 'Flere chargeringskasser':'More charging boxes','Større skrapkurv':'Bigger scrap bucket','Raskere Consteel-bånd':'Faster Consteel conveyor','Skraphaug 2':'Scrap pile 2',
+ 'Flere chargeringskasser':'More charging boxes','Større skrapkurv':'Bigger scrap bucket','Raskere chargeringsbånd':'Faster charging conveyor','Skraphaug 2':'Scrap pile 2',
  'Kurvforvarming':'Bucket preheating','Større konverter':'Bigger converter','Større ovn':'Bigger furnace','Sterkere blåsemaskin':'Stronger blowing engine',
  'Sterkere brennere':'Stronger burners','Kraftigere O₂-lanse':'Stronger O₂ lance','Mer effekt':'More power','Raskere raffinering':'Faster refining','Raskere tapping':'Faster tapping',
  'Tapper':'Tapper','Ekstra øse':'Extra ladle','Større slaggpotte':'Bigger slag pot','Slaggbil':'Slag pot carrier','Kalk og dolo':'Lime & dolomite','Oksygenanlegg':'Oxygen plant',
@@ -200,7 +200,7 @@ const EN={
  'neste: {0}':'next: {0}','{0} av {1} t/min':'{0} of {1} t/min','betalt {0}':'paid {0}','Nå: {0}':'Now: {0}','Fylt {0}/{1} t':'Filled {0}/{1} t','Pris ×{0}':'Price ×{0}',
  '{0} å hente':'{0} to collect','{0} av {1} elektroder':'{0} of {1} electrodes','Kokiller {0}/{1}':'Moulds {0}/{1}','{0} klare · {1} kjøles':'{0} ready · {1} cooling',
  'Kø {0}/{1}':'Queue {0}/{1}','Slaggpotte {0}/{1}':'Slag pot {0}/{1}','{0} på lager':'{0} in store','{0} vogner':'{0} cars','{0} vogn':'{0} car','Trenger {0}.':'Needs {0}.','i ovnen {0} t':'in the furnace {0} t',
- 'skrapkurv':'scrap bucket','Consteel-bånd':'Consteel conveyor','venter':'waiting','fylles':'filling','venter på kranen':'waiting for the crane','løftes':'being lifted',
+ 'skrapkurv':'scrap bucket','Chargeringsbånd':'Charging conveyor','venter':'waiting','fylles':'filling','venter på kranen':'waiting for the crane','løftes':'being lifted',
  'i øseovnen':'in the ladle furnace','på øsetårnet':'on the ladle turret','støper':'casting',
  'Molten Mill spillområde. Dra eller bruk piltaster for å gå. Gå på rutene for å kjøpe. Trykk på ting for en forklaring.':'Molten Mill play area. Drag or use the arrow keys to walk. Stand on the pads to buy. Tap things for an explanation.'
 };
