@@ -21,7 +21,8 @@ let s3=await st();ok(s3.free&&Math.hypot(s3.cam[0]-cs.cam[0],s3.cam[1]-cs.cam[1]
 ok(Math.hypot(s3.P[0]-cs.P[0],s3.P[1]-cs.P[1])<5,'swipe does not move the player');
 await p.waitForTimeout(800);let s4=await st();ok(Math.hypot(s4.cam[0]-s3.cam[0],s4.cam[1]-s3.cam[1])<3,'camera stays after the swipe');
 // tap again -> camera follows again
-await p.touchscreen.tap(sx+60,sy+40);await p.waitForTimeout(1500);let s5=await st();ok(!s5.free,'tap to walk makes the camera follow again');
+await p.touchscreen.tap(sx+60,sy+40);await p.waitForTimeout(1500);let s5=await st();ok(s5.free&&Math.hypot(s5.cam[0]-s4.cam[0],s5.cam[1]-s4.cam[1])<3,'tap to walk after a swipe keeps the camera where it is');
+await p.evaluate(()=>{window.__smelt.G.free=false});await p.waitForTimeout(800);
 // long press on the player -> bubble
 await p.waitForTimeout(1500);const pp=await p.evaluate(()=>{const W=window.__smelt,c=document.getElementById('c').getBoundingClientRect(),s=W.ws(W.P.x,W.P.y);return[c.left+s[0],c.top+s[1]]});
 // long press on scrap pile: find via hitInfo scan around screen

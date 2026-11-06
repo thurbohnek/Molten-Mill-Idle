@@ -2185,8 +2185,9 @@ function hud(){const mvT=NO_()?fmt(S.money):'$'+fmt(S.money);setT('mv',mvT);{con
  /* crane button: shown in a zone whose crane you can take over */
  const cz=craneHere();const cb=$('craneBtn');const ct=cz?t_(G.crane===cz.id?'Slipp {0}':'Styr {0}',t_(cz.n)):'';if(lastHud.cb!==ct){lastHud.cb=ct;cb.hidden=!cz;cb.textContent=ct;cb.classList.toggle('on',!!cz&&G.crane===cz.id);cb.setAttribute('aria-pressed',cz&&G.crane===cz.id?'true':'false')}}
 function craneHere(){if(G.crane)return CRm[G.crane];for(const c of CRANES){if(!canMan(c))continue;const d=c.d;if(P.x>d.x0-40&&P.x<d.x1+40&&P.y>d.y0-40&&P.y<d.y1+40)return c}return null}
-/* start walking (or steering the crane hook) to a world point; the camera follows again */
-function goTo(wx,wy){const cr=G.crane?CRm[G.crane]:null;G.free=false;
+/* start walking (or steering the crane hook) to a world point */
+/* the camera stays where the player put it (after a swipe); only the player bubble at the screen edge brings it back */
+function goTo(wx,wy){const cr=G.crane?CRm[G.crane]:null;
  if(cr){G.go={pts:[{x:wx,y:wy}],i:0,tx:wx,ty:wy,crane:1};return true}
  const pts=planPath(P.x,P.y,wx,wy);if(!pts||!pts.length){G.go=null;return false}
  G.go={pts,i:0,tx:wx,ty:wy,mk:pts[pts.length-1],t:T};if(!S.moved){S.moved=true}return true}
