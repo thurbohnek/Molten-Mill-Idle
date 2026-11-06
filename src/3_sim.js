@@ -722,7 +722,7 @@ function bottlenecks(){const o=[];for(const z of ZONES){const s=status(z.id);if(
 /* ---------- prestige / reset ---------- */
 function doPrestige(){const g=presGain();if(g<1)return;const keep={mute:S.mute,vib:S.vib,moved:true,infoHint:S.infoHint,introSeen:S.introSeen,life:S.life,st:S.st,pres:{pts:S.pres.pts+g,n:S.pres.n+1}};
  S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt verk! Inntekt ×{0}',L1(gm())),true);confetti(P.x,P.y-30,70);sfx('mile')}
-function doReset(){const keep={mute:S.mute,vib:S.vib,infoHint:S.infoHint};S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt spill startet'))}
+function doReset(){const keep={mute:S.mute,vib:S.vib,infoHint:S.infoHint};S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt spill startet'));/* a reset is a new game: show the start card */showStart()}
 
 /* ---------- useful-work check (idle stats) ---------- */
 function canAfford(){return PADS.some(d=>d.kind!=='prestige'&&vis(d)&&S.money+(S.paid[paidKey(d)]||0)>=cost(d))}
