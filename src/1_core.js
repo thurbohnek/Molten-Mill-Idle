@@ -47,7 +47,7 @@ const ZONES=[
  {id:'salg1',x0:1796,y0:316,x1:2000,y1:940,col:'#ffcf33',n:'SALG',sale:1},
  {id:'gjv',x0:2016,y0:316,x1:2290,y1:940,col:'#ff9f45',n:'GJENNOMVARMING',b:'vv'},
  {id:'vv',x0:2306,y0:316,x1:2900,y1:940,col:'#c9d0d8',n:'VALSEVERK',b:'vv'},
- {id:'tc',x0:2916,y0:316,x1:3140,y1:940,col:'#4dd0c8',n:'TEMPCORE',b:'tc'},
+ {id:'tc',x0:2916,y0:316,x1:3140,y1:940,col:'#4dd0c8',n:'BRÅKJØLING',b:'tc'},
  {id:'stel',x0:2306,y0:24,x1:3140,y1:300,col:'#c39bff',n:'VALSTRÅD',b:'stel'},
  {id:'nett',x0:3156,y0:24,x1:3520,y1:420,col:'#9bd35f',n:'NETTVERK',b:'nett'},
  {id:'salg2',x0:3156,y0:436,x1:3520,y1:744,col:'#ffcf33',n:'SALG 2',b:'stel',sale:1},
