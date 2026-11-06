@@ -17,7 +17,7 @@ function update(dt){
  let ix=0,iy=0;
  if(!G.modal&&!G.mapOn){
   /* hold still on something = explanation bubble */
-  if(J.on&&!J.drag&&!J.lp&&performance.now()-J.t0>450){J.lp=true;if(J.hit&&G.mode==='play'&&!G.modal&&showInfo(J.hit)){G.go=null;vib(8)}}
+  if(J.on&&!J.drag&&!J.lp&&performance.now()-J.t0>450){J.lp=true;if(J.hit&&G.mode==='play'&&!G.modal&&showInfo(J.hit)){G.go=null;buzz(8)}}
   /* analog stick for scripted input (tests/bots): J.virt */
   if(J.on&&J.virt){const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy);if(m>6){const k=min(1,m/JR);ix=dx/m*k;iy=dy/m*k}}
   if(keys.l)ix-=1;if(keys.r)ix+=1;if(keys.u)iy-=1;if(keys.d)iy+=1;

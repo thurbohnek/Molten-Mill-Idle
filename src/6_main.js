@@ -33,7 +33,7 @@ cv.addEventListener('pointermove',e=>{if(!J.on||e.pointerId!==J.id)return;const[
 /* tap = walk there (a dotted line shows the way); a tap on a waiting pad next to you buys the next level;
    a tap that only closes an explanation bubble does nothing else */
 const pUp=e=>{if(e.pointerId!==J.id)return;if(J.on&&e.type==='pointerup'&&!J.drag&&!J.lp){const wx=cam.x+(J.ox-cssW/2)/zoom,wy=cam.y+(J.oy-cssH/2)/zoom;
-  if(!J.closed&&!padUnlock(wx,wy))goTo(wx,wy)}J.on=false;J.drag=false};cv.addEventListener('pointerup',pUp);cv.addEventListener('pointercancel',pUp);cv.addEventListener('lostpointercapture',pUp);
+  const pin=G.pin;if(pin&&Math.hypot(J.ox-pin.x,J.oy-pin.y)<pin.r){G.free=false;buzz(6)}else if(!J.closed&&!padUnlock(wx,wy))goTo(wx,wy)}J.on=false;J.drag=false};cv.addEventListener('pointerup',pUp);cv.addEventListener('pointercancel',pUp);cv.addEventListener('lostpointercapture',pUp);
 const KM={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:'d'};
 addEventListener('keydown',e=>{initAudio();if(G.mode==='intro'&&(e.key===' '||e.key==='Enter'||KM[e.code])){endIntro()}
  if(e.key==='Escape'){if(INFO.on){hideInfo();if(!G.modal&&!G.mapOn&&!menu.classList.contains('on'))return}if(G.modal)closeModal();else if(G.mapOn){openMap(false);try{$('mapBtn').focus()}catch(_){}}else if(menu.classList.contains('on')){openMenu(false);try{mBtn.focus()}catch(_){}}return}
