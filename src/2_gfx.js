@@ -383,12 +383,14 @@ function torpedo(g,x,y,L,load,t,o){o=o||{};const r=17,z=16,yy=y-z*OK;
 return{slice,cyl,cap,converter,convPt,blastFurnace,elFurnace,cowper,torpedo,bfTap}})();
 
 /* ---------- floor bake: static floor, zones, rails and roller tables go to one offscreen canvas ---------- */
-const FS=1,fc=document.createElement('canvas');fc.width=(WW-WX0)*FS;fc.height=WH*FS;
+const FS=1,fc=document.createElement('canvas');fc.width=(WW-WX0)*FS;fc.height=WHMAX*FS;
 /* which zone plot is next to be built (only that one is shown before it exists) */
 const nextBuild=()=>BUILDS[S.ph]||null;
-const zoneShown=z=>z.rj||zoneBuilt(z)||(nextBuild()&&ZN[nextBuild().z]===z)||(z.id==='gjv'||z.id==='vv')&&nextBuild()&&nextBuild().id==='vv'||(z.id==='salg2'&&nextBuild()&&nextBuild().id==='stel');
+const zoneShown=z=>(z.rj&&!rjGone())||zoneBuilt(z)||(nextBuild()&&ZN[nextBuild().z]===z)||(z.id==='gjv'||z.id==='vv')&&nextBuild()&&nextBuild().id==='vv'||(z.id==='salg2'&&nextBuild()&&nextBuild().id==='stel');
 function zonePlate(z){const nb=nextBuild(),built=zoneBuilt(z);let t=t_(z.n);if(z.id==='ovn')t=t_('STÅLVERK')+' · '+t_(E_().k);if(z.id==='rj')t=t_('RÅJERNSVERK')+' · '+t_(rjEra()?'EL-OVN':'MASOVN');
  if(z.rj&&rjClosed())return{t:t_(z.n)+' · '+t_('NEDLAGT'),x:z.x0+12,y:z.y0+12,h:20,w:0,col:'#6b7079'};
+ if(z.mbp){const u=MBK.find(k=>mbOn(k)&&S.mb[k].p===z.id);return{t:t_('LAGT NED')+' · '+(u?mbName(u).toUpperCase():''),x:z.x0+12,y:z.y0+12,h:20,w:0,col:'#8d96a3'}}
+ if(z.cr)return{t:t_('KONTROLLROM'),x:z.x0+12,y:z.y0+12,h:20,w:0,col:z.col};
  if(!built)t=t_('TOMT')+' · '+(nb?t_(nb.n).toUpperCase():t_(z.n));return{t,x:z.x0+12,y:z.y0+12,h:20,w:0,col:built?z.col:'#7d8590'}}
 function plateW(p,g){g=g||ctx;g.font=`800 11px ${FONT}`;return g.measureText(p.t).width+18}
 const ROLLS=[];/* [path, built()] static roller tables / conveyors */
@@ -404,19 +406,19 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
  for(const[id,p]of[['y0',POS.y0],['y1',POS.y1]]){const on=id==='y0'||lv('yard2');f.fillStyle=on?'#2e3238':'rgba(46,50,56,.45)';SK.rr(f,p.x-96,p.y-122,192,244,10);f.fill();f.strokeStyle='#1b1e23';f.lineWidth=5;f.strokeRect(p.x-96,p.y-122,192,244);
   if(!on){f.font=`800 12px ${FONT}`;f.textAlign='center';f.fillStyle='rgba(244,241,234,.3)';f.fillText(t_('SKRAPHAUG 2'),p.x,p.y)}}
  /* råjernsverk floor: ore bay, ore-train track, cast house, skip pit, torpedo tracks to the steel plant */
- {const cl=rjClosed(),p=POS.ore;f.fillStyle=cl?'rgba(46,50,56,.55)':'#2e3238';SK.rr(f,p.x-96,p.y-122,192,244,10);f.fill();f.strokeStyle='#1b1e23';f.lineWidth=5;f.strokeRect(p.x-96,p.y-122,192,244);
+ {const cl=rjClosed(),p=POS.ore,gn=rjGone();if(!gn){f.fillStyle=cl?'rgba(46,50,56,.55)':'#2e3238';SK.rr(f,p.x-96,p.y-122,192,244,10);f.fill();f.strokeStyle='#1b1e23';f.lineWidth=5;f.strokeRect(p.x-96,p.y-122,192,244);
   const ty=POS.oreTrainY;f.fillStyle='#2b2826';f.fillRect(WX0+10,ty-20,640,40);for(let x=WX0+14;x<WX0+650;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=cl?'#5a4a40':C.rail;f.fillRect(WX0+10,ty-11,640,4);f.fillRect(WX0+10,ty+7,640,4);
-  f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,-236,590,200,70,8);f.fill();f.fillStyle='rgba(0,0,0,.25)';SK.rr(f,POS.skip.x-54,POS.skip.y-48,108,96,10);f.fill();
+  f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,-236,590,200,70,8);f.fill();f.fillStyle='rgba(0,0,0,.25)';SK.rr(f,POS.skip.x-54,POS.skip.y-48,108,96,10);f.fill()}
   const rail=(y,x0,x1)=>{f.fillStyle='#2b2620';for(let x=x0;x<x1;x+=8)f.fillRect(x,y-13,3.4,26);f.fillStyle=cl?'#5a4e44':'#7d7064';f.fillRect(x0,y-9,x1-x0,2.6);f.fillRect(x0,y+7,x1-x0,2.6)};
   /* Consteel: the old torpedo tracks are gone, the line's foundation runs through the yard */
-  if(era()<5){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
-  if(cl){f.fillStyle='rgba(55,60,68,.55)';f.fillRect(-340,POS.torpA-16,POS.torpX1+410,54)}}
+  if(era()<5){if(!gn){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
+  if(cl){f.fillStyle='rgba(55,60,68,.55)';f.fillRect(-340,POS.torpA-16,POS.torpX1+410,54)}}}
   else{f.fillStyle='rgba(0,0,0,.22)';f.fillRect(20,CSG.y-34,CSG.xf-20,68);f.fillStyle='rgba(0,0,0,.18)';SK.rr(f,SLAGP.x-60,SLAGP.y-50,120,104,10);f.fill()}}
  /* crane rails */
  f.fillStyle='#22252b';{const c=CRN.skrap;f.fillRect(c.x0-6,c.y0-8,c.x1-c.x0+12,6);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,6)}
  {const c=CRN.ose;f.fillRect(c.x0-6,c.y0-10,c.x1-c.x0+12,5);f.fillRect(c.x0-6,c.y1+4,c.x1-c.x0+12,5)}
  if(lv('malmkran')&&!rjClosed()){const c=CRN.malm;f.fillStyle='#22252b';f.fillRect(c.x0-6,c.y0-8,c.x1-c.x0+12,6);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,6)}
- if(B_('vv')&&lv('magkran')){const c=CRN.mag;f.fillRect(c.x0-6,c.y0-6,c.x1-c.x0+12,5);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,5)}
+ if(B_('vv')&&(lv('magkran')||AUTO())){const c=CRN.mag;f.fillRect(c.x0-6,c.y0-6,c.x1-c.x0+12,5);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,5)}
  /* furnace platform + slag yard */
  f.fillStyle='rgba(0,0,0,.18)';if(ET()!=='sm')f.beginPath(),f.arc(POS.F.x,POS.F.y,150,0,TAU),f.fill();else SK.rr(f,676,404,250,394,14),f.fill();
  if(slagOn()){const p=POS.slagp;f.fillStyle='#2b2826';f.beginPath();f.ellipse(p.x,p.y,84,56,0,0,TAU);f.fill();for(let i=0;i<120;i++){const a=r()*TAU,d=Math.sqrt(r());f.fillStyle=r()<.5?'rgba(90,86,80,.5)':'rgba(0,0,0,.35)';f.fillRect(p.x+Math.cos(a)*d*80,p.y+Math.sin(a)*d*52,3,3)}}

@@ -47,7 +47,7 @@ function max1(v){return Math.max(1e-9,v)}
  const s=W.status('skrap');ok(W.csLim()==='yard'&&s.t===W.t_('Flaskehals: skraptilførsel'),'empty yard → chip "'+(s&&s.t)+'"');}
 {const W=boot(Object.assign({},LV,{kran:20,magnet:10,charge:20,furnace:6,power:6}));for(let i=0;i<30*90;i++)W.update(1/30);ok(W.csLim()==='','strong line: no scrap-yard bottleneck ('+W.csLim()+')')}
 /* ---------- 3. manual crane: drive it, drop anywhere over the charging section (double lift) ---------- */
-{const W=boot(LV),c=W.CRm.skrap,C=W.CSG;for(let i=0;i<60;i++)W.update(1/30);W.P.x=250;W.P.y=560;const ch=W.craneHere();ok(ch&&ch.id==='skrap','crane button in the scrap yard');W.toggleCrane();ok(c.man,'crane under manual control');
+{const W=boot(LV),c=W.CRm.skrap,C=W.CSG;for(let i=0;i<60;i++)W.update(1/30);/* Phase 2: in the automated eras the crane is taken over at its pulpit */const pu=W.ctlDesks?W.ctlDesks().find(d=>d.id==='skrap'):null;if(pu){W.P.x=pu.x;W.P.y=pu.y+30}else{W.P.x=250;W.P.y=560}const ch=W.craneHere();ok(ch&&ch.id==='skrap','crane button at the scrap-crane pulpit');W.toggleCrane();ok(c.man,'crane under manual control');
  for(let i=0;i<30*10&&!(c.state==='idle'||c.state==='toPick');i++)W.update(1/30);let dropped=false,picked=false;
  for(let i=0;i<30*40&&!dropped;i++){if(c.load>W.craneLift()*1.5)picked=Math.max(picked||0,c.load);const before=W.CSB.drops.length;const j=c.job;let tx=c.x,ty=c.y;if(j){if(c.state==='toPick'){tx=j.from.x;ty=j.from.y}else if(c.state==='toDrop'){tx=180;ty=C.y}}
   const dx=tx-c.x,dy=ty-c.y,d=Math.hypot(dx,dy);W.J.on=d>4;W.J.virt=true;W.J.ox=200;W.J.oy=400;W.J.x=200+(d?dx/d*40:0);W.J.y=400+(d?dy/d*40:0);W.update(1/30);if(picked&&W.CSB.drops.length!==before)dropped=true}

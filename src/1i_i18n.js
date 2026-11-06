@@ -9,6 +9,24 @@ function t_(s,...a){let o=s==null?'':''+s;
  else{const i=o.indexOf('§');if(i>=0)o=o.slice(i+1)}
  return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
 const EN={
+ /* --- Phase 2: automation by era, control room, mothballed plants --- */
+ 'Kranfører':'Crane operator','Kontrollromsoperatør':'Control-room operator','Blokkoperatør':'Teeming operator','Strengoperatør':'Caster operator','Valseoperatør':'Mill operator',
+ 'Bråkjølingsoperatør':'Quench operator','Valstrådoperatør':'Wire-rod operator','Sveiseoperatør':'Welding operator','Bøyeoperatør':'Bending operator',
+ 'RESERVETOMT':'RESERVE PLOT','KONTROLLROM':'CONTROL ROOM','Vognfart':'Car speed','Vognkapasitet':'Car capacity','Råjernsverk':'Ironworks',
+ '{0} er revet · +{1} t skrap til skrapplassen':'{0} demolished · +{1} t scrap to the scrap yard','{0} startes igjen':'{0} is restarted','Riv':'Demolish','Start igjen':'Restart',
+ '+{0} t skrap':'+{0} t scrap','Trengs nå':'Needed now','Låst':'Locked','Låst – en senere ovn trenger den':'Locked – a later furnace needs it',
+ '{0} er lagt ned på en reservetomt – riv den eller la den stå':'{0} is mothballed on a reserve plot – demolish it or leave it standing','{0} masseljern solgt · +{1}':'{0} pig iron sold · +{1}',
+ 'Gå til kontrollrommet og styr ovnen selv (+10 % effekt)':'Go to the control room and run the furnace yourself (+10 % power)','ovnen':'the furnace','strengen':'the caster',
+ 'Automatikken tar over igjen':'The automation takes over again','Du styrer ovnen fra pulten (+10 % effekt, tapper straks)':'You run the furnace from the desk (+10 % power, taps at once)',
+ 'Du styrer strengen fra pulten (+15 % støpefart)':'You run the caster from the desk (+15 % casting speed)',
+ 'Fra nå av styres verket fra kontrollrom':'From now on the plant runs from control rooms',
+ 'Kraner, transportbånd og transportvogner flytter skrap, slagg, emner og ferdigvarer. Ingen bærer lenger.':'Cranes, conveyors and transport cars move scrap, slag, billets and finished products. Nobody carries any more.',
+ 'Hjelperne blir operatører ved pultene. Du går mellom pultene og tar over ovnen, strengen eller en kran ved å trykke på pulten – oppgraderinger kjøpes fortsatt på rutene.':'Your helpers become operators at the desks. You walk between the desks and take over the furnace, the caster or a crane by tapping its desk – upgrades are still bought on the pads.',
+ 'Det gamle verket står igjen, lagt ned. Trykk for å lukke.':'The old plant is still standing, mothballed. Tap to close.',
+ 'LAGT NED':'MOTHBALLED','OVN':'FURNACE','ØSEKRAN':'LADLE CRANE','STRENG':'CASTER','KRANPULT':'CRANE PULPIT','PULT':'DESK','LÅST':'LOCKED',
+ 'Operatører {0} av {1}':'Operators {0} of {1}','{0} vogner ved {1}':'{0} cars at {1}','last {0} stk':'load {0} pcs','vedlikehold {0}':'upkeep {0}',
+ 'Låst · ingen ovn trenger den ennå':'Locked · no furnace needs it yet','{0} operatører':'{0} operators','Du styrer':'You are in control','Automatikk':'Automatic',
+ 'Lagt ned: {0} · vedlikehold {1}':'Mothballed: {0} · upkeep {1}',
  /* --- Consteel line --- */
  'Større magnet':'Bigger magnet','SJAKT':'CHUTE','chargeringskran':'charging crane','Flaskehals: chargeringsbåndet':'Bottleneck: charging conveyor','Flaskehals: chargeringskranen':'Bottleneck: charging crane',
  'Flaskehals: skraptilførsel':'Bottleneck: scrap supply','Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.':'The charging crane lays the scrap along the whole charging section – nobody needs to carry scrap.',

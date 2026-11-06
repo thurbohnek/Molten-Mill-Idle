@@ -33,7 +33,9 @@ const tf=v=>v>=100?fmt(v):v>=10?L1(v):dsep((Math.round(v*100)/100).toFixed(2));
 /* ---------- world: one production line running left → right, every station in its own tinted zone ----------
    spine y=600; supply plants for the furnace in a blue zone above it; downstream stations follow to the right,
    utlasting (rail + quay) at the far right. */
-const WX0=-760,WW=4300,WH=1140,CY=600,QX=3560,QY=850;
+const WX0=-760,WW=4300,WH0=1140,WHMAX=1560,CY=600,QX=3560,QY=850;
+/* the world grows downward when the first old plant is mothballed: a strip of reserve plots + the control room (y 1132–1536) */
+let WH=WH0;
 /* v6: the integrated works start at the far left: ore + coke → råjernsovn → råjern by torpedo car to the steel furnace */
 const ZONES=[
  {id:'rjsup',x0:-744,y0:24,x1:8,y1:300,col:'#8ab4e8',n:'FORSYNING · RÅJERN',sup:1,rj:1},
@@ -52,7 +54,15 @@ const ZONES=[
  {id:'nett',x0:3156,y0:24,x1:3520,y1:420,col:'#9bd35f',n:'NETTVERK',b:'nett'},
  {id:'salg2',x0:3156,y0:436,x1:3520,y1:744,col:'#ffcf33',n:'SALG 2',b:'stel',sale:1},
  {id:'kob',x0:3156,y0:760,x1:3520,y1:1116,col:'#ef8ad6',n:'KLIPP OG BØY',b:'kob'},
- {id:'utlast',x0:3536,y0:24,x1:4280,y1:1116,col:'#ffcf33',n:'UTLASTING',b:'tog',sale:1}];
+ {id:'utlast',x0:3536,y0:24,x1:4280,y1:1116,col:'#ffcf33',n:'UTLASTING',b:'tog',sale:1},
+ /* reserve plots for mothballed plants (b:'mb' keeps them out of the station logic; shown only while a plant stands there) */
+ {id:'mbp0',x0:609,y0:1132,x1:1044,y1:1536,col:'#8d96a3',n:'RESERVETOMT',b:'mb',mbp:1},
+ {id:'mbp1',x0:1316,y0:1132,x1:1780,y1:1536,col:'#8d96a3',n:'RESERVETOMT',b:'mb',mbp:1},
+ {id:'mbp2',x0:158,y0:1132,x1:593,y1:1536,col:'#8d96a3',n:'RESERVETOMT',b:'mb',mbp:1},
+ {id:'mbp3',x0:-293,y0:1132,x1:142,y1:1536,col:'#8d96a3',n:'RESERVETOMT',b:'mb',mbp:1},
+ {id:'mbp4',x0:-744,y0:1132,x1:-309,y1:1536,col:'#8d96a3',n:'RESERVETOMT',b:'mb',mbp:1},
+ /* the control room for the furnace, ladle crane and caster (arc-furnace eras) */
+ {id:'cr',x0:1060,y0:1132,x1:1300,y1:1536,col:'#7fe0ff',n:'KONTROLLROM',b:'mb',cr:1}];
 const ZN=Object.fromEntries(ZONES.map(z=>[z.id,z]));
 const inZone=(z,x,y,m)=>{m=m||0;return x>=z.x0+m&&x<=z.x1-m&&y>=z.y0+m&&y<=z.y1-m};
 const POS={
@@ -111,6 +121,7 @@ const ERA=[
  {n:'Lysbueovn',k:'LYSBUEOVN',yr:1975,type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
  {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',yr:1985,cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
  {n:'Båndchargert ovn',k:'BÅNDOVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
+ERA.forEach(e=>{e.needs=e.needs||[]});
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
 const RJE=[{n:'Koksmasovn',k:'MASOVN',yr:1880,rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',yr:1965,rate:.75}];
@@ -141,7 +152,7 @@ const PRES_NEED=4e9;
 /* ---------- upgrades: every upgrade has its own pad in its station's upgrade row; the player picks the order.
    req = only real progress gates (furnace era, building, the plant it needs); intro:1 = shown during the first two heats too ---------- */
 const UP=[
- {id:'carry',st:'skrap',n:'Større bæring',max:16,base:20,m:1.55,intro:1},
+ {id:'carry',st:'skrap',n:'Større bæring',max:16,base:20,m:1.55,intro:1,req:()=>!AUTO()},
  {id:'speed',st:'skrap',n:'Raskere gange',max:12,base:45,m:1.6},
  {id:'yard',st:'skrap',n:'Skraptilførsel',max:20,base:70,m:1.55,req:()=>scrapUse()},
  {id:'kran',st:'skrap',n:'Skrapkran',max:23,base:180,m:1.52,req:()=>scrapUse()},
@@ -184,8 +195,8 @@ const UP=[
  {id:'torch',st:'strang',n:'Skjærebrenner',max:1,costs:[2e5]},
  {id:'turret',st:'strang',n:'Øsetårn (sekvens)',max:1,costs:[1e5]},
  {id:'truck',st:'salg1',n:'Salgsavtale',max:30,base:200,m:1.5},
- {id:'hspeed',st:'salg1',n:'Hjelperfart',max:14,base:400,m:1.65,req:()=>helpersHired()},
- {id:'hcap',st:'salg1',n:'Hjelperkapasitet',max:14,base:500,m:1.65,req:()=>helpersHired()},
+ {id:'hspeed',st:'salg1',n:()=>AUTO()?'Vognfart':'Hjelperfart',max:14,base:400,m:1.65,req:()=>helpersHired()||AUTO()},
+ {id:'hcap',st:'salg1',n:()=>AUTO()?'Vognkapasitet':'Hjelperkapasitet',max:14,base:500,m:1.65,req:()=>helpersHired()||AUTO()},
  {id:'gjvup',st:'gjv',n:'Ovnskapasitet',max:25,base:3e4,m:1.42},
  {id:'bjelke',st:'gjv',n:'Bjelkeovn',max:1,costs:[1.5e6]},
  {id:'magkran',st:'gjv',n:'Magnetkran',max:12,base:1e5,m:1.6},
@@ -205,15 +216,15 @@ const UPm=Object.fromEntries(UP.map(u=>[u.id,u]));
 UP.forEach(u=>{if(u.costs)u.max=u.costs.length});
 const HIRE={
  rj:{id:'h_rj',n:'Malmhjelper',costs:[70,900,9000],col:'#ff9a6a'},
- skrap:{id:'h_skrap',n:'Skraphjelper',costs:[90,900,9000],col:'#ffd23f',req:()=>scrapUse()},
- ovn:{id:'h_ovn',n:'Ovnshjelper',costs:[2500,15000,1.2e5],col:'#f1ede2',req:()=>slagOn()},
- blokk:{id:'h_blokk',n:'Blokkhjelper',costs:[250,2500,25000],col:'#ff8c5a'},
- strang:{id:'h_strang',n:'Emnehjelper',costs:[3e4,2.5e5,2e6],col:'#a0d8ff'},
- vv:{id:'h_vv',n:'Valseverkshjelper',costs:[1.5e5,1.2e6,1e7],col:'#d0d6de'},
- tc:{id:'h_tc',n:'Bråkjølingshjelper',costs:[3e6,2e7,1.2e8],col:'#7fe0d8'},
- stel:{id:'h_stel',n:'Valstrådhjelper',costs:[8e6,5e7,3e8],col:'#c48bff'},
- nett:{id:'h_nett',n:'Netthjelper',costs:[1.5e7,1e8,6e8],col:'#9bd35f'},
- kob:{id:'h_kob',n:'Bøyehjelper',costs:[6e7,4e8,3e9],col:'#ef8ad6'}};
+ skrap:{id:'h_skrap',n:'Skraphjelper',op:'Kranfører',costs:[90,900,9000],col:'#ffd23f',req:()=>scrapUse()},
+ ovn:{id:'h_ovn',n:'Ovnshjelper',op:'Kontrollromsoperatør',costs:[2500,15000,1.2e5],col:'#f1ede2',req:()=>slagOn()},
+ blokk:{id:'h_blokk',n:'Blokkhjelper',op:'Blokkoperatør',costs:[250,2500,25000],col:'#ff8c5a'},
+ strang:{id:'h_strang',n:'Emnehjelper',op:'Strengoperatør',costs:[3e4,2.5e5,2e6],col:'#a0d8ff'},
+ vv:{id:'h_vv',n:'Valseverkshjelper',op:'Valseoperatør',costs:[1.5e5,1.2e6,1e7],col:'#d0d6de'},
+ tc:{id:'h_tc',n:'Bråkjølingshjelper',op:'Bråkjølingsoperatør',costs:[3e6,2e7,1.2e8],col:'#7fe0d8'},
+ stel:{id:'h_stel',n:'Valstrådhjelper',op:'Valstrådoperatør',costs:[8e6,5e7,3e8],col:'#c48bff'},
+ nett:{id:'h_nett',n:'Netthjelper',op:'Sveiseoperatør',costs:[1.5e7,1e8,6e8],col:'#9bd35f'},
+ kob:{id:'h_kob',n:'Bøyehjelper',op:'Bøyeoperatør',costs:[6e7,4e8,3e9],col:'#ef8ad6'}};
 /* upgrade rows: slots [x,y] filled in UP order by the upgrades a station shows (maxed ones keep their slot as MAKS);
    lw = label width (row pitch − 4). One hire pad per station, beside its row. */
 const R_=(x0,y,n,dx)=>Array.from({length:n},(_,i)=>[x0+i*dx,y]);
@@ -239,6 +250,16 @@ const HIREPOS={rj:{x:-444,y:932},skrap:{x:296,y:930},ovn:{x:600,y:930},blokk:{x:
 const POSTS={rj:{x:-660,y:560,crane:'malm'},skrap:{x:490,y:840,crane:'skrap'},ovn:{x:900,y:745},blokk:{x:1372,y:196},strang:{x:1700,y:628,crane:'mag'},
  vv:{x:2680,y:862},tc:{x:3060,y:724},stel:{x:2660,y:256},nett:{x:3196,y:180},kob:{x:3470,y:900}};
 const TAPDESK={x:1018,y:520};
+/* the control room (arc-furnace eras): furnace, ladle-crane and caster desks; control-room / caster operators sit here */
+const CRB={x0:1080,y0:1170,x1:1280,y1:1330};
+const CRDESK={furnace:{x:1124,y:1250},caster:{x:1236,y:1250},ladle:{x:1180,y:1306}};
+const CRPOST={ovn:CRDESK.furnace,strang:CRDESK.caster};
+/* the plant runs from control rooms from the first arc furnace on: nobody carries where a crane, conveyor or car does the job */
+const AUTO=()=>era()>=3;
+/* stations whose products leave on automatic transport cars in the automated eras */
+const AGVK={blokk:'ingot',strang:'billet',vv:'rebar',tc:'tcore',stel:'coil',nett:'mesh',kob:'bent'};
+const postOf=r=>AUTO()&&CRPOST[r]?Object.assign({crane:POSTS[r]&&POSTS[r].crane},CRPOST[r]):POSTS[r];
+const opN=st=>AUTO()&&HIRE[st]?lv(HIRE[st].id):0;
 const PADPOS=Object.fromEntries(Object.keys(UPROW).map(k=>[k,{up:{x:UPROW[k].s[0][0],y:UPROW[k].s[0][1]},hire:HIREPOS[k]}]));
 const PRESPAD={x:4120,y:600};
 /* walk-on switches (step on to flip) */
@@ -248,6 +269,24 @@ const SW=[
  {id:'mix',x:2470,y:448,lab:'Valseprogram',on:()=>B_('stel')}];
 const SWm=Object.fromEntries(SW.map(s=>[s.id,s]));
 
+/* ---------- old plants: when a new era is built the previous main plant is mothballed (dark, no smoke) instead of torn down.
+   It moves to the nearest free reserve plot (the ironworks stays on its own plot). Demolish: pay, get a little scrap back,
+   the plot and its solids are freed. Restart: only when a later era declares it needs the plant (ERA[].needs). ---------- */
+const MBU={
+ bess:{n:'Bessemer-konverter',yr:1880,from:'sm',kind:'conv',R:58,dem:150,up:2,scrap:40},
+ sm:{n:'Siemens-Martin-ovn',yr:1910,from:'ld',kind:'sm',dem:1500,up:20,scrap:80},
+ ld:{n:'LD-konverter',yr:1960,from:'eaf1',kind:'conv',R:72,ld:1,torp:1,dem:2e4,up:300,scrap:140,re:1,rc:5e8},
+ rj:{n:'Råjernsverk',yr:1880,from:'eaf1',kind:'rj',dem:3e4,up:400,scrap:200},
+ eaf:{n:'Lysbueovn',yr:1975,from:'uhp',kind:'eaf',e:3,dem:1.5e5,up:3000,scrap:220},
+ uhp:{n:'UHP-lysbueovn',yr:1985,from:'consteel',kind:'eaf',e:4,dem:1.5e6,up:3e4,scrap:260}};
+const MBK=Object.keys(MBU);
+const MBPLOTS=['mbp0','mbp1','mbp2','mbp3','mbp4'];
+const mbSt=u=>(S.mb&&S.mb[u]&&S.mb[u].st)||'';
+const mbOn=u=>mbSt(u)==='mb';
+const mbZone=u=>{const m=S.mb[u];return m&&m.p?ZN[m.p]:null};
+const restartOK=u=>!!MBU[u].re&&ERA[era()].needs.indexOf(u)>=0;
+const rjGone=()=>mbSt('rj')==='gone';
+
 /* ---------- save ---------- */
 const KEY='smelteverket.v6';
 function rawLoad(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null}catch(e){return null}}
@@ -255,7 +294,7 @@ function freshS(){return{v:6,money:0,earned:0,life:0,heats:0,ph:0,lv:{},paid:{},
  mute:false,vib:true,dest:'best',moved:false,t:0,rate:0,lvl:0,pres:{pts:0,n:0},
  st:{sold:0,scrap:0,heats:0,play:0,best:0,prod:{},soldK:{},castB:0,castS:0,slagStops:0,slagT:0,eraT:{},hm:0,ore:0},
  piles:{},nodes:{},store:{},cash:{},kok:{slots:6,hot:0,ready:6,cool:[]},pot:0,elek:12,chg:0,yard:{y0:24,y1:0,ore:40},F:{bath:0,solid:0},
- rj:{ore:14,hearth:6},hm:10,torp:[],bonusGiven:false}}
+ rj:{ore:14,hearth:6},hm:10,torp:[],mb:{},bonusGiven:false}}
 let S=freshS();
 const num=v=>isFinite(v)&&v>=0?+v:0;
 (()=>{const s=rawLoad(KEY);
@@ -286,7 +325,7 @@ const usesHM=()=>E_().hm[1]>0;
 /* scrap matters for this era (Bessemer only takes a little cooling scrap) */
 const scrapUse=()=>era()>=1||S.heats>=4;
 /* a station exists when its build is done (base stations always exist); the råjernsverk closes at the Omlegging */
-const zoneBuilt=z=>(!z.b||B_(z.b))&&!(z.rj&&rjClosed());
+const zoneBuilt=z=>z.mbp?MBK.some(u=>mbOn(u)&&S.mb[u].p===z.id):z.cr?AUTO():(!z.b||B_(z.b))&&!(z.rj&&rjClosed());
 const stOn=id=>zoneBuilt(ZN[id]);
 const pileOn=k=>stOn(PR[k].z)||(k==='pig'&&PILE.pig.length>0);
 
@@ -296,7 +335,8 @@ const hcap=()=>4+2*lv('hcap');
 const speed=()=>160*(1+.08*lv('speed'));
 const hspeed=()=>130*(1+.08*lv('hspeed'));
 const fcap=()=>Math.round(E_().cap*(1+.18*lv('furnace')));
-const MW=()=>(E_().P||0)*(1+.15*lv('power'));
+/* the player at the furnace desk (control room) runs the power program by hand: +10 % */
+const MW=()=>(E_().P||0)*(1+.15*lv('power'))*(G.ctl==='furnace'?1.1:1);
 const kwh=()=>ET()==='conv'?0:Math.round(E_().E*(lv('forvarm')&&(era()===3||era()===4)?.88:1)*(era()===5?csPreK():1));
 /* converters: the blow takes blowT seconds (blower / lance upgrades shorten it); no external energy */
 const blowT=()=>E_().blow/(1+.15*lv('power'));
@@ -308,8 +348,9 @@ const supCap=s=>lv(s)>0?SUPC[s]*Math.pow(1.24,lv(s)-1)*(s==='o2'?[1,1.35,1.8][lv
 const SCRAP_T=2;
 const yardCap=()=>30+12*lv('yard');
 const yardRate=()=>.8*Math.pow(1.22,lv('yard'));
-const kranLoad=()=>4*(1+.38*max(0,lv('kran')-1));
-const kranSpd=()=>170*(1+.09*lv('kran'));
+/* in the automated eras the crane operators (scrap helpers) drive it: more lift and a little more speed per operator */
+const kranLoad=()=>4*(1+.38*max(0,lv('kran')-1))*(1+.4*opN('skrap'));
+const kranSpd=()=>170*(1+.09*lv('kran'))*(1+.08*opN('skrap'));
 /* Consteel: the charging crane carries a big lifting magnet (Større magnet adds lift) */
 const craneLift=()=>kranLoad()*(era()===5?1.5*(1+.15*lv('magnet')):1);
 const boxT=4,nBox=()=>3+lv('charge');
@@ -339,13 +380,14 @@ const IT=()=>2*(1+.25*lv('kokbig')),RUNNER=.06;               /* ingot tonnes; s
 const slotsMax=()=>6+lv('kokup');
 const pitTimes=()=>({pour:2.8,solid:2.8/(1+.25*lv('solid')),strip:1.4});
 const crop=h=>h?.04:.12;                    /* pipe crop on ingots; hot-top powder reduces it */
-const kcraneIv=()=>4.5/(1+.28*lv('kran2'));
+const kcraneIv=()=>4.5/(1+.28*lv('kran2'))/(1+.5*opN('blokk'));
 const coolT=()=>6;
 const lfTime=()=>5/(1+.2*lv('lft'));
 const qLF=()=>B_('lf')?1.08+.03*lv('lfq'):1;
 const oseSpd=()=>230*(1+.25*lv('osekran'));
 const nStr=()=>1+lv('strands');
-const strandRate=()=>.6*Math.pow(1.11,lv('caster'));
+/* the player at the caster desk pushes the casting speed: +15 % */
+const strandRate=()=>.6*Math.pow(1.11,lv('caster'))*(G.ctl==='caster'?1.15:1);
 const billetT=()=>clamp(Math.round(fcap()*(1-E_().heel)/18),2,12);
 const gjvRate=()=>.5*Math.pow(1.16,lv('gjvup'))*(lv('bjelke')?1.6:1);
 const vvRate=()=>.7*Math.pow(1.16,lv('vvup'))*(lv('splitt')?1.3:1);
@@ -372,18 +414,18 @@ const PN={yard:'Skrap\u00ADtilførsel',forvarm:'Kurv\u00ADforvarming',elekkran:'
  kanal:'Kanalstein\u00ADlager',hette:'Varmholds\u00ADmasse',torch:'Skjære\u00ADbrenner',varm:'Varm\u00ADinnsetting',hcap:'Hjelper\u00ADkapasitet',gjvup:'Ovns\u00ADkapasitet',
  splitt:'Splitt\u00ADvalsing',stelup:'Finverks\u00ADfart',ktrans:'Kveile\u00ADtransport',hspeed:'Hjelper\u00ADfart',slagcap:'Større slagg\u00ADpotte',kokup:'Flere kokiller',
  operator:'Tapper'};
-const padTitleNo=u=>{const n=upRaw(u);if(u.id==='lans')return lv('lans')?'Vegg\u00ADinjektorer':'Dørlanse';if(u.id==='charge'&&era()===1)return'Flere kasser';if(u.id==='charge'&&era()===5)return'Raskere bånd';if(u.id==='skip'&&rjEra())return'Større bånd';
+const padTitleNo=u=>{const n=upRaw(u);if(u.id==='hcap'&&AUTO())return'Vogn\u00ADkapasitet';if(u.id==='hspeed'&&AUTO())return'Vognfart';if(u.id==='lans')return lv('lans')?'Vegg\u00ADinjektorer':'Dørlanse';if(u.id==='charge'&&era()===1)return'Flere kasser';if(u.id==='charge'&&era()===5)return'Raskere bånd';if(u.id==='skip'&&rjEra())return'Større bånd';
  if(u.id==='power'&&era()===0)return'Sterkere blåse\u00ADmaskin';return PN[u.id]||n};
 /* English pad titles come from the dictionary (keyed by the Norwegian text without soft hyphens) */
 const padTitle=u=>{const n=padTitleNo(u);return NO_()?n:t_(n.replace(/\u00AD/g,''))};
 const upName=u=>t_(upRaw(u).replace(/\u00AD/g,'')).replace(/\u00AD/g,'');
-const hName=h=>t_(h.n);
+const hName=h=>t_(AUTO()&&h.op?h.op:h.n);
 /* a station shows an upgrade when its era/building gate holds; during the first two heats (tutorial) only the intro ones */
 const upOpen=u=>stOn(u.st)&&(!u.req||u.req())&&(u.intro||S.heats>=2||S.pres.n>0);
 const upAvail=u=>upOpen(u)&&lv(u.id)<u.max;
 function upSub(u){const l=lv(u.id),nx=l+1,ar=(a,b,un)=>a+' → '+b+(un?' '+un:''),pc=()=>t_('stk'),fa=n=>t_('+{0} % fart',n),ka=n=>t_('+{0} % kapasitet',n);switch(u.id){
  case'carry':return ar(capCarry(),capCarry()+2,pc());case'speed':return fa(8);
- case'yard':return t_('+{0} % skrap',22);case'kran':{const e5=era()===5?1.5*(1+.15*lv('magnet')):1;return l?ar(tf(craneLift()),tf(4*(1+.38*l)*e5),'t'):era()===5?ar(tf(craneLift()),tf(4*e5),'t'):t_('Henter selv')}case'magnet':return ar(tf(craneLift()),tf(kranLoad()*1.5*(1+.15*(l+1))),'t');
+ case'yard':return t_('+{0} % skrap',22);case'kran':{const e5=era()===5?1.5*(1+.15*lv('magnet')):1;return l?ar(tf(craneLift()),tf(4*(1+.38*l)*e5*(1+.4*opN('skrap'))),'t'):era()===5?ar(tf(craneLift()),tf(4*e5),'t'):t_('Henter selv')}case'magnet':return ar(tf(craneLift()),tf(kranLoad()*1.5*(1+.15*(l+1))),'t');
  case'charge':return era()===1?ar(nBox(),nBox()+1,t_('kasser')):era()===5?fa(20):ET()==='conv'?t_('+{0} % kasse',15):t_('+{0} % kurv',6);
  case'furnace':return ar(fcap(),Math.round(E_().cap*(1+.18*nx)),'t');
  case'power':return ET()==='conv'?ar(L1(blowT()),L1(E_().blow/(1+.15*nx)),t_('s blåsing')):ar(Math.round(MW()),Math.round(E_().P*(1+.15*nx)),t_(E_().pu));

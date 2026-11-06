@@ -1,15 +1,26 @@
 
 /* ---------- solids + navigation ---------- */
 let SOLIDS=[];
+/* mothballed plant on a reserve plot: the plant stands left of centre, its pads on the right */
+function mbGeo(u){const z=mbZone(u);if(!z)return null;const cy=(z.y0+z.y1)/2,cx=z.x0+170;return{z,cx,cy,dem:{x:z.x0+382,y:cy+100},rst:{x:z.x0+382,y:cy-44},torpY:z.y1-46}}
+function mbSolids(u){const G2=mbGeo(u),M=MBU[u];if(!G2)return[];const{cx,cy}=G2;
+ if(M.kind==='conv'){const o=[{x:cx,y:cy+6,r:M.R+16},{x:cx-42,y:cy-M.R*2.15,w:84,h:M.R*1.1}];if(M.torp)o.push({x:G2.z.x0+26,y:G2.torpY-14,w:290,h:28});return o}
+ if(M.kind==='sm')return[{x:cx-148,y:cy-90,w:296,h:180}];
+ return[{x:cx,y:cy,r:94},{x:cx-56,y:cy-128,w:112,h:44}]}
+/* the world is 1140 tall until the first old plant is mothballed (or the control room is needed); then 1560 */
+function setWorldH(){const h=AUTO()||MBK.some(u=>S.mb&&S.mb[u])?WHMAX:WH0;if(h!==WH){WH=h;navDirty=true}}
 const FURN_SOL=()=>ET()==='sm'?[{x:688,y:416,w:226,h:370}]:ET()==='conv'?[{x:POS.F.x,y:POS.F.y+6,r:90},{x:POS.F.x-50,y:POS.F.y-136,w:100,h:70}]:[{x:POS.F.x,y:POS.F.y,r:98}];
 function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
  /* the ladle car track (tap position + the two parking spots) and the hot-metal transfer ladle are not walked across */
  SOLIDS.push({x:POS.tap.x-28,y:POS.tap.y-32,w:56,h:POS.park[1].y+30-(POS.tap.y-32)});if(usesHM())SOLIDS.push({x:POS.hmL.x,y:POS.hmL.y,r:30});
  /* råjernsverk: furnace, cowpers / transformers, coke plant, dust catcher (they stay standing after the Omlegging) */
  /* tall equipment is drawn rising up the screen, so its solid covers the whole drawn body (no walking "behind" it) */
- SOLIDS.push({x:POS.rjF.x,y:POS.rjF.y,r:86},rjEra()?{x:POS.rjF.x-44,y:POS.rjF.y-158,w:88,h:90}:{x:POS.rjF.x-62,y:POS.rjF.y-196,w:124,h:130},{x:-150,y:426,r:28},{x:-174,y:330,w:48,h:100});
+ if(!rjGone()){SOLIDS.push({x:POS.rjF.x,y:POS.rjF.y,r:86},rjEra()?{x:POS.rjF.x-44,y:POS.rjF.y-158,w:88,h:90}:{x:POS.rjF.x-62,y:POS.rjF.y-196,w:124,h:130},{x:-150,y:426,r:28},{x:-174,y:330,w:48,h:100});
  if(rjEra())SOLIDS.push({x:-480,y:190,w:216,h:46});else if(lv('cowper')){const n=min(4,1+floor(lv('cowper')/5));SOLIDS.push({x:-496,y:118,w:48+70*(n-1),h:146})}else SOLIDS.push({x:-300,y:200,w:64,h:40});
- if(lv('koks')){const n=min(3,1+floor(lv('koks')/6));SOLIDS.push({x:-714,y:140,w:44+52*(n-1),h:96})}
+ if(lv('koks')){const n=min(3,1+floor(lv('koks')/6));SOLIDS.push({x:-714,y:140,w:44+52*(n-1),h:96})}}
+ /* mothballed plants on their reserve plots, and the control room's screen wall */
+ setWorldH();for(const u of MBK)if(mbOn(u)&&u!=='rj')SOLIDS.push(...mbSolids(u));
+ if(AUTO())SOLIDS.push({x:CRB.x0+10,y:CRB.y0,w:CRB.x1-CRB.x0-20,h:18});
  /* supply plants: only what is built is solid */if(lv('kull'))SOLIDS.push({x:666,y:60,w:98,h:108});if(lv('o2'))SOLIDS.push({x:786,y:56,w:150,h:104});if(lv('kalk'))SOLIDS.push({x:928,y:68,w:112,h:56});
  if(era()===5){const C=CSG,t=C.y-C.hw;/* Consteel: seal + tunnel + connecting car, off-gas duct, gas cleaning, slag chute, measuring robot */
   SOLIDS.push({x:C.xc,y:t+6,w:C.xs-C.xc,h:2*C.hw-12},{x:C.xs,y:t,w:C.xt-C.xs,h:2*C.hw},{x:C.xt,y:C.y-22,w:32,h:44},{x:C.dx-C.dw/2,y:C.gy,w:C.dw,h:t-C.gy},
@@ -35,7 +46,7 @@ function eraLayout(){const L=era()===5?LAY5:LAY0;if(layEra===era())return;layEra
  try{for(const k in YC)YC[k].n=-1}catch(e){}layKey='';
  /* a scrap helper caught unloading at the old charging point finishes at the new one */
  for(const h of helpers)if(h.r==='skrap'&&h.state==='unload'&&h.tg===d){const[sx,sy]=slot(d,h.gi);h.x=sx;h.y=sy;h.vx=h.vy=0}}
-const NC=20,GW=Math.ceil((WW-WX0)/NC),GH=Math.ceil(WH/NC);
+const NC=20,GW=Math.ceil((WW-WX0)/NC),GH=Math.ceil(WHMAX/NC);
 const BLK=new Uint8Array(GW*GH);let navDirty=true;let FIELDS={},nFields=0;const QUE=new Int32Array(GW*GH);
 function blockedPt(x,y,m){if(x<WX0+26||y<26||x>WW-26||y>WH-26||(x>QX-16&&y>QY-16))return true;
  for(const s of SOLIDS){if(s.r){if(hyp(x-s.x,y-s.y)<s.r+m)return true}else if(x>s.x-m&&x<s.x+s.w+m&&y>s.y-m&&y<s.y+s.h+m)return true}return false}
@@ -141,7 +152,7 @@ const VEH={bil1:{load:0,off:0,drive:0,cap:12},bil2:{load:0,off:0,drive:0,cap:12}
 const itemVal=it=>it.k==='slag'?PR.slag.p*(it.t||2)*(1+.15*lv('slagcap')):val(it);
 function sellVal(it,z){return itemVal(it)*SELLM[z.sell]()*gm()}
 function earn(pr){S.earned+=pr;S.life+=pr;G.earnWin+=pr}
-function sell(a,it,z){const pr=sellVal(it,z);if(a===P)S.money+=pr;else z.cash=(z.cash||0)+pr;earn(pr);S.st.sold++;S.st.soldK[it.k]=(S.st.soldK[it.k]||0)+1;
+function sell(a,it,z){const pr=sellVal(it,z);if(a===P||a.agv)S.money+=pr;else z.cash=(z.cash||0)+pr;earn(pr);S.st.sold++;S.st.soldK[it.k]=(S.st.soldK[it.k]||0)+1;
  const src=it.k==='slag'?'ovn':PR[it.k].z;rec('f:'+src+'>salg',it.k==='slag'?E_().slag*.12:it.t);rec('v:'+src,pr);rec('v:salg',pr);
  if(VEH[z.id])VEH[z.id].load++;
  const[sx,sy]=ws(a.x,a.y-40),onS=sx>-40&&sx<cssW+40&&sy>-40&&sy<cssH+40;
@@ -160,6 +171,8 @@ function pickOne(a,s){if(count(s)<=0)return false;const[it,fx,fy]=take(s);const 
 function act(a,dt){a.cd-=dt;if(a.cd>0)return;
  if(a.stack.length){for(const z of TG){if(z.open()&&near(a,z.x,z.y,z.r)&&unloadOne(a,z)){a.cd=.07;return}}}
  if(a.stack.length>=capCarry())return;
+ /* automated eras: cranes, conveyors and transport cars move everything – the player only delivers what he still holds */
+ if(a===P&&AUTO())return;
  for(const s of SRC){if(!s.open()||count(s)<=0||!near(a,s.x,s.y,s.r))continue;
   if(a.stack.filter(i=>i.k===s.kind).length>=demand(s.kind)){if(T-G.fullHint>2.5&&a.stack.length){G.fullHint=T;ftext(t_(s.kind==='scrap'?'Chargeringen er full':'Ingen plass å levere'),a.x,a.y-90,C.uidim)}continue}
   pickOne(a,s);a.cd=.08;return}}
@@ -191,8 +204,22 @@ const ROUTES={
  blokk:grp([['koklag','plate'],['kokv','koklag'],['st_kanal','plate'],['st_hette','plate'],['p_ingot','PROD']],HIRE.blokk.col),
  strang:prodRoute('billet',HIRE.strang.col),vv:prodRoute('rebar',HIRE.vv.col),tc:prodRoute('tcore',HIRE.tc.col),
  stel:prodRoute('coil',HIRE.stel.col),nett:prodRoute('mesh',HIRE.nett.col),kob:prodRoute('bent',HIRE.kob.col)};
-function syncHelpers(){for(const st in HIRE){const want=lv(HIRE[st].id);let have=helpers.filter(h=>h.r===st).length;const pp=HIREPOS[st];
-  while(have<want){helpers.push({r:st,i:have,gi:helpers.length,x:pp.x+rnd(-10,10),y:pp.y+30,vx:0,vy:0,walk:0,stack:[],cd:0,wait:0,moving:false,state:'toSrc',src:null,tg:null,trip:0,stuck:0});have++}}}
+/* automatic transport cars (driverless) in the automated eras: product pile → buyer or next station */
+const AROUTE=Object.fromEntries(Object.keys(AGVK).map(st=>[st,prodRoute(AGVK[st],HIRE[st].col)]));
+const nAGV=st=>AUTO()&&AGVK[st]&&stOn(st)?1+lv(HIRE[st].id):0;
+function syncHelpers(){for(const st in HIRE){const want=lv(HIRE[st].id);let have=helpers.filter(h=>h.r===st&&!h.agv).length;const pp=HIREPOS[st];
+  while(have<want){helpers.push({r:st,i:have,gi:helpers.length,x:pp.x+rnd(-10,10),y:pp.y+30,vx:0,vy:0,walk:0,stack:[],cd:0,wait:0,moving:false,state:'toSrc',src:null,tg:null,trip:0,stuck:0});have++}
+  const wa=nAGV(st);let ha=helpers.filter(h=>h.r===st&&h.agv).length;const pl=PR[AGVK[st]]&&PR[AGVK[st]].pile;
+  while(ha<wa){const blk=pl&&blockedPt(pl.x,pl.y,14);helpers.push({r:st,agv:true,i:ha,gi:helpers.length,x:blk?pp.x:pl.x+rnd(-14,14),y:blk?pp.y+30:pl.y+rnd(-8,8),vx:0,vy:0,walk:0,stack:[],cd:0,wait:0,moving:false,state:'toSrc',src:null,tg:null,trip:0,stuck:0});ha++}
+  if(ha>wa){for(let i=helpers.length-1;i>=0&&ha>wa;i--){const h=helpers[i];if(h.r===st&&h.agv){retStack(h);helpers.splice(i,1);ha--}}helpers.forEach((h,i)=>h.gi=i)}}}
+/* a helper who becomes an operator puts down what he holds: products back on their pile, the rest back where it came from */
+/* where an idle transport car waits: its own spot on a ring around the pile, clear of buildings */
+function agvPark(h){if(h.pk&&h.pkS===h.src)return h.pk;const s=h.src||{x:h.x,y:h.y},n=helpers.filter(o=>o.agv&&o.r===h.r&&o.gi<h.gi).length;
+ for(let k=0;k<16;k++){const a=(n*2+k)*PI/4+.4,r=k<8?46:76,x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r*.8;if(!blockedPt(x,y,16)){h.pk={x,y};h.pkS=h.src;return h.pk}}h.pk={x:s.x,y:s.y};h.pkS=h.src;return h.pk}
+function retStack(h){for(const it of h.stack){if(isProd(it.k))addPile(it);else if(it.k==='scrap')S.yard.y0=yardT(SRCm.y0)+(it.t||SCRAP_T);else if(it.k==='kokk')S.kok.ready++;else if(it.k==='kokv')S.kok.cool.push(coolT());else if(ST[it.k]!=null)ST[it.k]=min(storeMax(),ST[it.k]+1)}h.stack.length=0}
+function toOperators(){for(const h of helpers)if(!h.agv){retStack(h);toPost(h)}}
+/* the arc-furnace shop comes with its slag pot carrier and electrode crane */
+function autoGrant(){if(!AUTO())return;if(!lv('slaggbil'))S.lv.slaggbil=1;if(!lv('elekkran'))S.lv.elekkran=1;for(const k of['slaggbil','elekkran'])if(S.paid['u:'+k])S.paid['u:'+k]=0}
 function slot(node,gi){const a=gi*2.39996+.6,r=node.yard?54:node.r>60?28:12+(gi%3)*6;return[node.x+Math.cos(a)*r,node.y+Math.sin(a)*r*.6]}
 function hMove(h,tx,ty,dt){const w=navStep(h,tx,ty),dx=w.x-h.x,dy=w.y-h.y,d=hyp(dx,dy),sp=hspeed(),k=min(1,dt*8),dd=hyp(tx-h.x,ty-h.y);
  if(dd>5&&d>.5){const s=dd<30?sp*max(.35,dd/30):sp;h.vx=lerp(h.vx,dx/d*s,k);h.vy=lerp(h.vy,dy/d*s,k)}else{h.vx*=.75;h.vy*=.75}
@@ -207,14 +234,19 @@ function routeWork(r){const R=ROUTES[r];
 /* operator posts: one helper of a route rides in the crane cab (when that crane runs by itself), the rest stand at the desk */
 const postCrane=r=>{const c=POSTS[r]&&POSTS[r].crane&&CRm[POSTS[r].crane];return c&&c.built()?c:null};
 const inCab=h=>h.state==='post'&&h.cab&&postCrane(h.r)&&!postCrane(h.r).man;
-function deskSpot(h){const p=POSTS[h.r],k=helpers.filter(o=>o.r===h.r&&o!==h&&(o.state==='post'||o.state==='toPost')&&!o.cab&&o.gi<h.gi).length;return[p.x-16+k*16,p.y-26]}
-function toPost(h){const c=postCrane(h.r);h.cab=!!c&&!helpers.some(o=>o!==h&&o.r===h.r&&o.cab&&(o.state==='post'||o.state==='toPost'));h.state='toPost';h.idle=0;h.postT=0;h.src=null;h.tg=null}
-function hUpdate(h,dt){const R=ROUTES[h.r];h.cd-=dt;
+/* operator seats: one chair each, spread along the desk (the desk widens with the number of seats) */
+const SEAT=22,seatsAt=r=>max(1,helpers.filter(o=>o.r===r&&!o.agv&&!o.cab&&(o.state==='post'||o.state==='toPost')).length);
+function deskSpot(h){const p=postOf(h.r),k=helpers.filter(o=>o.r===h.r&&!o.agv&&o!==h&&(o.state==='post'||o.state==='toPost')&&!o.cab&&o.gi<h.gi).length,n=seatsAt(h.r);return[p.x+(k-(n-1)/2)*SEAT,p.y-17]}
+const seated=h=>!h.agv&&h.state==='post'&&!inCab(h)&&(()=>{const[px,py]=deskSpot(h);return hyp(px-h.x,py-h.y)<4})();
+function toPost(h){const c=postCrane(h.r);h.cab=!!c&&!helpers.some(o=>o!==h&&o.r===h.r&&!o.agv&&o.cab&&(o.state==='post'||o.state==='toPost'));h.state='toPost';h.idle=0;h.postT=0;h.src=null;h.tg=null}
+function hUpdate(h,dt){const R=h.agv?AROUTE[h.r]:ROUTES[h.r];h.cd-=dt;
+ /* automated eras: helpers are operators – they sit at their desk / in the crane cab and never carry */
+ const op=!h.agv&&AUTO()&&postOf(h.r);if(op&&h.state!=='post'&&h.state!=='toPost'){retStack(h);toPost(h)}
  switch(h.state){
- case'toPost':{const[px,py]=deskSpot(h);const d=hMove(h,px,py,dt);if(d<10){h.state='post';h.postT=0}if(routeWork(h.r)&&h.postT>=0){h.state='toSrc'}break}
+ case'toPost':{const[px,py]=deskSpot(h);const d=hMove(h,px,py,dt);if(d<10){h.state='post';h.postT=0}if(!op&&routeWork(h.r)&&h.postT>=0){h.state='toSrc'}break}
  case'post':{const[px,py]=deskSpot(h);h.postT+=dt;if(hyp(px-h.x,py-h.y)>3)hMove(h,px,py,dt);else{h.vx=h.vy=0;h.moving=false}
-  /* back to carrying when the automation cannot keep up */
-  if(h.postT>4&&(h.wk=(h.wk||0)+dt)>1){h.wk=0;if(routeWork(h.r)){h.state='toSrc';h.cab=false}}break}
+  /* back to carrying when the automation cannot keep up (only before the automated eras) */
+  if(!op&&h.postT>4&&(h.wk=(h.wk||0)+dt)>1){h.wk=0;if(routeWork(h.r)){h.state='toSrc';h.cab=false}}break}
  case'toSrc':{if(!h.src||!h.src.open())h.src=R.src(h);const[sx,sy]=slot(h.src,h.gi);const d=hMove(h,sx,sy,dt);
   if(d<10||(near(h,h.src.x,h.src.y,h.src.r*.75)&&d<40)){if(h.stack.length)G.vSrcLoaded++;h.state='pick';h.wait=0;h.tg=R.tgt(h)}break}
  case'pick':{hMove(h,h.x,h.y,dt);
@@ -223,9 +255,10 @@ function hUpdate(h,dt){const R=ROUTES[h.r];h.cd-=dt;
   if(h.stack.length>=max(1,lim)&&h.stack.length){h.tg=R.tgt(h);h.state='toTgt';break}
   if(h.cd<=0){if(h.src.open()&&count(h.src)>0&&lim>0&&(!h.stack.length||h.stack[0].k===h.src.kind)){pickOne(h,h.src);h.cd=.12;h.wait=0;h.idle=0}else{h.wait+=dt;
     /* nothing to carry for a while: go to the operator desk / crane cab instead of standing on the floor */
-    if(!h.stack.length&&(h.idle=(h.idle||0)+dt)>3&&POSTS[h.r]){toPost(h);break}
+    if(!h.agv&&!h.stack.length&&(h.idle=(h.idle||0)+dt)>3&&POSTS[h.r]){toPost(h);break}
     if(h.stack.length&&h.wait>1.5){h.tg=R.tgt(h);h.state='toTgt';break}
-    if(!h.stack.length&&h.wait>1.2){const s=R.src(h);if(s!==h.src){h.src=s;h.state='toSrc'}else h.tg=R.tgt(h);h.wait=0}}}
+    if(!h.stack.length&&h.wait>1.2){const s=R.src(h);if(s!==h.src){h.src=s;h.state='toSrc'}else h.tg=R.tgt(h);h.wait=0}
+    if(h.agv&&!h.stack.length){const pk=agvPark(h);if(hyp(pk.x-h.x,pk.y-h.y)>4)hMove(h,pk.x,pk.y,dt)}}}
   break}
  case'toTgt':{const tg=h.tg;const[tx,ty]=slot(tg,h.gi);const d=hMove(h,tx,ty,dt);
   if(d<10||(near(h,tg.x,tg.y,tg.r*.75)&&d<40)){h.state='unload';h.wait=0}break}
@@ -346,7 +379,7 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
   if(F.bath>=cap-.01&&F.solid<=1e-6&&!F.hmCh){F.state='refine';F.refT=refineT()}}
  else if(F.state==='refine'){F.arc=typ==='eaf'?.7:0;if(typ==='conv')F.lance=lerp(F.lance,0,dt*4);if(!F.stop)F.refT-=dt;F.temp=lerp(F.temp,1625,dt*.8);
   if(F.refT<=0){F.state='ready';F.temp=1625;if(near(P,F.x,F.y,700)){sfx('ready');buzz(40)}spark(F.x,F.y-10,26,200,C.moltenhi,.7);ftext(t_('1625 °C – KLAR!'),F.x,F.y-120,C.moltenhi);if(!lv('operator')&&S.heats<3)toast(t_('Klar for tapping! Gå på TAPP'))}}
- else if(F.state==='ready'){F.arc=0;F.lance=0;F.temp=1625+Math.sin(T*3)*2;const L=tapLadle();F.waitLadle=L?0:F.waitLadle+dt;if(!L)G.lwAcc=(G.lwAcc||0)+dt;if(lv('operator')&&L){F.opT=(F.opT||0)+dt;if(F.opT>.8)startTap()}}
+ else if(F.state==='ready'){F.arc=0;F.lance=0;F.temp=1625+Math.sin(T*3)*2;const L=tapLadle();F.waitLadle=L?0:F.waitLadle+dt;if(!L)G.lwAcc=(G.lwAcc||0)+dt;if((lv('operator')||G.ctl==='furnace')&&L){F.opT=(F.opT||0)+dt;if(F.opT>(G.ctl==='furnace'?.2:.8))startTap()}}
  else if(F.state==='tapping'){F.tapT+=dt;const t=F.tapT,L=F.L,D=tapDur();F.arc=0;
   const tiltMax=typ==='conv'?1.45:E.tap==='spout'?.45:E.tap==='ebt'?.18:0;F.tilt=t<.6?ease(t/.6)*tiltMax:t<D-.6?tiltMax:max(0,tiltMax*(1-(t-(D-.6))/.6));
   if(t>.6&&t<D-.4){L.steel=min(L.sm,L.steel+L.sm*dt/(D-1));if(Math.random()<.9)spark(L.x,L.y-14,3,170,C.moltenhi,.6,-PI/2)}
@@ -356,8 +389,8 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
  /* ----- electrodes: crane keeps the rack full once bought ----- */
  if(isEAF()&&lv('elekkran')&&S.elek<10&&ST.elek>0){G.ekT=(G.ekT||0)+dt;if(G.ekT>1.5){G.ekT=0;ST.elek--;S.elek++}}
  /* ----- slag truck empties the pot by itself ----- */
- if(slagOn()&&lv('slaggbil')){if(!F.SB&&S.pot>=max(2,potMax()*.5))F.SB={t:0,n:0};
-  if(F.SB){F.SB.t+=dt;if(F.SB.t>=2.5&&!F.SB.n){F.SB.n=S.pot;S.pot=0}if(F.SB.t>=6){const n=F.SB.n;if(n){const pr=n*itemVal({k:'slag',t:2})*SELLM.dock()*gm();S.money+=pr;earn(pr);S.st.soldK.slag=(S.st.soldK.slag||0)+n;rec('v:ovn',pr);rec('f:ovn>salg',n*E_().slag*.12);rec('v:salg',pr)}F.SB=null}}}}
+ if(slagOn()&&lv('slaggbil')){const sbk=AUTO()?1.6*(1+.25*opN('ovn')):1;if(!F.SB&&S.pot>=max(2,potMax()*(AUTO()?.35:.5)))F.SB={t:0,n:0};
+  if(F.SB){F.SB.t+=dt*sbk;if(F.SB.t>=2.5&&!F.SB.n){F.SB.n=S.pot;S.pot=0}if(F.SB.t>=6){const n=F.SB.n;if(n){const pr=n*itemVal({k:'slag',t:2})*SELLM.dock()*gm();S.money+=pr;earn(pr);S.st.soldK.slag=(S.st.soldK.slag||0)+n;rec('v:ovn',pr);rec('f:ovn>salg',n*E_().slag*.12);rec('v:salg',pr)}F.SB=null}}}}
 /* converter charging: tilt toward the charging side, scrap box first, then the råjern ladle; then upright and blow */
 function updConvCharge(dt,cap){
  if(F.ch){const c=F.ch;c.t+=dt;const k=c.t/c.dur;F.tilt=-(k<.18?ease(k/.18):k<.82?1:1-ease((k-.82)/.18))*1.25;
@@ -422,7 +455,7 @@ function updTorps(dt){syncTorps();const sp=torpSpd(),X0=POS.torpX0,X1=POS.torpX1
 function mkCrane(id,o){const d=CRN[id];return Object.assign({id,d,x:d.park.x,y:d.park.y,h:1,state:'idle',job:null,load:0,pay:null,t:0,man:false},o)}
 const CRANES=[
  /* scrap crane; with Consteel it is the charging crane: a big lifting magnet that lays its lifts along the charging section */
- mkCrane('skrap',{n:'skrapkran',built:()=>lv('kran')>0||era()===5,spd:()=>kranSpd(),bonus:'dobbel last',ht:()=>era()===5?.24:.35,
+ mkCrane('skrap',{n:'skrapkran',built:()=>lv('kran')>0||era()>=3,spd:()=>kranSpd(),bonus:'dobbel last',ht:()=>era()===5?.24:.35,
   dropAny:c=>era()===5&&c.x>CSG.x0-4&&c.x<CSG.xc+4&&Math.abs(c.y-CSG.y)<34,
   find(c){const y=bestYard(null);if(count(y)<=0)return null;
    if(era()===5){const tx=csNextDrop(craneLift()*(c.man?2:1)*.3);if(tx==null)return null;return{from:c.man?{x:y.x,y:y.y}:{x:y.x+rnd(-40,40),y:y.y+rnd(-56,56)},to:{x:tx,y:CSG.y},y}}
@@ -442,7 +475,7 @@ const CRANES=[
   find(c){let best=null;for(const L of LADLES){if(L.state!=='await'||L.arm!=null&&CAST.rf<1)continue;const to=ladleDest(L);if(!to)continue;const pr=L.steel>0?2:1;if(!best||pr>best.pr)best={L,to,from:{x:L.x,y:L.y},pr}}return best},
   pick(c,j){if(j.L.state!=='await')return false;const to=ladleDest(j.L);if(!to)return false;j.to=to;j.L.state='carried';c.pay=j.L;return true},
   drop(c,j){const L=c.pay;if(!L)return true;L.x=j.to.x;L.y=j.to.y;arriveLadle(L,j.to);c.pay=null;return true}}),
- mkCrane('mag',{n:'magnetkran',built:()=>B_('vv')&&lv('magkran')>0,spd:()=>150*(1+.08*lv('magkran')),bonus:'dobbel last',
+ mkCrane('mag',{n:'magnetkran',built:()=>B_('vv')&&(lv('magkran')>0||AUTO()),spd:()=>150*(1+.08*lv('magkran')),bonus:'dobbel last',
   find(c){if(!S.tg.strang||lv('varm'))return null;if(PILE.billet.length<=0||nodeRoom('gjv')<=0)return null;return{from:{x:PR.billet.pile.x,y:PR.billet.pile.y},to:{x:POS.gjvIn.x,y:POS.gjvIn.y}}},
   pick(c){const n=min(magLoad()*(c.man?2:1),PILE.billet.length,nodeRoom('gjv'));if(n<=0)return false;c.pay=PILE.billet.splice(PILE.billet.length-n,n);return true},
   drop(c){const a=c.pay||[];while(a.length&&nodeRoom('gjv')>0){const it=a.shift();NODE.gjv.in.push(it);rec('f:strang>gjv',it.t)}if(a.length)return false;c.pay=null;return true}})];
@@ -508,7 +541,7 @@ let kcT=0;
 function updPit(dt){const K=S.kok;
  for(let i=K.cool.length-1;i>=0;i--){K.cool[i]-=dt;if(K.cool[i]<=0){K.cool.splice(i,1);K.ready++}}
  const Lw=LADLES.find(l=>l.state==='pit'&&l.steel>.01);
- kcT+=dt;if(kcT>=kcraneIv()){kcT=0;/* the old mould crane works at base speed; carrying moulds yourself is faster */
+ kcT+=dt;if(kcT>=kcraneIv()){kcT=0;if(AUTO())for(const k of['kanal','hette'])if(lv(k)&&(S[k]|0)<HOPK&&ST[k]>0){ST[k]--;S[k]=(S[k]|0)+1}/* the old mould crane works at base speed; carrying moulds yourself is faster */
   const place=pitRoom()>0&&K.ready>0&&(Lw||K.hot===0);if(place){K.ready--;K.slots++}else if(K.hot>0){K.hot--;K.cool.push(coolT())}else if(pitRoom()>0&&K.ready>0){K.ready--;K.slots++}}
  const pt=pitTimes();
  switch(PIT.state){
@@ -655,9 +688,14 @@ const PADS=[];
 for(const u of UP)PADS.push({id:'u_'+u.id,kind:'up',st:u.st,u,x:-9999,y:-9999,slot:-1,lw:(UPROW[u.st]||{}).lw||74});
 for(const st in HIRE){const hp=HIREPOS[st];PADS.push({id:'hire_'+st,kind:'hire',st,h:HIRE[st],x:hp.x,y:hp.y,lw:hp.lw||84})}
 PADS.push({id:'build',kind:'build',x:0,y:0},{id:'prestige',kind:'prestige',x:PRESPAD.x,y:PRESPAD.y});
+for(const u of MBK){PADS.push({id:'dem_'+u,kind:'demol',u,x:-9999,y:-9999,st:'rj'});if(MBU[u].re)PADS.push({id:'rst_'+u,kind:'restart',u,x:-9999,y:-9999,st:'rj'})}
+/* pad position of a mothballed plant's Demolish / Restart pad */
+function mbPadPos(d){if(d.u==='rj'){d.x=-366;d.y=940;d.st='rj';return true}const g2=mbGeo(d.u);if(!g2)return false;const p=d.kind==='demol'?g2.dem:g2.rst;d.x=p.x;d.y=p.y;d.st=g2.z.id;return true}
+/* a pad the player can pay into now (a locked Restart pad is shown but takes no money) */
+const payable=d=>d.kind!=='prestige'&&vis(d)&&!(d.kind==='restart'&&!restartOK(d.u));
 const PAD=Object.fromEntries(PADS.map(d=>[d.id,d]));
 /* paid-in progress stays per upgrade id ('u:<id>', the same keys older saves use) */
-const paidKey=d=>d.kind==='up'?'u:'+d.u.id:d.kind==='hire'?d.h.id:d.kind==='build'?'b:'+(nextBuild()||{}).id:'pres';
+const paidKey=d=>d.kind==='up'?'u:'+d.u.id:d.kind==='hire'?d.h.id:d.kind==='build'?'b:'+(nextBuild()||{}).id:d.kind==='demol'?'mb:'+d.u:d.kind==='restart'?'rs:'+d.u:'pres';
 /* a pad is shown in its station row while its gate holds; a maxed one keeps its slot as a small MAKS tile */
 const padShown=d=>d.kind==='up'&&d.slot>=0;
 const padMaks=d=>padShown(d)&&lv(d.u.id)>=d.u.max;
@@ -690,12 +728,14 @@ function vis(d){switch(d.kind){
  case'up':return d.slot>=0&&lv(d.u.id)<d.u.max;
  case'hire':return stOn(d.st)&&(!d.h.req||d.h.req())&&lv(d.h.id)<d.h.costs.length;
  case'build':{const b=nextBuild();if(!b)return false;d.x=b.x;d.y=b.y;return true}
- case'prestige':return S.ph>=BUILDS.length}return false}
-function cost(d){switch(d.kind){case'up':return upCost(d.u);case'hire':return d.h.costs[min(lv(d.h.id),d.h.costs.length-1)];case'build':{const b=nextBuild();return b?b.cost:0}}return 0}
-function padName(d){switch(d.kind){case'up':return upName(d.u);case'hire':return hName(d.h);case'build':{const b=nextBuild();return b?t_('Bygg: {0}',t_(b.n)):''}case'prestige':return t_('Nytt verk')}return''}
+ case'prestige':return S.ph>=BUILDS.length;
+ case'demol':case'restart':return mbOn(d.u)&&mbPadPos(d)}return false}
+function cost(d){switch(d.kind){case'up':return upCost(d.u);case'hire':return d.h.costs[min(lv(d.h.id),d.h.costs.length-1)];case'build':{const b=nextBuild();return b?b.cost:0}case'demol':return MBU[d.u].dem;case'restart':return restartOK(d.u)?MBU[d.u].rc:0}return 0}
+function padName(d){switch(d.kind){case'up':return upName(d.u);case'hire':return hName(d.h);case'build':{const b=nextBuild();return b?t_('Bygg: {0}',t_(b.n)):''}case'prestige':return t_('Nytt verk');case'demol':return t_('Riv');case'restart':return t_('Start igjen')}return''}
 function padSub(d){switch(d.kind){case'up':{const u=d.u;if(u.person)return t_('Hjelpere {0} av {1}',lv(u.id),u.max);return lv(u.id)>=u.max?t_('MAKS'):t_('Nivå {0}/{1}',lv(u.id),u.max)}
- case'hire':return t_('Hjelpere {0} av {1}',lv(d.h.id),d.h.costs.length);case'build':return t_('Fase {0} · ny stasjon',S.ph+2);
- case'prestige':return presGain()>0?t_('+{0} ekspertise',presGain()):t_('Tjen {0} totalt',kr(PRES_NEED))}return''}
+ case'hire':return t_(AUTO()&&d.h.op?'Operatører {0} av {1}':'Hjelpere {0} av {1}',lv(d.h.id),d.h.costs.length);case'build':return t_('Fase {0} · ny stasjon',S.ph+2);
+ case'prestige':return presGain()>0?t_('+{0} ekspertise',presGain()):t_('Tjen {0} totalt',kr(PRES_NEED));
+ case'demol':return t_('+{0} t skrap',MBU[d.u].scrap);case'restart':return restartOK(d.u)?t_('Trengs nå'):t_('Låst')}return''}
 function buy(d){if(d.kind==='prestige')return;const key=paidKey(d);let nm='';
  if(d.kind==='up'){const u=d.u;nm=upName(u);S.lv[u.id]=lv(u.id)+1;
   if(u.id==='yard2'){S.yard.y1=max(yardT(SRCm.y1),20);bakeFloor()}if(u.id==='malmkran'&&lv('malmkran')===1)toast(t_('Malmkranen henter malm selv. Trykk STYR KRANEN for å kjøre den selv.'));if(['kalk','o2','kull','koks','cowper'].indexOf(u.id)>=0)rebuildSolids();if(u.id==='malmkran'||u.id==='magkran'||u.id==='varm'||u.id==='rullkob'||u.id==='ktrans'||u.id==='kalk'||u.id==='o2'||u.id==='kull')bakeFloor();
@@ -703,23 +743,28 @@ function buy(d){if(d.kind==='prestige')return;const key=paidKey(d);let nm='';
   if(u.id==='kran'&&lv('kran')===1)toast(t_('Skrapkranen henter skrap selv. Trykk STYR KRANEN for å kjøre den selv (dobbel last).'))}
  else if(d.kind==='hire'){S.lv[d.h.id]=lv(d.h.id)+1;nm=hName(d.h)}
  else if(d.kind==='build'){const b=nextBuild();S.b[b.id]=1;S.ph++;nm=t_(b.n);onBuild(b)}
+ else if(d.kind==='demol'){S.paid[key]=0;demolish(d.u);sfx('buy');buzz([20,30,20]);return}
+ else if(d.kind==='restart'){S.paid[key]=0;restartUnit(d.u);return}
  S.paid[key]=0;syncHelpers();syncLadles();layoutPads();sfx('buy');buzz([20,30,20]);confetti(d.x,d.y);
  ftext(nm+'!',d.x,d.y-50,C.good);if(d.kind!=='build')toast(t_('{0} – kjøpt!',nm));save()}
-function onBuild(b){S.st.eraT[b.id]=S.st.play;rebuildSolids();bakeFloor();layoutPads();
+function onBuild(b){S.st.eraT[b.id]=S.st.play;const nu=mbSync();if(b.id==='eaf1')autoGrant();rebuildSolids();bakeFloor();layoutPads();syncHelpers();
  if(b.era){const E=E_();if(F.state==='tapping')finishTap();
   if(F.ch){const c=F.ch;if(c.hm!=null){F.solid+=c.s+c.hm;F.scIn+=c.s;F.hmIn+=c.hm}else if(!c.done)addSolid(c.amt)}if(F.hmCh){F.bath+=F.hmCh.amt;F.hmIn+=F.hmCh.amt;F.hmCh=null}
   F.ch=null;F.roof=0;F.smDoor=-1;F.tilt=0;F.lance=0;F.bath=min(F.bath,fcap());F.solid=min(F.solid,max(0,fcap()-F.bath));
-  if(b.id==='eaf1')closeRJ();
+  if(b.id==='eaf1'){closeRJ();toOperators();eraCard()}
   toast(E.yr+' · '+t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
   if(usesHM())toast(t_('Chargen: {0}–{1} % råjern, resten skrap',Math.round(E.hm[0]*100),Math.round(E.hm[1]*100)));
   if(b.id==='eaf1'){ST.elek=max(ST.elek,12);S.elek=12}if(b.id==='consteel'){csInit(S.chg);if(G.crane==='skrap'){CRm.skrap.man=false;G.crane=null}const c=CRm.skrap;c.state='idle';c.job=null;c.load=0;toast(t_('Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.'))}G.chFx=2;sfx('mile');buzz([30,40,30,40,60])}
  else if(b.rjEra){toast(year()+' · '+t_('Ny råjernsovn: {0}!',t_(RJE[rjEra()].n)),true);toast(t_(b.d));G.chFx=2;sfx('mile')}
  else{toast(t_('{0} er bygget!',t_(b.n)),true);if(b.d)toast(t_(b.d))}
+ for(const u of nu)if(u!=='rj')toast(t_('{0} er lagt ned på en reservetomt – riv den eller la den stå',mbName(u)));
  G.chGuide=T+30;
  collide(P);for(const h of helpers)collide(h);hudT=0}
 /* Omleggingen: the råjernsverk closes. Liquid iron left anywhere is cast to pigs (still sellable), malmhjelpere are paid back. */
 function closeRJ(){let t=S.hm+S.rj.hearth+RJ.pigAcc;for(const c of TORPS){t+=c.load;c.load=0;c.st='fill';c.x=POS.torpX0+150*c.i;c.ord=c.i}S.hm=0;S.rj.hearth=0;S.rj.ore=0;RJ.pigAcc=0;
- const n=floor(t/PIG_T+.5);for(let i=0;i<n;i++)addPile({k:'pig',t:PIG_T,q:1});
+ /* the liquid iron left is cast to pigs and sold at once, together with any pig iron still lying at the ironworks */
+ const n=floor(t/PIG_T+.5);let pv=0;for(let i=0;i<n;i++)pv+=val({k:'pig',t:PIG_T,q:1});for(const it of PILE.pig)pv+=val(it);const np=n+PILE.pig.length;PILE.pig.length=0;
+ pv*=SELLM.dock()*gm();if(pv>0){S.money+=pv;earn(pv);rec('v:rj',pv);rec('v:salg',pv)}
  let ref=0;for(let i=0;i<lv('h_rj');i++)ref+=HIRE.rj.costs[i];S.lv.h_rj=0;
  for(const u of UP)if((u.st==='rj'||u.st==='rjsup')&&S.paid['u:'+u.id]>0){ref+=S.paid['u:'+u.id];S.paid['u:'+u.id]=0}if(S.paid.h_rj>0){ref+=S.paid.h_rj;S.paid.h_rj=0}
  for(let i=helpers.length-1;i>=0;i--){const h=helpers[i];if(h.r!=='rj')continue;for(const it of h.stack)if(it.k==='pig')addPile(it);helpers.splice(i,1)}helpers.forEach((h,i)=>h.gi=i);
@@ -727,13 +772,35 @@ function closeRJ(){let t=S.hm+S.rj.hearth+RJ.pigAcc;for(const c of TORPS){t+=c.l
  if(G.crane==='malm'){CRm.malm.man=false;G.crane=null}
  if(ref>0)S.money+=ref;
  toast(t_('Omleggingen: Råjernsverket legges ned – nå blir det skrap og lysbue'),true);
- if(n>0)toast(t_('{0} masseljern ligger klare for salg ved malmtoget',n));if(ref>0)toast(t_('Malmhjelperne får nye jobber · +{0} tilbake',kr(ref)))}
+ if(np>0)toast(t_('{0} masseljern solgt · +{1}',np,kr(pv)));if(ref>0)toast(t_('Malmhjelperne får nye jobber · +{0} tilbake',kr(ref)))}
+/* ---------- mothballing ---------- */
+/* keep S.mb consistent and mothball every plant whose successor is built (also migrates saves from before Phase 2:
+   a save already in a later era gets its old plants as if they had been kept) */
+function mbSync(){if(!S.mb||typeof S.mb!=='object'||Array.isArray(S.mb))S.mb={};const nu=[];
+ for(const k in S.mb){const m=S.mb[k];if(!MBU[k]||!m||typeof m!=='object'||['mb','gone','run'].indexOf(m.st)<0||!B_(MBU[k].from)){delete S.mb[k];continue}
+  if(m.st==='gone'){S.mb[k]={st:'gone'};continue}if(k==='rj')m.p='rj';else if(MBPLOTS.indexOf(m.p)<0||MBK.some(o=>o!==k&&S.mb[o]&&S.mb[o].p===m.p&&S.mb[o].st!=='gone'&&MBK.indexOf(o)<MBK.indexOf(k)))m.p=null}
+ for(const k of MBK){const m=S.mb[k];if(m&&m.st!=='gone'&&m.p==null){const p=freePlot();if(p)m.p=p;else S.mb[k]={st:'gone'}}}
+ for(const k of MBK){if(S.mb[k]||!B_(MBU[k].from))continue;const p=k==='rj'?'rj':freePlot();S.mb[k]=p?{st:'mb',p}:{st:'gone'};if(p)nu.push(k)}
+ return nu}
+function freePlot(){for(const p of MBPLOTS)if(!MBK.some(k=>S.mb[k]&&S.mb[k].st!=='gone'&&S.mb[k].p===p))return p;return null}
+const mbUpkeep=()=>MBK.reduce((a,k)=>a+(mbOn(k)?MBU[k].up:0),0);
+const mbName=u=>t_(MBU[u].n);
+function demolish(u){const M=MBU[u];if(!mbOn(u))return;const g2=u==='rj'?{cx:POS.rjF.x,cy:POS.rjF.y}:mbGeo(u);S.mb[u]={st:'gone'};
+ /* a little scrap back to the scrap yard (it may lie above the yard's normal capacity until it is used) */
+ S.yard.y0=yardT(SRCm.y0)+M.scrap;MBC[u]=null;
+ rebuildSolids();bakeFloor();layKey='';layoutPads();if(g2){for(let i=0;i<4;i++)spark(g2.cx+rnd(-60,60),g2.cy+rnd(-50,50),8,140,'#c9ced6',.7);confetti(g2.cx,g2.cy,20)}
+ toast(t_('{0} er revet · +{1} t skrap til skrapplassen',mbName(u),M.scrap),true);collide(P);for(const h of helpers)collide(h);save()}
+/* restart hook (Phase 4: the LD converter + torpedo cars come back for green pig iron); locked until an era needs it */
+function restartUnit(u){if(!mbOn(u)||!restartOK(u))return false;S.mb[u].st='run';MBC[u]=null;rebuildSolids();bakeFloor();toast(t_('{0} startes igjen',mbName(u)),true);save();return true}
+/* the cached dark sprite of each mothballed plant (cleared when it changes) */
+const MBC={};
 function padUnlock(wx,wy){for(const d of PADS){if(!d.lock||!vis(d))continue;if((wx==null||hyp(wx-d.x,wy-d.y)<64)&&near(P,d.x,d.y,40)){d.lock=false;d.dw=.3;sfx('tick',600);buzz(10);return true}}return false}
 function updPads(dt){let onPres=false;layoutPads();
  for(const d of PADS){if(!vis(d))continue;
   if(d.kind==='prestige'){if(near(P,d.x,d.y,34)){onPres=true;G.presT+=dt;if(G.presT>.7&&!G.modal&&!G.presShown){G.presShown=true;openPresModal()}}continue}
   if(!near(P,d.x,d.y,40)){d.lock=false}/* one purchase per visit: step off and back on, or tap the pad, for the next */
-  if(G.crane||!near(P,d.x,d.y,34)||hyp(P.vx,P.vy)>70||d.lock){d.dw=0;continue}d.dw=(d.dw||0)+dt;/* walking across a pad never pays; stop on it to buy */
+  if(G.crane||!near(P,d.x,d.y,34)||hyp(P.vx,P.vy)>70||d.lock){d.dw=0;continue}d.dw=(d.dw||0)+dt;
+  if(d.kind==='restart'&&!restartOK(d.u)){if(d.dw>.3&&T-(G.rstHint||-9)>3){G.rstHint=T;ftext(t_('Låst – en senere ovn trenger den'),d.x,d.y-70,C.uidim)}continue}/* walking across a pad never pays; stop on it to buy */
   const key=paidKey(d),c0=cost(d);if(c0-(S.paid[key]||0)<=.5){buy(d);d.lock=true;continue}
   if(d.dw>.3&&S.money>.001){const c=cost(d),paid=S.paid[key]||0,need=c-paid;let amt=min(need,S.money,max(40,c*.85)*dt);if(need-amt<.5&&S.money>=need)amt=need;S.paid[key]=paid+amt;S.money-=amt;
    if(Math.random()<dt*14){sfx('tick',(paid/c)*400);if(flyers.length<80)flyers.push({it:null,x0:P.x,y0:P.y-30,tg:{x:d.x,y:d.y},i:0,t:0,d:.25})}
@@ -780,7 +847,7 @@ function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>
  default:{const n=NODE[NODEZ[id]];if(!n)return{lv:0,t:''};const q=n.in.length+(n.cur?1:0);
   if(n.cur&&n.util>.9&&n.in.length>=n.cap*.5)return{lv:2,t:t_('Flaskehals')};if(q)return{lv:0,t:tf(rate('o:'+id))+' t/min'};
   const need={gjv:'emner',vv:'emner',tc:'stenger',stel:'stenger',nett:'valstråd',kob:'armering'}[id];
-  const hand=(id==='gjv'&&!lv('varm')&&!lv('magkran'))||(id==='nett'&&!lv('ktrans'))||(id==='kob'&&!lv('rullkob'));
+  const hand=!AUTO()&&((id==='gjv'&&!lv('varm')&&!lv('magkran'))||(id==='nett'&&!lv('ktrans'))||(id==='kob'&&!lv('rullkob')));
   if(id==='stel'&&S.mix==='arm')return{lv:1,t:t_('Valseprogram: Armering')};if(id==='tc'&&B_('stel')&&S.mix==='vals')return{lv:1,t:t_('Valseprogram: Valstråd')};if(id==='gjv'&&!S.tg.strang)return{lv:1,t:t_('Emner går til salg (meny)')};
   return{lv:1,t:hand?t_('Bær {0} hit',t_(need)):t_('Venter på {0}',t_(need))}}}}
 const steelIn=l=>l.steel>.01;
@@ -795,8 +862,10 @@ function doPrestige(){const g=presGain();if(g<1)return;const keep={mute:S.mute,v
 function doReset(){const keep={mute:S.mute,vib:S.vib,infoHint:S.infoHint};S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt spill startet'));/* a reset is a new game: show the start card */showStart()}
 
 /* ---------- useful-work check (idle stats) ---------- */
-function canAfford(){return PADS.some(d=>d.kind!=='prestige'&&vis(d)&&S.money+(S.paid[paidKey(d)]||0)>=cost(d))}
+function canAfford(){return PADS.some(d=>payable(d)&&S.money+(S.paid[paidKey(d)]||0)>=cost(d))}
 function workAvail(noCash){if(!noCash&&TG.some(z=>z.cash>=10&&z.open()))return true;if(!lv('operator')&&F.state==='ready'&&tapLadle())return true;
+ /* automated eras: there is always the control room – take over the furnace or the caster */
+ if(AUTO())return true;
  if(canAfford())return true;
  for(const it of stackKinds(P))if(TG.some(z=>z.open()&&accepts(z,it)&&freeFor(z,it.k)>0))return true;
  if(P.stack.length>=capCarry())return false;
@@ -825,6 +894,7 @@ function initRun(){LADLES.length=0;syncLadles();
  for(const z of TG){const c=S.cash[z.id];z.cash=isFinite(c)&&c>0?+c:0}
  for(const k of['y0','y1'])S.yard[k]=clamp(num(S.yard[k]),0,yardCap());S.yard.ore=clamp(num(S.yard.ore),0,oreYardCap());if(S.yard.y0<12)S.yard.y0=24;
  for(const k in ST){ST[k]=clamp((S.store||{})[k]|0,0,storeMax());if(ST[k]<6)ST[k]=6}
+ mbSync();autoGrant();setWorldH();for(const k in MBC)MBC[k]=null;G.ctl=null;
  helpers.length=0;syncHelpers();layKey='';layoutPads();
  for(const c of CRANES){c.x=c.d.park.x;c.y=c.d.park.y;c.h=1;c.state='idle';c.job=null;c.load=0;c.pay=null;c.man=false}G.crane=null;
  P.x=POS.start.x;P.y=POS.start.y;P.vx=P.vy=0;P.stack=[];

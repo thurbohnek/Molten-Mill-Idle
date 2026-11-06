@@ -113,6 +113,8 @@ function choose(){const S=W.S,n=P.stack.length;
  if(n){const t=W.carryTask();if(t)return{x:t.x,y:t.y,tol:12,k:'carry'}}
  if(MODE==='bot'&&W.presGain()>=1&&W.vis(W.PAD.prestige)&&process.env.PRES)return{x:W.PAD.prestige.x,y:W.PAD.prestige.y,tol:8,k:'pres'};
  const t=W.carryTask();if(t)return{x:t.x,y:t.y,tol:12,k:'src'};
+ /* automated eras (Phase 2): nothing to carry – sit at the furnace desk in the control room like a player would */
+ if(W.AUTO&&W.AUTO()){const d=W.CRDESK.furnace;if(W.G.ctl!=='furnace'&&Math.hypot(P.x-d.x,P.y-d.y-30)<40){J.on=false;W.setCtl('furnace')}return W.G.ctl==='furnace'?{x:P.x,y:P.y,tol:999,k:'desk'}:{x:d.x,y:d.y+30,tol:10,k:'desk'}}
  return null}
 let task=null,taskT=0,simT=0,presDone=0;
 function botStep(){simT+=DT;/* like a player: tap a locked pad only when it is the one we came to buy */{const bt=W.buyTarget();if(bt&&Math.hypot(bt.d.x-P.x,bt.d.y-P.y)<20)W.padUnlock()}

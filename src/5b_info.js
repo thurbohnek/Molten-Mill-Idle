@@ -63,6 +63,17 @@ const IX={
   kobup:['Raskere bøyemaskiner i klipp og bøy.','Faster bending machines at cut & bend.'],
   togp:['Bedre togavtale: toget betaler mer per tonn.','A better rail contract: the train pays more per tonne.'],
   kaip:['Bedre kaiavtale: skipet betaler mer per tonn.','A better shipping contract: the ship pays more per tonne.']},
+ /* operators (arc-furnace eras): helpers who run the plant from desks and crane cabs */
+ op:{
+  skrap:['Kranførere kjører skrapkranen fra kranpulten og førerhuset. Hver kranfører gir kranen større løft og litt mer fart.','Crane operators run the scrap crane from the pulpit and the cab. Each operator gives the crane a bigger lift and a little more speed.'],
+  ovn:['Kontrollromsoperatører kjører ovnen fra kontrollrommet: slaggbilen kjører tidligere og raskere, så slaggpotta aldri stopper ovnen.','Control-room operators run the furnace from the control room: the slag pot carrier goes earlier and faster, so the slag pot never stops the furnace.'],
+  blokk:['Blokkoperatører kjører kokillekranen fra pulten (raskere for hver operatør) og sender ut én transportvogn til med støpeblokker.','Teeming operators run the mould crane from the desk (faster for each operator) and dispatch one more transport car with ingots.'],
+  strang:['Strengoperatører sitter ved strengpulten i kontrollrommet og i magnetkranen. Hver operatør sender ut én transportvogn til med emner.','Caster operators sit at the caster desk in the control room and in the magnet crane. Each operator dispatches one more transport car with billets.'],
+  vv:['Valseoperatører styrer valseverket fra pulten. Hver operatør sender ut én transportvogn til med armeringsstål.','Mill operators run the rolling mill from the desk. Each operator dispatches one more transport car with rebar.'],
+  tc:['Bråkjølingsoperatører styrer linja fra pulten og sender ut én transportvogn til hver.','Quench operators run the line from the desk; each dispatches one more transport car.'],
+  stel:['Valstrådoperatører styrer linja fra pulten og sender ut én transportvogn til hver.','Wire-rod operators run the line from the desk; each dispatches one more transport car.'],
+  nett:['Sveiseoperatører styrer nettverket fra pulten og sender ut én transportvogn til hver.','Welding operators run the mesh line from the desk; each dispatches one more transport car.'],
+  kob:['Bøyeoperatører styrer klipp og bøy fra pulten og sender ut én transportvogn til hver.','Bending operators run cut & bend from the desk; each dispatches one more transport car.']},
  hire:{
   rj:['Malmhjelpere bærer malm fra malmlageret til skipet, og masseljern til salg.','Ore helpers carry ore from the ore yard to the skip, and pig iron to sale.'],
   skrap:['Skraphjelpere bærer skrap fra haugen til chargeringen.','Scrap helpers carry scrap from the pile to the charging area.'],
@@ -76,6 +87,7 @@ const IX={
   kob:['Bøyehjelpere bærer den bøyde armeringen til salg.','Bending helpers take the bent rebar to sale.'],
   all:['Når en kran eller rullebane gjør jobben, venter de ved operatørpulten.','When a crane or conveyor covers the job, they wait at the operator desk.']},
  zone:{
+  cr:['Kontrollrommet: ovnen, øsekranen og strengen kjøres herfra. Ta over en pult ved å trykke på den.','The control room: the furnace, the ladle crane and the caster are run from here. Take over a desk by tapping it.'],
   rjsup:['Forsyning til råjernsovnen: koksverk og cowpere (transformatorer for el-ovnen). Ovnen går ikke raskere enn forsyningen.','Supplies for the iron furnace: coke plant and hot stoves (transformers for the electric smelter). The furnace can’t run faster than its supplies.'],
   rj:['Råjernsverket: malm og koks smeltes til flytende råjern, som går med torpedovogn til stålverket. Overskudd støpes til masseljern.','The ironworks: ore and coke are smelted into liquid hot metal, which goes by torpedo car to the melt shop. Any surplus is cast into pig iron.'],
   skrap:['Skrapplassen: skrap hentes fra haugene og legges i chargeringen ved ovnen.','The scrap yard: scrap is taken from the piles to the charging area next to the furnace.'],
@@ -154,6 +166,18 @@ const IX={
   cast:['Bryter: Auto, bare blokkstøping eller bare stranggjuting. Stå på den for å bytte.','Switch: Auto, ingot casting only or the caster only. Stand on it to flip.'],
   mix:['Valseprogram: armering, valstråd eller begge. Stå på den for å bytte.','Mill program: rebar, wire rod or both. Stand on it to flip.']},
  misc:{
+  agv:['Transportvogn','En førerløs transportvogn henter ferdigvarer ved haugen og kjører dem til kjøperen eller til neste stasjon. Pengene går rett inn.','Transport car','A driverless transport car takes finished products from the pile to the buyer or to the next station. The money comes in at once.'],
+  ctl_furnace:['Ovnspult','Herfra kjøres ovnen. Trykk på pulten (eller STYR) for å ta over: +10 % effekt, og den tapper straks når stålet er klart. Går du fra pulten, tar automatikken over igjen.','Furnace desk','The furnace is run from here. Tap the desk (or TAKE OVER) to take control: +10 % power, and it taps as soon as the steel is ready. Walk away and the automation takes over again.'],
+  ctl_caster:['Strengpult','Herfra kjøres stranggjutingen. Ta over for +15 % støpefart så lenge du sitter her.','Caster desk','The continuous caster is run from here. Take over for +15 % casting speed while you sit here.'],
+  ctl_ladle:['Øsekranpult','Herfra kjører du øsekranen selv: trykk på pulten, så sender et trykk kroken dit.','Ladle-crane desk','Drive the ladle crane yourself from here: tap the desk, then a tap sends the hook there.'],
+  ctl_skrap:['Kranpult','Herfra kjører du skrapkranen selv (dobbel last). Kranførerne sitter her og i førerhuset.','Crane pulpit','Drive the scrap crane yourself from here (double load). The crane operators sit here and in the cab.'],
+  ctl_mag:['Kranpult','Herfra kjører du magnetkranen selv (dobbel last).','Crane pulpit','Drive the magnet crane yourself from here (double load).'],
+  pult:['Operatørpult','Operatørene styrer stasjonen herfra. Ingen bærer – kraner, bånd og transportvogner flytter alt.','Operator desk','The operators run the station from here. Nobody carries – cranes, conveyors and transport cars move everything.'],
+  cr:['Kontrollrom','Ovnen, øsekranen og strengen kjøres herfra. Operatørene sitter ved pultene; du kan ta over en pult selv.','Control room','The furnace, the ladle crane and the caster are run from here. The operators sit at the desks; you can take over a desk yourself.'],
+  mb:['','Lagt ned: kald, uten røyk og lys. Den koster litt i vedlikehold hvert minutt. Riv den for å frigjøre tomta og få litt skrap tilbake.','','Mothballed: cold, no smoke or light. It costs a little upkeep every minute. Demolish it to free the plot and get some scrap back.'],
+  mbre:['','Den kan startes igjen når en senere ovn trenger den.','','It can be restarted when a later furnace needs it.'],
+  dem:['Riv','Betal for å rive det gamle anlegget: tomta blir ledig, vedlikeholdet stopper, og litt skrap går tilbake til skrapplassen.','Demolish','Pay to tear down the old plant: the plot is freed, the upkeep stops and some scrap goes back to the scrap yard.'],
+  rst:['Start igjen','Et nedlagt anlegg kan startes igjen når en senere ovn trenger det. LD-konverteren med torpedovognene kommer tilbake med den elektriske smelteovnen.','Restart','A mothballed plant can be restarted when a later furnace needs it. The LD converter with its torpedo cars returns with the electric smelting furnace.'],
   torp:['Torpedovogn','Isolert jernbanevogn som frakter rundt 1450 °C varmt råjern fra masovnen til stålverket.','Torpedo car','An insulated rail car that carries hot metal at about 1450 °C from the blast furnace to the melt shop.'],
   ladle:['Støpeøse','Stålkappe med ildfast foring. Den tar imot stålet fra ovnen, og kranen bærer den til øseovnen og støpingen.','Ladle','A steel shell with a refractory lining. It takes the steel from the furnace, and the crane carries it to the ladle furnace and to casting.'],
   hmL:['Råjernsøse','Torpedovogna heller råjernet i denne øsa, som så chargerer det i ovnen.','Hot-metal ladle','The torpedo car pours its iron into this ladle, which then charges it into the furnace.'],
@@ -196,6 +220,8 @@ const IX={
   malm:['Gripekran som flytter malm til skipet av seg selv. Du kan styre den selv for dobbel last.','A grab crane that moves ore to the skip by itself. Drive it yourself for a double load.'],
   ose:['Øsekranen løfter fulle øser fra tappen til øseovnen og støpingen, og tomme øser tilbake.','The ladle crane lifts full ladles from the tap to the ladle furnace and casting, and empty ones back.'],
   mag:['Magnetkran som løfter emner fra kjølesenga til gjennomvarmingsovnen.','A magnet crane that lifts billets from the cooling bed to the reheating furnace.']}};
+/* every reserve plot shares one text */
+for(const z of ZONES)if(z.mbp)IX.zone[z.id]=['Reservetomt: her settes et gammelt anlegg når et nytt verk bygges. Lagt ned står det mørkt og koster litt vedlikehold, til du river det.','Reserve plot: an old plant is put here when a new one is built. Mothballed it stands dark and costs a little upkeep until you demolish it.'];
 const ixs=o=>o?(NO_()?o[0]:o[1]):'';
 const ix4=o=>o?(NO_()?[o[0],o[1]]:[o[2],o[3]]):['',''];
 const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
@@ -218,7 +244,10 @@ function hitInfo(wx,wy){
  for(const t of TORPS){if(rjClosed()&&t.i>0)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;
   if(Math.abs(wx-t.x)<70&&Math.abs(wy-y)<26)return{type:'torp',key:'torp:'+t.i,t,x:t.x,y}}
  for(const c of CRANES){if(c.built()&&hyp(wx-c.x,wy-c.y)<30)return{type:'crane',key:'crane:'+c.id,c,x:c.x,y:c.y}}
- for(const h of helpers){if(!inCab(h)&&hyp(wx-h.x,wy-(h.y-14))<18)return{type:'helper',key:'helper:'+h.gi,h,x:h.x,y:h.y}}
+ for(const h of helpers){if(!inCab(h)&&hyp(wx-h.x,wy-(h.y-14))<(h.agv?22:18))return{type:h.agv?'agv':'helper',key:(h.agv?'agv:':'helper:')+h.gi,h,x:h.x,y:h.y}}
+ for(const d of ctlDesks()){if(inR(wx,wy,d.x-24,d.y-16,48,40))return{type:'misc',key:'misc:ctl_'+d.id,id:'ctl_'+d.id,d,x:d.x,y:d.y}}
+ for(const u of MBK){if(!mbOn(u)||u==='rj')continue;const g2=mbGeo(u);if(g2&&inR(wx,wy,g2.z.x0,g2.z.y0+30,330,g2.z.y1-g2.z.y0-40))return{type:'mb',key:'mb:'+u,u,x:g2.cx,y:g2.cy}}
+ if(AUTO()&&inR(wx,wy,CRB.x0,CRB.y0,CRB.x1-CRB.x0,CRB.y1-CRB.y0))return{type:'misc',key:'misc:cr',id:'cr',x:(CRB.x0+CRB.x1)/2,y:CRB.y0+40};
  if(era()===5){const C=CSG,cs=(id,x,y)=>({type:'cs',key:'cs:'+id,id,x,y});
   if(hyp(wx-TROBP.x,wy-TROBP.y)<28||inR(wx,wy,882,686,30,76))return cs('robot',TROBP.x,TROBP.y);
   if(inR(wx,wy,POS.F.x-16,POS.F.y+84,32,SLAGP.y-SLAGP.h/2-POS.F.y-80))return cs('door',POS.F.x,POS.F.y+96);
@@ -231,9 +260,9 @@ function hitInfo(wx,wy){
   if(inR(wx,wy,C.dx-C.dw/2-8,140,C.dw+16,C.y-C.hw-140)||inR(wx,wy,364,150,90,120))return cs('duct',C.dx,wy);
   if(inR(wx,wy,60,40,300,200))return cs('filter',wx,wy)}
  if(inR(wx,wy,GAUGE.x-60,GAUGE.y-22,120,48)||(ET()==='sm'?inR(wx,wy,676,404,250,394):hyp(wx-POS.F.x,wy-POS.F.y)<112))return{type:'furnace',key:'furnace',x:POS.F.x,y:POS.F.y};
- if(Math.abs(wx-POS.rjF.x)<95&&wy>POS.rjF.y-260&&wy<POS.rjF.y+92)return{type:'rjf',key:'rjf',x:POS.rjF.x,y:POS.rjF.y};
+ if(!rjGone()&&Math.abs(wx-POS.rjF.x)<95&&wy>POS.rjF.y-260&&wy<POS.rjF.y+92)return{type:'rjf',key:'rjf',x:POS.rjF.x,y:POS.rjF.y};
  if(usesHM()&&hyp(wx-POS.hmL.x,wy-POS.hmL.y)<40)return{type:'misc',key:'misc:hmL',id:'hmL',x:POS.hmL.x,y:POS.hmL.y};
- for(const r in POSTS){const p=POSTS[r];if(lv(HIRE[r].id)&&stOn(r)&&inR(wx,wy,p.x-24,p.y-14,48,40))return{type:'misc',key:'misc:desk',id:'desk',r,x:p.x,y:p.y}}
+ for(const r in POSTS){const p=postOf(r);if((lv(HIRE[r].id)||AUTO()&&r!=='rj')&&stOn(r)&&inR(wx,wy,p.x-24,p.y-14,48,40))return{type:'misc',key:'misc:desk',id:AUTO()?'pult':'desk',r,x:p.x,y:p.y}}
  if(lv('operator')&&inR(wx,wy,TAPDESK.x-24,TAPDESK.y-40,48,66))return{type:'pad',key:'pad:u_operator',d:PAD.u_operator,x:TAPDESK.x,y:TAPDESK.y};
  /* plant equipment: supply plants and the råjernsverk machines explain their upgrade */
  const eq=[['kalk',928,68,112,56,()=>lv('kalk')],['o2',786,56,150,104,()=>lv('o2')],['kull',666,60,98,108,()=>lv('kull')],['koks',-716,130,160,110,()=>lv('koks')],
@@ -264,8 +293,9 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'pad':{const d=h.d;if(!d)return null;
   if(d.kind==='up'){const u=d.u;let n=upNums(u);if(['kalk','o2','kull'].indexOf(u.id)>=0&&lv(u.id))n+=' · '+t_('{0} av {1} t/min',tf(supCap(u.id)*60),tf(F.rp*60));if(['koks','cowper'].indexOf(u.id)>=0&&lv(u.id))n+=' · '+t_('{0} av {1} t/min',tf(rjSupCap(u.id)*60),tf(RJ.rp*60));
    return{t:upName(u),d:ixs(IX.up[u.id]),n}}
-  if(d.kind==='hire'){const l=lv(d.h.id),N=d.h.costs.length;return{t:hName(d.h),d:ixs(IX.hire[d.st])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',l,N)+(l<N?' · '+kr(cost(d)-(S.paid[paidKey(d)]||0)):'')}}
+  if(d.kind==='hire'){const l=lv(d.h.id),N=d.h.costs.length,au=AUTO()&&IX.op[d.st];return{t:hName(d.h),d:au?ixs(IX.op[d.st]):ixs(IX.hire[d.st])+' '+ixs(IX.hire.all),n:t_(au?'Operatører {0} av {1}':'Hjelpere {0} av {1}',l,N)+(l<N?' · '+kr(cost(d)-(S.paid[paidKey(d)]||0)):'')}}
   if(d.kind==='build'){const b=nextBuild();if(!b)return null;const[,tx]=ix4(IX.misc.build);return{t:t_('Bygg: {0}',t_(b.n)),d:t_(b.d)+' '+tx,n:kr(b.cost)+' · '+t_('betalt {0}',kr(S.paid['b:'+b.id]||0))}}
+  if(d.kind==='demol'||d.kind==='restart'){const M=MBU[d.u],dm=d.kind==='demol',[ti,tx]=ix4(IX.misc[dm?'dem':'rst']);return{t:ti+': '+mbName(d.u),d:tx,n:dm?kr(cost(d)-(S.paid[paidKey(d)]||0))+' · '+t_('+{0} t skrap',M.scrap)+' · '+t_('vedlikehold {0}',kr(M.up,'/min')):restartOK(d.u)?kr(cost(d)):t_('Låst · ingen ovn trenger den ennå')}}
   if(d.kind==='prestige'){const[ti,tx]=ix4(IX.misc.prestige);return{t:ti,d:tx,n:presGain()>0?t_('+{0} ekspertise',presGain()):t_('Tjen {0} totalt',kr(PRES_NEED))+' · '+kr(S.earned)}}return null}
  case'sw':{const s=h.s;return{t:t_(s.lab),d:ixs(IX.sw[s.id]),n:t_('Nå: {0}',swTxt(s.id).replace(/^[^:]*: /,''))}}
  case'tap':{const[ti,tx]=ix4(IX.ring.tap);return{t:ti,d:tx+(lv('operator')?' '+ixs(IX.up.operator):''),n:furnNums()}}
@@ -292,9 +322,11 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
    filter:()=>'',car:()=>fd,door:()=>t_('Slagg {0}/{1}',S.pot,potMax()),pit:()=>S.pot+'/'+potMax()+(lv('slaggbil')?' · '+t_('Slaggbil'):''),
    robot:()=>(TROB.n?t_('Siste måling: {0} °C',TROB.val)+' · '+t_('{0} målinger',TROB.n):t_('Venter på første måling'))}[h.id]();
   return{t:ti,d:tx,n}}
- case'helper':{const r=h.h.r,hi=HIRE[r];return{t:hName(hi),d:ixs(IX.hire[r])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}}
+ case'helper':{const r=h.h.r,hi=HIRE[r];if(AUTO()&&IX.op[r])return{t:hName(hi),d:ixs(IX.op[r]),n:t_('Operatører {0} av {1}',lv(hi.id),hi.costs.length)};return{t:hName(hi),d:ixs(IX.hire[r])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}}
+ case'agv':{const r=h.h.r,[ti,tx]=ix4(IX.misc.agv);return{t:ti,d:tx,n:t_('{0} vogner ved {1}',nAGV(r),t_(PR[AGVK[r]].n))+' · '+t_('last {0} stk',hcap())}}
+ case'mb':{const u=h.u,M=MBU[u],[,tx]=ix4(IX.misc.mb),[,tr]=ix4(IX.misc.mbre);return{t:mbName(u)+' · '+M.yr,d:tx+(M.re?' '+tr:''),n:t_('LAGT NED')+' · '+t_('vedlikehold {0}',kr(M.up,'/min'))}}
  case'furnace':{const E=E_();return{t:t_(E.n)+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
- case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:t_(RJE[rjEra()].n),d:tx,n:t_('NEDLAGT')}}const st=status('rj');return{t:t_(RJE[rjEra()].n)+' · '+RJE[rjEra()].yr,d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
+ case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed),[,tm]=ix4(IX.misc.mb);return{t:t_(RJE[rjEra()].n),d:tx+' '+tm,n:t_('NEDLAGT')+(mbOn('rj')?' · '+t_('vedlikehold {0}',kr(MBU.rj.up,'/min')):'')}}const st=status('rj');return{t:t_(RJE[rjEra()].n)+' · '+RJE[rjEra()].yr,d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
  case'up':{const u=h.u;return infoFor({type:'pad',d:PAD['u_'+u.id]})}
  case'cast':{const[ti,tx]=ix4(IX.cast[h.id]);const n={turret:()=>upNums(UPm.turret),shroud:()=>t_(CAST.pour?'Skjermrør på':'Skjermrør parkert'),tundish:()=>t_('Stålnivå {0} %',Math.round(CAST.tlev*100)),
    mould:()=>t_('{0} av {1} strenger i bruk',CAST.on?min(nStr(),CAST.nOn):nStr(),8)+' · '+upNums(UPm.strands),spray:()=>upNums(UPm.caster),
@@ -304,11 +336,14 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
   if(h.id==='hmL')n=t_('råjern {0} t',tf(S.hm))+' / '+Math.round(hmCap())+' t';
   else if(h.id==='pigm')n=PILE.pig.length+' '+t_('stk');
   else if(h.id==='train')n=tf(yardT(SRCm.ore))+'/'+oreYardCap()+' t';
-  else if(h.id==='desk'){const hi=HIRE[h.r];n=hName(hi)+' · '+t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}
+  else if(h.id==='desk'||h.id==='pult'){const hi=HIRE[h.r];n=hName(hi)+' · '+t_(AUTO()?'Operatører {0} av {1}':'Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}
+  else if(h.id==='cr')n=t_('{0} operatører',helpers.filter(o=>!o.agv&&(o.r==='ovn'||o.r==='strang')&&o.state==='post'&&!inCab(o)).length);
+  else if(h.id&&h.id.startsWith('ctl_')){const d=h.d||{};n=(d.crane?G.crane===d.crane:G.ctl===d.id)?t_('Du styrer'):t_('Automatikk');if(h.id==='ctl_furnace')n+=' · '+furnNums()}
   return{t:T2,d:tx,n}}
  case'zone':{const z=h.z,built=zoneBuilt(z),nb=nextBuild();
   if(!built&&!(z.rj&&rjClosed())){const[ti,tx]=ix4(IX.misc.plot);const b=nb&&(ZN[nb.z]===z||(nb.id==='vv'&&(z.id==='gjv'||z.id==='vv'))||(nb.id==='stel'&&z.id==='salg2'))?nb:null;
    return{t:ti+(b?' · '+t_(b.n):''),d:b?tx.replace('{0}',t_(b.n))+' '+t_(b.d):ixs(IX.zone[z.id]),n:b?kr(b.cost):''}}
+  if(z.mbp){const u=MBK.find(k=>mbOn(k)&&S.mb[k].p===z.id);if(u)return infoFor({type:'mb',u})}
   if(z.rj&&rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:scase(t_(z.n)),d:tx,n:t_('NEDLAGT')}}
   const st=status(z.id),t=z.id==='ovn'?scase(t_('STÅLVERK'))+' · '+t_(E_().n):z.id==='rj'?scase(t_('RÅJERNSVERK'))+' · '+t_(RJE[rjEra()].n):scase(t_(z.n));
   return{t,d:ixs(IX.zone[z.id]),n:st&&st.t?st.t:''}}}

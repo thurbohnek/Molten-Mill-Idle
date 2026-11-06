@@ -116,6 +116,13 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 /* tap-to-explain bubble: dark panel, hazard border; placed above or below the play area, whichever is farther from the object */
 #info{position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:min(88%,440px);box-sizing:border-box;background:var(--panel2);border:2px solid var(--hazard);border-radius:16px;padding:10px 14px 11px;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:4;pointer-events:none;font-size:13.5px;line-height:1.4;display:none}
 #info.on{display:block}
+#eracard{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%) scale(.94);width:min(86%,380px);box-sizing:border-box;background:#10131a;border:2px solid #7fe0ff;border-radius:18px;padding:14px 16px 12px;box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:5;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+#eracard.on{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+#eracard small{display:block;color:#7fe0ff;font-weight:800;font-size:12px;letter-spacing:.06em;margin:0 0 4px}
+#eracard b{display:block;font-size:18px;font-weight:800;color:var(--ui);margin:0 0 6px;line-height:1.25}
+#eracard p{margin:0 0 6px;color:var(--ui);font-size:13.5px;line-height:1.45}
+#eracard p.dim{color:var(--uidim);font-size:12.5px;margin:6px 0 0}
+@media (prefers-reduced-motion: reduce){#eracard{transition:none}}
 #info b{display:block;font-size:15px;font-weight:800;color:var(--hazard);margin:0 0 3px}
 #info p{margin:0;color:var(--ui);font-weight:500}
 #info p.n{margin-top:6px;color:var(--uidim);font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -177,6 +184,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
     <div class="mwrap"><div class="mscroll" id="mapScroll"><svg id="mapSvg" viewBox="0 0 1420 500" role="group" aria-label="Linja fra skrap til salg" data-ia="Linja fra skrap til salg"></svg></div><div class="mzoom" role="group" aria-label="Zoom"><button type="button" id="mzIn" aria-label="Zoom inn" data-ia="Zoom inn">+</button><button type="button" id="mzOut" aria-label="Zoom ut" data-ia="Zoom ut">−</button><button type="button" id="mzFit" aria-label="Tilpass kartet" data-ia="Tilpass kartet">⤢</button></div></div>
     <div id="mapPanel" class="mpanel" aria-live="polite"></div>
   </div>
+  <div id="eracard" role="status" aria-live="polite"><small id="ecY"></small><b id="ecT"></b><p id="ecP"></p><p id="ecQ"></p><p class="dim" id="ecD"></p></div>
   <div id="info" role="status" aria-live="polite"><b id="infoT"></b><p id="infoP"></p><p class="n" id="infoN"></p></div>
   <div id="toast" role="status" aria-live="polite"></div>
 </div></div>
