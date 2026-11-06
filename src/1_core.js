@@ -1,3 +1,4 @@
+/* Molten Mill Idle: Steel Tycoon — Copyright (c) 2026 Studio.grane. All rights reserved. */
 function start(){
 'use strict';
 if(window.__smeltOn)return;window.__smeltOn=1;
@@ -92,13 +93,13 @@ const PR={
  ingot:{n:'Støpeblokk',p:10.5,z:'blokk',pile:{x:1712,y:300},col:'#e8b04a'},
  billet:{n:'Emne',p:10.5,z:'strang',pile:{x:1705,y:1052},col:'#ff5d5d'},
  rebar:{n:'Armeringsstål',p:13.5,z:'vv',pile:{x:2790,y:866},col:'#b9c1cb'},
- tcore:{n:'Tempcore-armering',p:14.25,z:'tc',pile:{x:3086,y:850},col:'#6fb7ff'},
+ tcore:{n:'Bråkjølt armering',p:14.25,z:'tc',pile:{x:3086,y:850},col:'#6fb7ff'},
  coil:{n:'Valstråd',p:13.9,z:'stel',pile:{x:3070,y:244},col:'#c39bff'},
  mesh:{n:'Armeringsnett',p:15,z:'nett',pile:{x:3456,y:330},col:'#9bd35f'},
  bent:{n:'Bøyd armering',p:16.5,z:'kob',pile:{x:3456,y:1050},col:'#4dd0c8'},
  slag:{n:'Slagg (pukk)',p:.6}};
 const PRK=['pig','ingot','billet','rebar','tcore','coil','mesh','bent'];
-const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektroder',kokk:'kokiller',kokv:'varme kokiller',kanal:'kanalstein',hette:'varmholdsmasse',ingot:'støpeblokker',billet:'emner',rebar:'armeringsstål',tcore:'Tempcore-armering',coil:'valstråd',mesh:'armeringsnett',bent:'bøyd armering'};
+const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektroder',kokk:'kokiller',kokv:'varme kokiller',kanal:'kanalstein',hette:'varmholdsmasse',ingot:'støpeblokker',billet:'emner',rebar:'armeringsstål',tcore:'Bråkjølt armering',coil:'valstråd',mesh:'armeringsnett',bent:'bøyd armering'};
 
 /* ---------- steel furnace eras (same plot), following the works' history: Bessemer → SM → LD → [Omlegging] → arc furnaces.
    type conv = converter (charge råjern + skrap, blow, tilt to tap), sm = open hearth, eaf = arc furnace.
@@ -128,8 +129,8 @@ const BUILDS=[
  {id:'tog',sn:'Jernbane',n:'Jernbane',z:'utlast',cost:5e5,x:3700,y:440,d:'Toget betaler mer per tonn enn lastebilen.'},
  {id:'eaf1',sn:'Omlegging',n:'Omlegging: lysbueovn',z:'ovn',cost:1.2e6,x:990,y:1040,era:3,d:'Råjernsverket legges ned. Stålet lages av skrap i lysbueovn.'},
  {id:'uhp',sn:'UHP-ovn',n:'UHP-lysbueovn',z:'ovn',cost:3e6,x:990,y:1040,era:4,d:'Vannkjølte paneler, stor trafo, O₂-lanser og kullinjeksjon.'},
- {id:'tc',sn:'Tempcore',n:'Tempcore',z:'tc',cost:9e6,x:3028,y:600,d:'Bråkjøling gir B500-armering uten dyre legeringer.'},
- {id:'stel',sn:'Valstråd',n:'Valstråd',z:'stel',cost:2.2e7,x:2700,y:150,d:'Ferdigblokk, leggehode og Stelmor. Med egen lastebil.'},
+ {id:'tc',sn:'Bråkjøling',n:'Bråkjøling',z:'tc',cost:9e6,x:3028,y:600,d:'Bråkjøling gir B500-armering uten dyre legeringer.'},
+ {id:'stel',sn:'Valstråd',n:'Valstråd',z:'stel',cost:2.2e7,x:2700,y:150,d:'Ferdigblokk, leggehode og kjølebane. Med egen lastebil.'},
  {id:'nett',sn:'Nettverk',n:'Nettverk',z:'nett',cost:5.5e7,x:3330,y:200,d:'Valstråd sveises til armeringsnett.'},
  {id:'consteel',sn:'Consteel',n:'Consteel-ovn',z:'ovn',cost:1.3e8,x:990,y:1040,era:5,d:'Kontinuerlig chargering med forvarmingstunnel og flat bad.'},
  {id:'kob',sn:'Klipp og bøy',n:'Klipp og bøy',z:'kob',cost:3.2e8,x:3330,y:950,d:'Ferdig bøyd armering per byggeprosjekt.'},
@@ -192,9 +193,9 @@ const UP=[
  {id:'vvup',st:'vv',n:'Valsefart',max:24,base:3.5e4,m:1.42},
  {id:'splitt',st:'vv',n:'Splittvalsing',max:1,costs:[3e6]},
  {id:'rullkob',st:'vv',n:'Rullebane til klipp og bøy',max:1,costs:[1.2e8],req:()=>B_('kob')},
- {id:'tcup',st:'tc',n:'Tempcore-kapasitet',max:24,base:2.5e6,m:1.42},
+ {id:'tcup',st:'tc',n:'Bråkjølingskapasitet',max:24,base:2.5e6,m:1.42},
  {id:'stelup',st:'stel',n:'Finverksfart',max:24,base:5e6,m:1.42},
- {id:'stelmor',st:'stel',n:'Stelmor-vifter',max:1,costs:[2e7]},
+ {id:'stelmor',st:'stel',n:'Kjølevifter',max:1,costs:[2e7]},
  {id:'ktrans',st:'stel',n:'Kveiletransport',max:1,costs:[5e7],req:()=>B_('nett')},
  {id:'nettup',st:'nett',n:'Sveisefart',max:24,base:1.2e7,m:1.42},
  {id:'kobup',st:'kob',n:'Bøyefart',max:24,base:6e7,m:1.42},
@@ -209,7 +210,7 @@ const HIRE={
  blokk:{id:'h_blokk',n:'Blokkhjelper',costs:[250,2500,25000],col:'#ff8c5a'},
  strang:{id:'h_strang',n:'Emnehjelper',costs:[3e4,2.5e5,2e6],col:'#a0d8ff'},
  vv:{id:'h_vv',n:'Valseverkshjelper',costs:[1.5e5,1.2e6,1e7],col:'#d0d6de'},
- tc:{id:'h_tc',n:'Tempcorehjelper',costs:[3e6,2e7,1.2e8],col:'#7fe0d8'},
+ tc:{id:'h_tc',n:'Bråkjølingshjelper',costs:[3e6,2e7,1.2e8],col:'#7fe0d8'},
  stel:{id:'h_stel',n:'Valstrådhjelper',costs:[8e6,5e7,3e8],col:'#c48bff'},
  nett:{id:'h_nett',n:'Netthjelper',costs:[1.5e7,1e8,6e8],col:'#9bd35f'},
  kob:{id:'h_kob',n:'Bøyehjelper',costs:[6e7,4e8,3e9],col:'#ef8ad6'}};

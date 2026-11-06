@@ -25,4 +25,11 @@ npm run test:long    # 8-hour bot playthrough
 npm run test:browser # Playwright tests (needs `npm i` and a Chromium)
 ```
 
-© Studio.grane
+## Copyright
+
+Copyright © 2026 Studio.grane. All rights reserved.
+
+The source code is public so the game can be played and reviewed, but it is **not open source**.
+You may not copy, modify, redistribute or publish the game or its code without written permission.
+See [`LICENSE`](LICENSE) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+Contact: studio.grane@gmail.com

@@ -16,7 +16,7 @@ function drawTitle(t){ctx.fillStyle=C.bg;ctx.fillRect(0,0,cssW,cssH);const cx=cs
  ctx.font=`800 ${fs}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';const lg=ctx.createLinearGradient(0,cy-fs*1.1,0,cy+fs*.4);lg.addColorStop(0,C.moltenhi);lg.addColorStop(1,C.molten);
  ctx.shadowColor='rgba(255,122,26,.7)';ctx.shadowBlur=RM?0:18;ctx.fillStyle=lg;ctx.fillText('MOLTEN',cx,cy-fs*.55);ctx.fillStyle=C.ui;ctx.shadowBlur=0;ctx.fillText('MILL',cx,cy+fs*.45);
  ctx.fillStyle=C.hazard;ctx.fillRect(cx-fs*1.3,cy+fs*1.05,fs*2.6,4);
- txt('IDLE · STEEL TYCOON',cx,cy+fs*1.05+22,13,C.uidim,800);ctx.globalAlpha=1}
+ txt('IDLE · STEEL TYCOON',cx,cy+fs*1.05+22,13,C.uidim,800);txt('© 2026 Studio.grane',cx,cssH-30,11,C.uidim,500);ctx.globalAlpha=1}
 function endIntro(){if(G.mode!=='intro')return;G.mode='play';stage.classList.remove('intro');try{cv.focus({preventScroll:true})}catch(e){}
  if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(ERA[0].yr+' · '+t_('Fase 1: Masovn og Bessemer-konverter'),true);
  /* every new game (first start, reset or a new mill) opens with the How to play card */

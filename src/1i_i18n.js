@@ -27,7 +27,7 @@ const EN={
  'BESSEMER':'BESSEMER','SM-OVN':'OPEN HEARTH','LD-KONVERTER':'LD CONVERTER','LYSBUEOVN':'ARC FURNACE','UHP-LYSBUEOVN':'UHP ARC FURNACE','CONSTEEL-OVN':'CONSTEEL',
  'EL-RÅJERNSOVN':'ELECTRIC SMELTER',
  /* --- products / kinds --- */
- 'Masseljern':'Pig iron','Støpeblokk':'Ingot','Emne':'Billet','Armeringsstål':'Rebar','Tempcore-armering':'Tempcore rebar','Valstråd':'Wire rod','Armeringsnett':'Rebar mesh',
+ 'Masseljern':'Pig iron','Støpeblokk':'Ingot','Emne':'Billet','Armeringsstål':'Rebar','Bråkjølt armering':'Quenched rebar','Valstråd':'Wire rod','Armeringsnett':'Rebar mesh',
  'Bøyd armering':'Bent rebar','Slagg (pukk)':'Slag (aggregate)',
  'skrap':'scrap','malm':'ore','masseljern':'pig iron','slagg':'slag','elektroder':'electrodes','kokiller':'moulds','varme kokiller':'hot moulds','kanalstein':'runner bricks',
  'varmholdsmasse':'hot-top compound','støpeblokker':'ingots','emner':'billets','armeringsstål':'rebar','valstråd':'wire rod','armeringsnett':'rebar mesh','bøyd armering':'bent rebar',
@@ -40,7 +40,7 @@ const EN={
  'Koksmasovn':'Coke blast furnace','Elektrisk råjernsovn':'Electric iron smelter',
  /* --- builds --- */
  'SM-ovn':'Open hearth','Øseovn':'Ladle furnace','Strang':'Caster','Stranggjuting':'Continuous caster','Valseverk':'Rolling mill','El-råjernsovn':'Electric smelter',
- 'Jernbane':'Railway','Omlegging':'Conversion','Omlegging: lysbueovn':'Conversion: arc furnace','UHP-ovn':'UHP furnace','Tempcore':'Tempcore','Nettverk':'Mesh welding',
+ 'Jernbane':'Railway','Omlegging':'Conversion','Omlegging: lysbueovn':'Conversion: arc furnace','UHP-ovn':'UHP furnace','Bråkjøling':'Quench line','Nettverk':'Mesh welding',
  'Consteel':'Consteel','Klipp og bøy':'Cut & bend','Kai':'Quay','Masovn og Bessemer':'Blast furnace & Bessemer',
  'Råjern og skrap i kasser – større charger, men trenger kalk.':'Hot metal and scrap charged in boxes – bigger heats, but it needs lime.',
  'Legeringer og temperatur i øsa gir bedre kvalitet og høyere pris.':'Alloying and temperature control in the ladle give better quality and a higher price.',
@@ -52,7 +52,7 @@ const EN={
  'Råjernsverket legges ned. Stålet lages av skrap i lysbueovn.':'The ironworks closes. Steel is made from scrap in an electric arc furnace.',
  'Vannkjølte paneler, stor trafo, O₂-lanser og kullinjeksjon.':'Water-cooled panels, a big transformer, O₂ lances and coal injection.',
  'Bråkjøling gir B500-armering uten dyre legeringer.':'Quenching gives B500 rebar without expensive alloys.',
- 'Ferdigblokk, leggehode og Stelmor. Med egen lastebil.':'Finishing block, laying head and Stelmor. With its own truck.',
+ 'Ferdigblokk, leggehode og kjølebane. Med egen lastebil.':'Finishing block, laying head and cooling conveyor. With its own truck.',
  'Valstråd sveises til armeringsnett.':'Wire rod is welded into rebar mesh.',
  'Kontinuerlig chargering med forvarmingstunnel og flat bad.':'Continuous charging through a preheating tunnel, flat-bath operation.',
  'Ferdig bøyd armering per byggeprosjekt.':'Rebar cut and bent to order for each building project.',
@@ -71,7 +71,7 @@ const EN={
  'Kanalsteinlager':'Runner-brick store','Varmholdsmasse':'Hot-top compound','Flere strenger':'More strands','Støpefart':'Casting speed','Skjærebrenner':'Cutting torch',
  'Øsetårn (sekvens)':'Ladle turret (sequence)','Salgsavtale':'Sales contract','Hjelperfart':'Helper speed','Hjelperkapasitet':'Helper capacity','Ovnskapasitet':'Furnace capacity',
  'Bjelkeovn':'Walking-beam furnace','Magnetkran':'Magnet crane','Varminnsetting':'Hot charging','Valsefart':'Rolling speed','Splittvalsing':'Slit rolling',
- 'Rullebane til klipp og bøy':'Roller table to cut & bend','Tempcore-kapasitet':'Tempcore capacity','Finverksfart':'Finishing-block speed','Stelmor-vifter':'Stelmor fans',
+ 'Rullebane til klipp og bøy':'Roller table to cut & bend','Bråkjølingskapasitet':'Quench capacity','Finverksfart':'Finishing-block speed','Kjølevifter':'Cooling fans',
  'Kveiletransport':'Coil conveyor','Sveisefart':'Welding speed','Bøyefart':'Bending speed','Togavtale':'Rail contract','Kaiavtale':'Shipping contract',
  'Vegginjektorer':'Wall injectors','Dørlanse':'Door lance','Flere kasser':'More boxes','Raskere bånd':'Faster conveyor','Større bånd':'Bigger belt',
  /* upgrade effects */
@@ -83,7 +83,7 @@ const EN={
  '+{0} % råjern':'+{0}% hot metal','+{0} % malm':'+{0}% ore','vogner':'cars','{0} → {1} % jern':'{0} → {1}% iron',
  /* helpers */
  'Malmhjelper':'Ore helper','Skraphjelper':'Scrap helper','Ovnshjelper':'Furnace helper','Blokkhjelper':'Ingot helper','Emnehjelper':'Billet helper',
- 'Valseverkshjelper':'Rolling-mill helper','Tempcorehjelper':'Tempcore helper','Valstrådhjelper':'Wire-rod helper','Netthjelper':'Mesh helper','Bøyehjelper':'Bending helper',
+ 'Valseverkshjelper':'Rolling-mill helper','Bråkjølingshjelper':'Quench helper','Valstrådhjelper':'Wire-rod helper','Netthjelper':'Mesh helper','Bøyehjelper':'Bending helper',
  /* switches */
  'Råjern':'Hot metal','Støping':'Casting','Valseprogram':'Mill program','Auto':'Auto','Blokk':'Ingots','Streng':'Caster','Armering':'Rebar','Begge':'Both',
  'Stålverk':'Melt shop','Salg':'Sale','VIDERE':'ONWARD',
@@ -106,7 +106,7 @@ const EN={
  'Mens du var borte: +{0}':'While you were away: +{0}',
  'Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.':'New Mill! You now start right from the ore: blast furnace, torpedo cars and a Bessemer converter.',
  'Startbonus fra forrige verk: +{0}':'Starting bonus from your previous mill: +{0}','Fase 1: Masovn og Bessemer-konverter':'Phase 1: Blast furnace and Bessemer converter',
- 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','Hold fingeren på en ting for å få en forklaring':'Press and hold anything for an explanation','Trykk for å gå · sveip for å se deg rundt':'Tap to walk · swipe to look around','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
+ 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','Alle rettigheter forbeholdt':'All rights reserved','Hold fingeren på en ting for å få en forklaring':'Press and hold anything for an explanation','Trykk for å gå · sveip for å se deg rundt':'Tap to walk · swipe to look around','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
  /* status chips */
  'Flaskehals: skrap til ovnen':'Bottleneck: scrap to the furnace','Skrapkassa er full (litt kjøleskrap)':'Scrap box full (a little cooling scrap)','Chargering full':'Charging full',
  'Flaskehals: øse ({0})':'Bottleneck: ladle ({0})','Flaskehals: øse':'Bottleneck: ladle','blokkstøping':'ingot casting','streng':'caster','øseovn':'ladle furnace','kø':'queue','kran':'crane',
@@ -154,7 +154,7 @@ const EN={
  'Lyd':'Sound','Vibrasjon':'Vibration','På':'On','Av':'Off','Automatiske transporter: videre eller salg':'Automatic transport: onward or sale','Hjelpere leverer til':'Helpers deliver to',
  'Beste pris':'Best price','Lastebil':'Truck','Tog':'Train','Priser per tonn (lastebil)':'Prices per tonne (truck)','Statistikk':'Statistics','Nullstill spillet':'Reset the game',
  'Nullstill':'Reset','Slette alt?':'Delete everything?','Ja, slett':'Yes, delete','Avbryt':'Cancel','Meny':'Menu','Zoom ut':'Zoom out','Zoom inn':'Zoom in',
- 'Råjern → stålverket':'Hot metal → melt shop','Emner → gjennomvarming':'Billets → reheating','Armering → klipp og bøy':'Rebar → cut & bend','Tempcore → klipp og bøy':'Tempcore → cut & bend',
+ 'Råjern → stålverket':'Hot metal → melt shop','Emner → gjennomvarming':'Billets → reheating','Armering → klipp og bøy':'Rebar → cut & bend','Bråkjøling → klipp og bøy':'Quench → cut & bend',
  'Valstråd → nettverk':'Wire rod → mesh welding','Videre':'Onward','spesialstål':'special steel','låst':'locked','Leveres nå til {0} · ×{1} pris':'Delivering to the {0} now · ×{1} price',
  'lastebil':'truck','tog':'train','kai':'quay',
  'Spilletid':'Play time','{0} t {1} min':'{0} h {1} min','Ovn':'Furnace','{0} t laget':'{0} t made','Charger tappet':'Heats tapped','Skrap smeltet':'Scrap melted',

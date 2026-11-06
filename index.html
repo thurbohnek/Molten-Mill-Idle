@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>/* standalone: full-bleed on phones (no 16px side gutter) */@media (max-width:559px),(max-height:599px){html body #app{padding-left:env(safe-area-inset-left,0px)!important;padding-right:env(safe-area-inset-right,0px)!important;padding-top:0!important;padding-bottom:0!important}html body #stage{border-radius:0!important;box-shadow:none!important;max-height:none!important}}</style>
 <title>Molten Mill Idle: Steel Tycoon</title>
+<!-- Molten Mill Idle: Steel Tycoon. Copyright (c) 2026 Studio.grane. All rights reserved. Unauthorized copying, modification or distribution is prohibited. -->
+<meta name="author" content="Studio.grane">
+<meta name="copyright" content="© 2026 Studio.grane. All rights reserved.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
@@ -58,6 +61,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 #menu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);right:12px;width:min(290px,calc(100% - 24px));box-sizing:border-box;background:#10131a;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:6px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:none;z-index:5;font-size:14px}
 #menu.on{display:block}
 #menu h2{font-size:15px;margin:8px 0 4px;font-weight:800}
+.mcopy{font-size:11px;opacity:.55;text-align:center;padding:12px 0 2px;line-height:1.5}
 .mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);min-height:44px}
 .mrow:last-child{border-bottom:0}
 .dest{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px 0}
@@ -174,6 +178,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
     <div id="stats"></div>
     <div class="mrow" id="resetRow"><span data-i="Nullstill spillet">Nullstill spillet</span><button class="mbtn warn" id="mReset" type="button" data-i="Nullstill">Nullstill</button></div>
     <div class="mrow" id="resetConf" hidden><span data-i="Slette alt?">Slette alt?</span><span style="display:flex;gap:6px"><button class="mbtn warnf" id="mResetYes" type="button" data-i="Ja, slett">Ja, slett</button><button class="mbtn" id="mResetNo" type="button" data-i="Avbryt">Avbryt</button></span></div>
+    <div class="mcopy">© 2026 Studio.grane · <span data-i="Alle rettigheter forbeholdt">Alle rettigheter forbeholdt</span></div>
   </div>
   <div id="modal" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="box"><h2 id="mdT"></h2><p id="mdP"></p><div class="btns"><button class="mbtn go" id="mdYes" type="button"></button><button class="mbtn" id="mdNo" type="button" data-i="Avbryt">Avbryt</button></div></div></div>
   <div id="mapov" role="dialog" aria-modal="true" aria-label="Kart over produksjonslinja" data-ia="Kart over produksjonslinja">
@@ -186,6 +191,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
   <div id="toast" role="status" aria-live="polite"></div>
 </div></div>
 <script>
+/* Molten Mill Idle: Steel Tycoon — Copyright (c) 2026 Studio.grane. All rights reserved. */
 function start(){
 'use strict';
 if(window.__smeltOn)return;window.__smeltOn=1;
@@ -280,13 +286,13 @@ const PR={
  ingot:{n:'Støpeblokk',p:10.5,z:'blokk',pile:{x:1712,y:300},col:'#e8b04a'},
  billet:{n:'Emne',p:10.5,z:'strang',pile:{x:1705,y:1052},col:'#ff5d5d'},
  rebar:{n:'Armeringsstål',p:13.5,z:'vv',pile:{x:2790,y:866},col:'#b9c1cb'},
- tcore:{n:'Tempcore-armering',p:14.25,z:'tc',pile:{x:3086,y:850},col:'#6fb7ff'},
+ tcore:{n:'Bråkjølt armering',p:14.25,z:'tc',pile:{x:3086,y:850},col:'#6fb7ff'},
  coil:{n:'Valstråd',p:13.9,z:'stel',pile:{x:3070,y:244},col:'#c39bff'},
  mesh:{n:'Armeringsnett',p:15,z:'nett',pile:{x:3456,y:330},col:'#9bd35f'},
  bent:{n:'Bøyd armering',p:16.5,z:'kob',pile:{x:3456,y:1050},col:'#4dd0c8'},
  slag:{n:'Slagg (pukk)',p:.6}};
 const PRK=['pig','ingot','billet','rebar','tcore','coil','mesh','bent'];
-const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektroder',kokk:'kokiller',kokv:'varme kokiller',kanal:'kanalstein',hette:'varmholdsmasse',ingot:'støpeblokker',billet:'emner',rebar:'armeringsstål',tcore:'Tempcore-armering',coil:'valstråd',mesh:'armeringsnett',bent:'bøyd armering'};
+const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektroder',kokk:'kokiller',kokv:'varme kokiller',kanal:'kanalstein',hette:'varmholdsmasse',ingot:'støpeblokker',billet:'emner',rebar:'armeringsstål',tcore:'Bråkjølt armering',coil:'valstråd',mesh:'armeringsnett',bent:'bøyd armering'};
 
 /* ---------- steel furnace eras (same plot), following the works' history: Bessemer → SM → LD → [Omlegging] → arc furnaces.
    type conv = converter (charge råjern + skrap, blow, tilt to tap), sm = open hearth, eaf = arc furnace.
@@ -316,8 +322,8 @@ const BUILDS=[
  {id:'tog',sn:'Jernbane',n:'Jernbane',z:'utlast',cost:5e5,x:3700,y:440,d:'Toget betaler mer per tonn enn lastebilen.'},
  {id:'eaf1',sn:'Omlegging',n:'Omlegging: lysbueovn',z:'ovn',cost:1.2e6,x:990,y:1040,era:3,d:'Råjernsverket legges ned. Stålet lages av skrap i lysbueovn.'},
  {id:'uhp',sn:'UHP-ovn',n:'UHP-lysbueovn',z:'ovn',cost:3e6,x:990,y:1040,era:4,d:'Vannkjølte paneler, stor trafo, O₂-lanser og kullinjeksjon.'},
- {id:'tc',sn:'Tempcore',n:'Tempcore',z:'tc',cost:9e6,x:3028,y:600,d:'Bråkjøling gir B500-armering uten dyre legeringer.'},
- {id:'stel',sn:'Valstråd',n:'Valstråd',z:'stel',cost:2.2e7,x:2700,y:150,d:'Ferdigblokk, leggehode og Stelmor. Med egen lastebil.'},
+ {id:'tc',sn:'Bråkjøling',n:'Bråkjøling',z:'tc',cost:9e6,x:3028,y:600,d:'Bråkjøling gir B500-armering uten dyre legeringer.'},
+ {id:'stel',sn:'Valstråd',n:'Valstråd',z:'stel',cost:2.2e7,x:2700,y:150,d:'Ferdigblokk, leggehode og kjølebane. Med egen lastebil.'},
  {id:'nett',sn:'Nettverk',n:'Nettverk',z:'nett',cost:5.5e7,x:3330,y:200,d:'Valstråd sveises til armeringsnett.'},
  {id:'consteel',sn:'Consteel',n:'Consteel-ovn',z:'ovn',cost:1.3e8,x:990,y:1040,era:5,d:'Kontinuerlig chargering med forvarmingstunnel og flat bad.'},
  {id:'kob',sn:'Klipp og bøy',n:'Klipp og bøy',z:'kob',cost:3.2e8,x:3330,y:950,d:'Ferdig bøyd armering per byggeprosjekt.'},
@@ -380,9 +386,9 @@ const UP=[
  {id:'vvup',st:'vv',n:'Valsefart',max:24,base:3.5e4,m:1.42},
  {id:'splitt',st:'vv',n:'Splittvalsing',max:1,costs:[3e6]},
  {id:'rullkob',st:'vv',n:'Rullebane til klipp og bøy',max:1,costs:[1.2e8],req:()=>B_('kob')},
- {id:'tcup',st:'tc',n:'Tempcore-kapasitet',max:24,base:2.5e6,m:1.42},
+ {id:'tcup',st:'tc',n:'Bråkjølingskapasitet',max:24,base:2.5e6,m:1.42},
  {id:'stelup',st:'stel',n:'Finverksfart',max:24,base:5e6,m:1.42},
- {id:'stelmor',st:'stel',n:'Stelmor-vifter',max:1,costs:[2e7]},
+ {id:'stelmor',st:'stel',n:'Kjølevifter',max:1,costs:[2e7]},
  {id:'ktrans',st:'stel',n:'Kveiletransport',max:1,costs:[5e7],req:()=>B_('nett')},
  {id:'nettup',st:'nett',n:'Sveisefart',max:24,base:1.2e7,m:1.42},
  {id:'kobup',st:'kob',n:'Bøyefart',max:24,base:6e7,m:1.42},
@@ -397,7 +403,7 @@ const HIRE={
  blokk:{id:'h_blokk',n:'Blokkhjelper',costs:[250,2500,25000],col:'#ff8c5a'},
  strang:{id:'h_strang',n:'Emnehjelper',costs:[3e4,2.5e5,2e6],col:'#a0d8ff'},
  vv:{id:'h_vv',n:'Valseverkshjelper',costs:[1.5e5,1.2e6,1e7],col:'#d0d6de'},
- tc:{id:'h_tc',n:'Tempcorehjelper',costs:[3e6,2e7,1.2e8],col:'#7fe0d8'},
+ tc:{id:'h_tc',n:'Bråkjølingshjelper',costs:[3e6,2e7,1.2e8],col:'#7fe0d8'},
  stel:{id:'h_stel',n:'Valstrådhjelper',costs:[8e6,5e7,3e8],col:'#c48bff'},
  nett:{id:'h_nett',n:'Netthjelper',costs:[1.5e7,1e8,6e8],col:'#9bd35f'},
  kob:{id:'h_kob',n:'Bøyehjelper',costs:[6e7,4e8,3e9],col:'#ef8ad6'}};
@@ -626,7 +632,7 @@ const EN={
  'BESSEMER':'BESSEMER','SM-OVN':'OPEN HEARTH','LD-KONVERTER':'LD CONVERTER','LYSBUEOVN':'ARC FURNACE','UHP-LYSBUEOVN':'UHP ARC FURNACE','CONSTEEL-OVN':'CONSTEEL',
  'EL-RÅJERNSOVN':'ELECTRIC SMELTER',
  /* --- products / kinds --- */
- 'Masseljern':'Pig iron','Støpeblokk':'Ingot','Emne':'Billet','Armeringsstål':'Rebar','Tempcore-armering':'Tempcore rebar','Valstråd':'Wire rod','Armeringsnett':'Rebar mesh',
+ 'Masseljern':'Pig iron','Støpeblokk':'Ingot','Emne':'Billet','Armeringsstål':'Rebar','Bråkjølt armering':'Quenched rebar','Valstråd':'Wire rod','Armeringsnett':'Rebar mesh',
  'Bøyd armering':'Bent rebar','Slagg (pukk)':'Slag (aggregate)',
  'skrap':'scrap','malm':'ore','masseljern':'pig iron','slagg':'slag','elektroder':'electrodes','kokiller':'moulds','varme kokiller':'hot moulds','kanalstein':'runner bricks',
  'varmholdsmasse':'hot-top compound','støpeblokker':'ingots','emner':'billets','armeringsstål':'rebar','valstråd':'wire rod','armeringsnett':'rebar mesh','bøyd armering':'bent rebar',
@@ -639,7 +645,7 @@ const EN={
  'Koksmasovn':'Coke blast furnace','Elektrisk råjernsovn':'Electric iron smelter',
  /* --- builds --- */
  'SM-ovn':'Open hearth','Øseovn':'Ladle furnace','Strang':'Caster','Stranggjuting':'Continuous caster','Valseverk':'Rolling mill','El-råjernsovn':'Electric smelter',
- 'Jernbane':'Railway','Omlegging':'Conversion','Omlegging: lysbueovn':'Conversion: arc furnace','UHP-ovn':'UHP furnace','Tempcore':'Tempcore','Nettverk':'Mesh welding',
+ 'Jernbane':'Railway','Omlegging':'Conversion','Omlegging: lysbueovn':'Conversion: arc furnace','UHP-ovn':'UHP furnace','Bråkjøling':'Quench line','Nettverk':'Mesh welding',
  'Consteel':'Consteel','Klipp og bøy':'Cut & bend','Kai':'Quay','Masovn og Bessemer':'Blast furnace & Bessemer',
  'Råjern og skrap i kasser – større charger, men trenger kalk.':'Hot metal and scrap charged in boxes – bigger heats, but it needs lime.',
  'Legeringer og temperatur i øsa gir bedre kvalitet og høyere pris.':'Alloying and temperature control in the ladle give better quality and a higher price.',
@@ -651,7 +657,7 @@ const EN={
  'Råjernsverket legges ned. Stålet lages av skrap i lysbueovn.':'The ironworks closes. Steel is made from scrap in an electric arc furnace.',
  'Vannkjølte paneler, stor trafo, O₂-lanser og kullinjeksjon.':'Water-cooled panels, a big transformer, O₂ lances and coal injection.',
  'Bråkjøling gir B500-armering uten dyre legeringer.':'Quenching gives B500 rebar without expensive alloys.',
- 'Ferdigblokk, leggehode og Stelmor. Med egen lastebil.':'Finishing block, laying head and Stelmor. With its own truck.',
+ 'Ferdigblokk, leggehode og kjølebane. Med egen lastebil.':'Finishing block, laying head and cooling conveyor. With its own truck.',
  'Valstråd sveises til armeringsnett.':'Wire rod is welded into rebar mesh.',
  'Kontinuerlig chargering med forvarmingstunnel og flat bad.':'Continuous charging through a preheating tunnel, flat-bath operation.',
  'Ferdig bøyd armering per byggeprosjekt.':'Rebar cut and bent to order for each building project.',
@@ -670,7 +676,7 @@ const EN={
  'Kanalsteinlager':'Runner-brick store','Varmholdsmasse':'Hot-top compound','Flere strenger':'More strands','Støpefart':'Casting speed','Skjærebrenner':'Cutting torch',
  'Øsetårn (sekvens)':'Ladle turret (sequence)','Salgsavtale':'Sales contract','Hjelperfart':'Helper speed','Hjelperkapasitet':'Helper capacity','Ovnskapasitet':'Furnace capacity',
  'Bjelkeovn':'Walking-beam furnace','Magnetkran':'Magnet crane','Varminnsetting':'Hot charging','Valsefart':'Rolling speed','Splittvalsing':'Slit rolling',
- 'Rullebane til klipp og bøy':'Roller table to cut & bend','Tempcore-kapasitet':'Tempcore capacity','Finverksfart':'Finishing-block speed','Stelmor-vifter':'Stelmor fans',
+ 'Rullebane til klipp og bøy':'Roller table to cut & bend','Bråkjølingskapasitet':'Quench capacity','Finverksfart':'Finishing-block speed','Kjølevifter':'Cooling fans',
  'Kveiletransport':'Coil conveyor','Sveisefart':'Welding speed','Bøyefart':'Bending speed','Togavtale':'Rail contract','Kaiavtale':'Shipping contract',
  'Vegginjektorer':'Wall injectors','Dørlanse':'Door lance','Flere kasser':'More boxes','Raskere bånd':'Faster conveyor','Større bånd':'Bigger belt',
  /* upgrade effects */
@@ -682,7 +688,7 @@ const EN={
  '+{0} % råjern':'+{0}% hot metal','+{0} % malm':'+{0}% ore','vogner':'cars','{0} → {1} % jern':'{0} → {1}% iron',
  /* helpers */
  'Malmhjelper':'Ore helper','Skraphjelper':'Scrap helper','Ovnshjelper':'Furnace helper','Blokkhjelper':'Ingot helper','Emnehjelper':'Billet helper',
- 'Valseverkshjelper':'Rolling-mill helper','Tempcorehjelper':'Tempcore helper','Valstrådhjelper':'Wire-rod helper','Netthjelper':'Mesh helper','Bøyehjelper':'Bending helper',
+ 'Valseverkshjelper':'Rolling-mill helper','Bråkjølingshjelper':'Quench helper','Valstrådhjelper':'Wire-rod helper','Netthjelper':'Mesh helper','Bøyehjelper':'Bending helper',
  /* switches */
  'Råjern':'Hot metal','Støping':'Casting','Valseprogram':'Mill program','Auto':'Auto','Blokk':'Ingots','Streng':'Caster','Armering':'Rebar','Begge':'Both',
  'Stålverk':'Melt shop','Salg':'Sale','VIDERE':'ONWARD',
@@ -705,7 +711,7 @@ const EN={
  'Mens du var borte: +{0}':'While you were away: +{0}',
  'Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.':'New Mill! You now start right from the ore: blast furnace, torpedo cars and a Bessemer converter.',
  'Startbonus fra forrige verk: +{0}':'Starting bonus from your previous mill: +{0}','Fase 1: Masovn og Bessemer-konverter':'Phase 1: Blast furnace and Bessemer converter',
- 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','Hold fingeren på en ting for å få en forklaring':'Press and hold anything for an explanation','Trykk for å gå · sveip for å se deg rundt':'Tap to walk · swipe to look around','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
+ 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','Alle rettigheter forbeholdt':'All rights reserved','Hold fingeren på en ting for å få en forklaring':'Press and hold anything for an explanation','Trykk for å gå · sveip for å se deg rundt':'Tap to walk · swipe to look around','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
  /* status chips */
  'Flaskehals: skrap til ovnen':'Bottleneck: scrap to the furnace','Skrapkassa er full (litt kjøleskrap)':'Scrap box full (a little cooling scrap)','Chargering full':'Charging full',
  'Flaskehals: øse ({0})':'Bottleneck: ladle ({0})','Flaskehals: øse':'Bottleneck: ladle','blokkstøping':'ingot casting','streng':'caster','øseovn':'ladle furnace','kø':'queue','kran':'crane',
@@ -753,7 +759,7 @@ const EN={
  'Lyd':'Sound','Vibrasjon':'Vibration','På':'On','Av':'Off','Automatiske transporter: videre eller salg':'Automatic transport: onward or sale','Hjelpere leverer til':'Helpers deliver to',
  'Beste pris':'Best price','Lastebil':'Truck','Tog':'Train','Priser per tonn (lastebil)':'Prices per tonne (truck)','Statistikk':'Statistics','Nullstill spillet':'Reset the game',
  'Nullstill':'Reset','Slette alt?':'Delete everything?','Ja, slett':'Yes, delete','Avbryt':'Cancel','Meny':'Menu','Zoom ut':'Zoom out','Zoom inn':'Zoom in',
- 'Råjern → stålverket':'Hot metal → melt shop','Emner → gjennomvarming':'Billets → reheating','Armering → klipp og bøy':'Rebar → cut & bend','Tempcore → klipp og bøy':'Tempcore → cut & bend',
+ 'Råjern → stålverket':'Hot metal → melt shop','Emner → gjennomvarming':'Billets → reheating','Armering → klipp og bøy':'Rebar → cut & bend','Bråkjøling → klipp og bøy':'Quench → cut & bend',
  'Valstråd → nettverk':'Wire rod → mesh welding','Videre':'Onward','spesialstål':'special steel','låst':'locked','Leveres nå til {0} · ×{1} pris':'Delivering to the {0} now · ×{1} price',
  'lastebil':'truck','tog':'train','kai':'quay',
  'Spilletid':'Play time','{0} t {1} min':'{0} h {1} min','Ovn':'Furnace','{0} t laget':'{0} t made','Charger tappet':'Heats tapped','Skrap smeltet':'Scrap melted',
@@ -2196,7 +2202,7 @@ $('craneBtn').addEventListener('click',e=>{initAudio();toggleCrane();e.stopPropa
 
 /* ---------- menu + modal ---------- */
 const menu=$('menu'),mBtn=$('menuBtn');
-const TOGN={rj:'Råjern → stålverket',strang:'Emner → gjennomvarming',vv:'Armering → klipp og bøy',tc:'Tempcore → klipp og bøy',stel:'Valstråd → nettverk'};
+const TOGN={rj:'Råjern → stålverket',strang:'Emner → gjennomvarming',vv:'Armering → klipp og bøy',tc:'Bråkjøling → klipp og bøy',stel:'Valstråd → nettverk'};
 const TOGON={rj:()=>stOn('rj'),strang:()=>B_('vv')&&(lv('varm')||lv('magkran')),vv:()=>B_('kob')&&lv('rullkob')&&!B_('tc'),tc:()=>B_('kob')&&lv('rullkob')&&B_('tc'),stel:()=>B_('nett')&&lv('ktrans')};
 const refItem=k=>({k,t:1,q:k==='ingot'||k==='billet'?qLF():qLF()});
 function prodOn(k){return{pig:pileOn('pig'),ingot:1,billet:B_('strang'),rebar:B_('vv'),tcore:B_('tc'),coil:B_('stel'),mesh:B_('nett'),bent:B_('kob')}[k]}
@@ -2246,9 +2252,9 @@ const MN={
  kalk:{x:360,y:44,sup:1,n:'Kalk / dolo'},o2:{x:465,y:44,sup:1,n:'Oksygen'},kull:{x:570,y:44,sup:1,n:'Kullinjeksjon'},
  skrap:{x:320,y:215,n:'Skrapplass'},ovn:{x:445,y:215,n:'Ovn'},lf:{x:570,y:215,n:'Øseovn'},
  strang:{x:700,y:150,n:'kart§Stranggjuting'},blokk:{x:700,y:300,n:'Blokkstøping'},gjv:{x:830,y:215,n:'Gjennomvarming'},vv:{x:960,y:215,n:'Valseverk'},
- tc:{x:1090,y:300,n:'Tempcore'},stel:{x:1090,y:130,n:'Valstråd'},nett:{x:1220,y:130,n:'Nettverk'},kob:{x:1220,y:420,n:'Klipp og bøy'},salg:{x:1360,y:260,sale:1,n:'Salg'}};
+ tc:{x:1090,y:300,n:'Bråkjøling'},stel:{x:1090,y:130,n:'Valstråd'},nett:{x:1220,y:130,n:'Nettverk'},kob:{x:1220,y:420,n:'Klipp og bøy'},salg:{x:1360,y:260,sale:1,n:'Salg'}};
 const PCOL={malm:'#a0604a',rajern:'#ffb030',pig:'#9a8f86',skrap:'#c0804f',stal:'#ff7a1a',ingot:'#e8b04a',billet:'#ff5d5d',rebar:'#b9c1cb',tcore:'#6fb7ff',coil:'#c39bff',mesh:'#9bd35f',bent:'#4dd0c8',slag:'#8b8780'};
-const PNAME={malm:'Malm',rajern:'Råjern (flytende)',pig:'Masseljern',skrap:'Skrap',stal:'Flytende stål',ingot:'Støpeblokk',billet:'Emne',rebar:'Armeringsstål',tcore:'Tempcore-armering',coil:'Valstråd',mesh:'Armeringsnett',bent:'Bøyd armering',slag:'Slagg'};
+const PNAME={malm:'Malm',rajern:'Råjern (flytende)',pig:'Masseljern',skrap:'Skrap',stal:'Flytende stål',ingot:'Støpeblokk',billet:'Emne',rebar:'Armeringsstål',tcore:'Bråkjølt armering',coil:'Valstråd',mesh:'Armeringsnett',bent:'Bøyd armering',slag:'Slagg'};
 /* value per tonne used for kr/min on the map: scrap 1,0 · liquid steel ~1,27 · products by the price ladder */
 const VALT=p=>({malm:1.5,rajern:6,skrap:7.5,stal:9.5,slag:PR.slag.p}[p]||PR[p].p)*BASEP()*gm();
 const MEDG=[['malm','rj','malm'],['rj','ovn','rajern'],['rj','salg','pig'],['skrap','ovn','skrap'],['ovn','lf','stal'],['ovn','blokk','stal'],['ovn','strang','stal'],['lf','blokk','stal'],['lf','strang','stal'],['strang','gjv','billet'],['gjv','vv','billet'],['vv','tc','rebar'],['vv','stel','rebar'],['vv','kob','rebar'],['tc','kob','tcore'],['stel','nett','coil'],
@@ -3202,9 +3208,9 @@ const IX={
   vvup:['Raskere valsing: valseverket gjør flere emner om til armeringsstål.','Faster rolling: the mill turns more billets into rebar.'],
   splitt:['Splittvalsing deler stangen i to eller flere strenger i valseverket, så flere tynne stenger kommer ut samtidig.','Slit rolling splits the bar into two or more strands in the mill, so several thin bars come out at once.'],
   rullkob:['Rullebane fra valseverket til klipp og bøy, så armeringen går dit av seg selv.','A roller table from the rolling mill to cut & bend, so the rebar goes there by itself.'],
-  tcup:['Tempcore bråkjøler overflaten av stangen med vann rett etter siste valsepar. Mer kapasitet = flere stenger.','Tempcore quenches the surface of the bar with water right after the last stand. More capacity = more bars.'],
+  tcup:['Bråkjølingen kjøler overflaten av stangen med vann rett etter siste valsepar. Mer kapasitet = flere stenger.','The quench line quenches the surface of the bar with water right after the last stand. More capacity = more bars.'],
   stelup:['Raskere ferdigblokk i valstrådlinja.','A faster finishing block on the wire-rod line.'],
-  stelmor:['Stelmor-vifter kjøler valstrådringene kontrollert på transportøren, så strukturen blir riktig.','Stelmor fans cool the wire-rod rings in a controlled way on the conveyor, so the steel gets the right structure.'],
+  stelmor:['Kjølevifter kjøler valstrådringene kontrollert på transportøren, så strukturen blir riktig.','Cooling fans cool the wire-rod rings in a controlled way on the conveyor, so the steel gets the right structure.'],
   ktrans:['Kveiletransport fra valstrådlinja til nettverket, så kveilene går dit av seg selv.','A coil conveyor from the wire-rod line to mesh welding, so the coils go there by themselves.'],
   nettup:['Raskere sveisemaskin: mer valstråd blir til armeringsnett.','A faster welding machine: more wire rod becomes rebar mesh.'],
   kobup:['Raskere bøyemaskiner i klipp og bøy.','Faster bending machines at cut & bend.'],
@@ -3217,7 +3223,7 @@ const IX={
   blokk:['Blokkhjelpere setter kokiller på bunnplata, bærer kanalstein, varmholdsmasse og varme kokiller, og selger støpeblokkene.','Ingot helpers set moulds on the bottom plate, carry runner bricks, hot-top compound and hot moulds, and sell the ingots.'],
   strang:['Emnehjelpere bærer emner fra kjølesenga til gjennomvarmingen eller til salg.','Billet helpers carry billets from the cooling bed to reheating or to sale.'],
   vv:['Valseverkshjelpere bærer armeringsstål til klipp og bøy eller til salg.','Rolling-mill helpers carry rebar to cut & bend or to sale.'],
-  tc:['Tempcorehjelpere bærer Tempcore-armering videre eller til salg.','Tempcore helpers carry Tempcore rebar onward or to sale.'],
+  tc:['Bråkjølingshjelpere bærer Bråkjølt armering videre eller til salg.','Quench helpers carry Quenched rebar onward or to sale.'],
   stel:['Valstrådhjelpere bærer kveiler til nettverket eller til salg.','Wire-rod helpers carry coils to mesh welding or to sale.'],
   nett:['Netthjelpere bærer armeringsnettene til salg.','Mesh helpers take the rebar mesh to sale.'],
   kob:['Bøyehjelpere bærer den bøyde armeringen til salg.','Bending helpers take the bent rebar to sale.'],
@@ -3234,8 +3240,8 @@ const IX={
   salg1:['Salg: lastebilen kjøper alt du leverer. Penger fra hjelperne legges i en bunke ved bilen.','Sales: the truck buys everything you bring. Money from helpers is stacked next to it.'],
   gjv:['Gjennomvarming: kalde emner varmes til rundt 1200 °C så de kan valses.','Reheating: cold billets are heated to about 1200 °C so they can be rolled.'],
   vv:['Valseverket: det glødende emnet går gjennom mange valsepar og blir til tynne armeringsstenger.','The rolling mill: the glowing billet passes through many roll stands and becomes thin reinforcing bars.'],
-  tc:['Tempcore: vannkjøling gir hard overflate og seig kjerne – sterk B500-armering uten dyre legeringer.','Tempcore: water quenching gives a hard skin and a tough core – strong B500 rebar without costly alloys.'],
-  stel:['Valstrådlinja: ferdigblokk, leggehode og Stelmor-transportør lager kveiler av tynn tråd.','The wire-rod line: finishing block, laying head and Stelmor conveyor make coils of thin rod.'],
+  tc:['Bråkjøling: vannkjøling gir hard overflate og seig kjerne – sterk B500-armering uten dyre legeringer.','Quench line: water quenching gives a hard skin and a tough core – strong B500 rebar without costly alloys.'],
+  stel:['Valstrådlinja: ferdigblokk, leggehode og kjøletransportør lager kveiler av tynn tråd.','The wire-rod line: finishing block, laying head and cooling conveyor make coils of thin rod.'],
   nett:['Nettverket sveiser valstråd til armeringsnett for betong.','Mesh welding turns wire rod into welded reinforcing mesh for concrete.'],
   salg2:['Salg 2: en egen lastebil for produktene lengst ute i linja.','Sale 2: a second truck for the products at the far end of the line.'],
   kob:['Klipp og bøy: armering kappes og bøyes etter tegning for hvert byggeprosjekt – mest verdt per tonn.','Cut & bend: rebar is cut and bent to drawings for each building project – the highest value per tonne.'],
@@ -3253,7 +3259,7 @@ const IX={
   ingot:['Støpeblokk: stål støpt i kokille. Når stranggjutingen er bygd, blir blokkene små serier spesialstål med høyere pris.','Ingot: steel cast in a mould. Once the caster is built, ingots become small special-steel batches with a higher price.'],
   billet:['Emne: kvadratisk stålstang fra stranggjutingen – råvaren til valseverket.','Billet: a square steel bar from the continuous caster – the feedstock for the rolling mill.'],
   rebar:['Armeringsstål: ribbede stenger som gjør betongen sterk på strekk.','Rebar: ribbed bars that give concrete its tensile strength.'],
-  tcore:['Tempcore-armering: herdet overflate og seig kjerne – sterk og sveisbar.','Tempcore rebar: a quenched skin and a tough core – strong and weldable.'],
+  tcore:['Bråkjølt armering: herdet overflate og seig kjerne – sterk og sveisbar.','Quenched rebar: a quenched skin and a tough core – strong and weldable.'],
   coil:['Valstråd: tynn tråd i store ringer, til nett, spiker og trådprodukter.','Wire rod: thin rod in big coils, for mesh, nails and wire products.'],
   mesh:['Armeringsnett: sveisede rutenett til gulv og vegger i betong.','Rebar mesh: welded grids for concrete floors and walls.'],
   bent:['Bøyd armering: kappet og bøyd etter tegning, klar til å legges i forskalingen.','Bent rebar: cut and bent to the drawing, ready to place in the formwork.']},
@@ -3496,7 +3502,7 @@ function drawTitle(t){ctx.fillStyle=C.bg;ctx.fillRect(0,0,cssW,cssH);const cx=cs
  ctx.font=`800 ${fs}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';const lg=ctx.createLinearGradient(0,cy-fs*1.1,0,cy+fs*.4);lg.addColorStop(0,C.moltenhi);lg.addColorStop(1,C.molten);
  ctx.shadowColor='rgba(255,122,26,.7)';ctx.shadowBlur=RM?0:18;ctx.fillStyle=lg;ctx.fillText('MOLTEN',cx,cy-fs*.55);ctx.fillStyle=C.ui;ctx.shadowBlur=0;ctx.fillText('MILL',cx,cy+fs*.45);
  ctx.fillStyle=C.hazard;ctx.fillRect(cx-fs*1.3,cy+fs*1.05,fs*2.6,4);
- txt('IDLE · STEEL TYCOON',cx,cy+fs*1.05+22,13,C.uidim,800);ctx.globalAlpha=1}
+ txt('IDLE · STEEL TYCOON',cx,cy+fs*1.05+22,13,C.uidim,800);txt('© 2026 Studio.grane',cx,cssH-30,11,C.uidim,500);ctx.globalAlpha=1}
 function endIntro(){if(G.mode!=='intro')return;G.mode='play';stage.classList.remove('intro');try{cv.focus({preventScroll:true})}catch(e){}
  if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(ERA[0].yr+' · '+t_('Fase 1: Masovn og Bessemer-konverter'),true);
  /* every new game (first start, reset or a new mill) opens with the How to play card */

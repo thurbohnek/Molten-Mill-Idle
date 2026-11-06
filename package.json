@@ -11,5 +11,7 @@
   },
   "devDependencies": {
     "playwright": "^1.40.0"
-  }
+  },
+  "license": "UNLICENSED",
+  "author": "Studio.grane <studio.grane@gmail.com>"
 }

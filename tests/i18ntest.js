@@ -60,6 +60,6 @@ for(const stage of['ld','kai']){const W2=H.boot();W2.S.heats=99;W2.build(stage);
 W.setLang('en');ok(W.I18N_MISS.size===0,'runtime misses: '+JSON.stringify([...W.I18N_MISS]));
 // no towns, countries, companies or the developer anywhere in the game
 /* forbidden real-world names (places, people, companies) are kept encoded so they don't appear in the repo */
-for(const re of Buffer.from('TW8gaSBSYW5hClxiUmFuYVxiCk5vcmdlfE5vcndheXxOb3J3ZWdpYW4oPyEgYm9rbcOlbCkKQ2Vsc2EKNy0/c3RlZWwKTm9yc2sgSmVybnZlcmsKVGVub3ZhCkRhbmllbGkKw5hyamFuCkVsa2VtClN0ZWluYmFra2Vu','base64').toString('utf8').split('\n').map(w=>new RegExp(w,'i'))){
+for(const re of Buffer.from('TW8gaSBSYW5hClxiUmFuYVxiCk5vcmdlfE5vcndheXxOb3J3ZWdpYW4oPyEgYm9rbcOlbCkKQ2Vsc2EKNy0/c3RlZWwKTm9yc2sgSmVybnZlcmsKVGVub3ZhCkRhbmllbGkKw5hyamFuCkVsa2VtClN0ZWluYmFra2VuClRlbXBjb3JlClN0ZWxtb3I=','base64').toString('utf8').split('\n').map(w=>new RegExp(w,'i'))){
  const m=html.replace(/\/\*[\s\S]*?\*\//g,'').match(re);ok(!m,'forbidden name in build: '+re+' → '+(m&&m[0]))}
 console.log(bad?'FAIL '+bad:'PASS');process.exitCode=bad?1:0;

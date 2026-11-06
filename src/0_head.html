@@ -1,4 +1,7 @@
 <title>Molten Mill Idle: Steel Tycoon</title>
+<!-- Molten Mill Idle: Steel Tycoon. Copyright (c) 2026 Studio.grane. All rights reserved. Unauthorized copying, modification or distribution is prohibited. -->
+<meta name="author" content="Studio.grane">
+<meta name="copyright" content="© 2026 Studio.grane. All rights reserved.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
@@ -48,6 +51,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 #menu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);right:12px;width:min(290px,calc(100% - 24px));box-sizing:border-box;background:#10131a;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:6px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:none;z-index:5;font-size:14px}
 #menu.on{display:block}
 #menu h2{font-size:15px;margin:8px 0 4px;font-weight:800}
+.mcopy{font-size:11px;opacity:.55;text-align:center;padding:12px 0 2px;line-height:1.5}
 .mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);min-height:44px}
 .mrow:last-child{border-bottom:0}
 .dest{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px 0}
@@ -164,6 +168,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
     <div id="stats"></div>
     <div class="mrow" id="resetRow"><span data-i="Nullstill spillet">Nullstill spillet</span><button class="mbtn warn" id="mReset" type="button" data-i="Nullstill">Nullstill</button></div>
     <div class="mrow" id="resetConf" hidden><span data-i="Slette alt?">Slette alt?</span><span style="display:flex;gap:6px"><button class="mbtn warnf" id="mResetYes" type="button" data-i="Ja, slett">Ja, slett</button><button class="mbtn" id="mResetNo" type="button" data-i="Avbryt">Avbryt</button></span></div>
+    <div class="mcopy">© 2026 Studio.grane · <span data-i="Alle rettigheter forbeholdt">Alle rettigheter forbeholdt</span></div>
   </div>
   <div id="modal" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="box"><h2 id="mdT"></h2><p id="mdP"></p><div class="btns"><button class="mbtn go" id="mdYes" type="button"></button><button class="mbtn" id="mdNo" type="button" data-i="Avbryt">Avbryt</button></div></div></div>
   <div id="mapov" role="dialog" aria-modal="true" aria-label="Kart over produksjonslinja" data-ia="Kart over produksjonslinja">
