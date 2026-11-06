@@ -304,6 +304,8 @@ function updTRob(dt){if(era()!==5){TROB.st='park';TROB.t=0;return}TROB.t+=dt;CSB
  if(TROB.st==='in'&&!TROB.done&&TROB.t>=TROBD.in*.55){TROB.done=1;TROB.val=Math.round(F.temp+rnd(-4,4));TROB.n++;TROB.show=3.4;if(near(P,POS.F.x,POS.F.y,520))sfx('tick',900)}
  if(TROB.t>=TROBD[TROB.st]){TROB.st=TROBN[TROB.st];TROB.t=0;if(TROB.st==='park'){TROB.wait=13+rnd(0,4);TROB.done=0}}}
 function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
+ /* self-heal (old saves): an empty electric furnace with room left but its scrap count already used up would wait forever */
+ if(F.state==='melt'&&E.hm[1]===0&&typ!=='conv'&&!F.ch&&F.solid<1e-3&&furnRoom()>1&&scrapMax()-F.scIn<furnRoom()-.5)F.scIn=max(0,scrapMax()-furnRoom());
  /* ----- charging ----- */
  const room=furnRoom(),canCharge=F.state==='melt'||(E.ch==='belt'&&F.state==='refine');
  if(typ==='conv'){updConvCharge(dt,cap)}

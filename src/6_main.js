@@ -59,7 +59,7 @@ function save(){S.t=Date.now();
  /* liquid råjern in torpedo cars goes back to the hearth; whatever does not fit is cast to pigs */
  let hearth=S.rj.hearth+RJ.pigAcc;for(const c of TORPS)hearth+=c.load;const hc=rjClosed()?0:hearthCap();while(hearth>hc+PIG_T*.5){hearth-=PIG_T;piles.pig.push(packIt({k:'pig',t:PIG_T,q:1}))}
  const fch=F.ch?(F.ch.hm!=null?F.ch.s+F.ch.hm:F.ch.done?0:F.ch.amt):0;
- const out=Object.assign({},S,{pp:{x:Math.round(P.x),y:Math.round(P.y),stack:P.stack.map(packS)},piles,nodes,store,cash,kok,F:{bath:(F.state==='tapping'?max(0,F.bath-F.tapAmt):F.bath)+(F.hmCh?F.hmCh.amt:0),solid:F.solid+fch,scIn:F.scIn+(F.ch&&F.ch.hm!=null?F.ch.s:0),hmIn:F.hmIn+(F.ch&&F.ch.hm!=null?F.ch.hm:0)+(F.hmCh?F.hmCh.amt:0)},rj:{ore:S.rj.ore,hearth:max(0,hearth)},torp:[]});
+ const out=Object.assign({},S,{pp:{x:Math.round(P.x),y:Math.round(P.y),stack:P.stack.map(packS)},piles,nodes,store,cash,kok,F:{bath:(F.state==='tapping'?max(0,F.bath-F.tapAmt):F.bath)+(F.hmCh?F.hmCh.amt:0),solid:F.solid+fch,scIn:F.state==='tapping'?0:F.scIn+(F.ch&&F.ch.hm!=null?F.ch.s:0),hmIn:F.state==='tapping'?0:F.hmIn+(F.ch&&F.ch.hm!=null?F.ch.hm:0)+(F.hmCh?F.hmCh.amt:0)}/* a save during tapping stores the bath after the tap, so the new heat starts with nothing charged */,rj:{ore:S.rj.ore,hearth:max(0,hearth)},torp:[]});
  try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 setInterval(save,4000);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});addEventListener('pagehide',save);
 function resize(){const r=stage.getBoundingClientRect();cssW=max(200,r.width);cssH=max(300,r.height);dpr=min(2,window.devicePixelRatio||1);
