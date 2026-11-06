@@ -60,6 +60,8 @@ function drawRebar(x,y,w,tc){const c1=tc?'#3a4350':C.rebar,c2=tc?'#262c35':'#5a4
 function drawCoil(x,y,w){ctx.fillStyle='#3b2d22';ell(x,y+1,w*.42,w*.24);ctx.fill();ctx.strokeStyle=C.wire;ctx.lineWidth=3;ell(x,y-2,w*.36,w*.2);ctx.stroke();ctx.strokeStyle='#d0a070';ctx.lineWidth=1;ell(x,y-3,w*.3,w*.15);ctx.stroke()}
 function drawMesh(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(-11,-6,24,15);ctx.strokeStyle='#8a6a52';ctx.lineWidth=1.4;ctx.beginPath();for(let i=0;i<=4;i++){ctx.moveTo(-12+i*6,-8);ctx.lineTo(-12+i*6,7);}for(let j=0;j<=3;j++){ctx.moveTo(-12,-8+j*5);ctx.lineTo(12,-8+j*5)}ctx.stroke();ctx.fillStyle=C.hazard;ctx.fillRect(9,-9,4,4);ctx.restore()}
 function drawBent(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.lineCap='round';ctx.lineJoin='round';for(let i=0;i<3;i++){ctx.strokeStyle=i%2?'#5a4535':C.rebar;ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(-10,-6+i*3);ctx.lineTo(-10,4+i*1.5);ctx.lineTo(8,4+i*1.5);ctx.lineTo(8,-4+i*3);ctx.stroke()}ctx.fillStyle=C.good;ctx.fillRect(-2,2,5,5);ctx.restore()}
+/* welded rebar cage: a frame with stirrups */
+function drawCage(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(-11,-3,25,11);ctx.strokeStyle='#8a6a52';ctx.lineWidth=1.6;ctx.strokeRect(-12,-6,24,10);ctx.strokeStyle=C.rebar;ctx.lineWidth=1.1;for(let i=-9;i<=9;i+=4.5){ctx.beginPath();ctx.moveTo(i,-6);ctx.lineTo(i+1.5,4);ctx.stroke()}ctx.strokeStyle='#5a4535';ctx.beginPath();ctx.moveTo(-12,-1);ctx.lineTo(12,-1);ctx.stroke();ctx.restore()}
 function drawSack(x,y,s,k,col){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='rgba(0,0,0,.25)';rr(-9,-4,19,11,4);ctx.fill();ctx.fillStyle=col||(k?C.kull:C.kalk);rr(-10,-6,20,11,4);ctx.fill();ctx.fillStyle=col?'rgba(0,0,0,.2)':k?'#4a4a50':'#c9c2b0';ctx.fillRect(-10,-2,20,2);ctx.fillStyle=col?'#f4e2bf':k?'#1b1b1e':'#fffdf5';ctx.fillRect(-6,-5,5,2);ctx.restore()}
 function drawLeg(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='rgba(0,0,0,.25)';rr(-8,-5,17,12,3);ctx.fill();ctx.fillStyle=C.leg;rr(-9,-7,18,12,3);ctx.fill();ctx.fillStyle='#b6c6da';ctx.fillRect(-9,-7,18,3);ctx.fillStyle='#3d4a5c';ctx.fillRect(-2,-9,4,4);ctx.fillStyle=C.hazard;ctx.fillRect(-9,0,18,1.5);ctx.restore()}
 function drawBottle(x,y,s,col){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='rgba(0,0,0,.25)';rr(-9,-2,20,9,4);ctx.fill();ctx.fillStyle=col;rr(-10,-5,18,9,4.5);ctx.fill();ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(-8,-4,13,1.6);ctx.fillStyle='#2a2d33';ctx.fillRect(8,-3,4,5);ctx.restore()}
@@ -80,7 +82,7 @@ function drawItem(it,x,y,sc){switch(it.k){
  case'scrap':drawScrap(x,y,9*sc,it.kk||0,((it.kk||0)%8-4)*.08);break;case'slag':drawSlag(x,y,8*sc,it.kk||0);break;
  case'ingot':drawIngot(x,y,sc,0);break;case'bloom':case'billet':drawBillet(x,y+2,0,24*sc,it.k);break;
  case'rebar':drawRebar(x,y,24*sc,0);break;case'tcore':drawRebar(x,y,24*sc,1);break;case'coil':drawCoil(x,y,24*sc);break;
- case'mesh':drawMesh(x,y,sc);break;case'bent':drawBent(x,y,sc);break;
+ case'mesh':drawMesh(x,y,sc);break;case'bent':drawBent(x,y,sc);break;case'ebar':drawRebar(x,y,24*sc,1);break;case'cage':drawCage(x,y,sc);break;
  case'ore':drawOre(x,y,sc,it.kk||0);break;case'pig':drawPig(x,y,sc);break;
  case'kalk':drawSack(x,y,sc,it.kk);break;case'hette':drawSack(x,y,sc,0,C.hette);break;case'leg':drawLeg(x,y,sc);break;
  case'o2':drawBottle(x,y,sc,C.o2);break;case'gass':drawBottle(x,y,sc,C.gass);break;case'elek':drawRod(x,y,sc);break;
@@ -391,7 +393,10 @@ function zonePlate(z){const nb=nextBuild(),built=zoneBuilt(z);let t=t_(z.n);if(z
  if(z.rj&&rjClosed())return{t:t_(z.n)+' · '+t_('NEDLAGT'),x:z.x0+12,y:z.y0+12,h:20,w:0,col:'#6b7079'};
  if(z.mbp){const u=MBK.find(k=>mbOn(k)&&S.mb[k].p===z.id);return{t:t_('LAGT NED')+' · '+(u?mbName(u).toUpperCase():''),x:z.x0+12,y:z.y0+12,h:20,w:0,col:'#8d96a3'}}
  if(z.cr)return{t:t_('KONTROLLROM'),x:z.x0+12,y:z.y0+12,h:20,w:0,col:z.col};
- if(!built)t=t_('TOMT')+' · '+(nb?t_(nb.n).toUpperCase():t_(z.n));return{t,x:z.x0+12,y:z.y0+12,h:20,w:0,col:built?z.col:'#7d8590'}}
+ if(!built)t=t_('TOMT')+' · '+(nb?t_(nb.n).toUpperCase():t_(z.n));
+ /* the endless line's plate sits right of the magnet crane's parking spot and the strand coming down from the caster */
+ if(z.id==='endl'&&!lv('endless'))t=t_('TOMT')+' · '+t_(z.n);if(z.id==='rob'&&!lv('robot'))t=t_('TOMT')+' · '+t_(z.n);
+ return{t,x:z.x0+12+(z.id==='endl'?210:0),y:z.y0+12,h:20,w:0,col:built?z.col:'#7d8590'}}
 function plateW(p,g){g=g||ctx;g.font=`800 11px ${FONT}`;return g.measureText(p.t).width+18}
 const ROLLS=[];/* [path, built()] static roller tables / conveyors */
 function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0,0,FS,-WX0*FS,0);

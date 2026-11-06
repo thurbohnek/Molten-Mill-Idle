@@ -222,6 +222,64 @@ const IX={
   mag:['Magnetkran som løfter emner fra kjølesenga til gjennomvarmingsovnen.','A magnet crane that lifts billets from the cooling bed to the reheating furnace.']}};
 /* every reserve plot shares one text */
 for(const z of ZONES)if(z.mbp)IX.zone[z.id]=['Reservetomt: her settes et gammelt anlegg når et nytt verk bygges. Lagt ned står det mørkt og koster litt vedlikehold, til du river det.','Reserve plot: an old plant is put here when a new one is built. Mothballed it stands dark and costs a little upkeep until you demolish it.'];
+/* ---- Phase 3 explanations: [Norwegian, English] (up/zone/kind) and [no title, no text, en title, en text] (p3 equipment) ---- */
+Object.assign(IX.up,{
+ sort:['En sorteringslinje med kamera, laser og luftdyser plukker kobber og annet rask ut av skrapleveransene. Renere skrap gir bedre stål: høyere pris og færre overflatesprekker. Hvert nivå sorterer mer.','A sorting line with cameras, a laser and air jets picks copper and other tramp material out of the scrap deliveries. Cleaner scrap makes better steel: a higher price and fewer surface cracks. Each level sorts more.'],
+ tdheat:['Induksjons- og plasmavarme i fordeleren holder overhetingen nær 30 °C. For kaldt gror dysene igjen, for varmt må strengen støpe saktere. Hvert nivå holder temperaturen jevnere.','Induction and plasma heating in the tundish keeps the superheat near 30 °C. Too cold and the nozzles clog, too hot and the strand must cast slower. Each level holds the temperature steadier.'],
+ slagdet:['Et IR-kamera ser etter slagg i strålen fra øsa og stenger glideluka før slagget renner inn i fordeleren. Færre feilemner.','An IR camera watches the stream from the ladle for slag and closes the slide gate before slag runs into the tundish. Fewer defective billets.'],
+ ems:['Elektromagnetisk omrøring: spoler rundt kokillene rører i det flytende stålet, så strukturen blir jevnere. Færre feil – også når strengen går fort.','Electromagnetic stirring: coils around the moulds stir the liquid steel so the structure is more even. Fewer defects – also when the strand runs fast.'],
+ hss:['Hurtigstreng: hver streng støper 12 % fortere per nivå. Uten omrøring gir høy fart flere feilemner.','High-speed strand: every strand casts 12 % faster per level. Without stirring, high speed gives more defective billets.'],
+ insp:['Inspeksjonsbue over strengen: kameraer og laser leser overflaten på det glødende emnet. Feilemner merkes med rød ring og slipes av en robot på kjølesenga i stedet for å selges billig.','An inspection arch over the strand: cameras and a laser read the surface of the glowing billet. Defective billets are marked with a red ring and ground by a robot on the cooling bed instead of being sold cheap.'],
+ pass:['Digitalt produktpass: hver bunt får en QR-kode som viser hvor stålet kommer fra og hvor mye CO₂ det har kostet. Kundene betaler en grønn pris – jo lavere CO₂ per tonn, jo høyere.','Digital product passport: every bundle gets a QR code that shows where the steel comes from and how much CO₂ it cost. Buyers pay a green price – the lower the CO₂ per tonne, the higher.'],
+ endless:['Endeløs støp til armering: den nederste strengen kappes ikke, men går rett gjennom en induksjonsvarmer, valsestoler med hver sin motor og vannkjøling i linja. Ingen kjøleseng og ingen oppvarmingsovn – mindre energi og CO₂.','Endless cast-to-rebar: the bottom strand is not cut but runs straight through an induction heater, stands with their own motors and an inline water quench. No cooling bed and no reheating furnace – less energy and CO₂.'],
+ elspd:['Raskere valser i den endeløse linja. Støpefart og valsefart må passe: går strengen fortere enn valsene, kappes resten til emner.','Faster stands on the endless line. Casting and rolling speed must match: if the strand runs faster than the stands, the rest is cut to billets.'],
+ loop:['En sløyfe mellom strengen og valsene tar opp forskjellen i fart og holder strengen mens valsene byttes. Uten nok sløyfe må strengen kappes til emner.','A loop between the strand and the stands takes up the difference in speed and holds the strand while the rolls are changed. Without enough loop the strand must be cut to billets.'],
+ robot:['Robotceller ved enden av den endeløse linja: to roboter bøyer stengene etter tegning, og to sveiseroboter lager armeringskurver – det mest verdifulle produktet.','Robot cells at the end of the endless line: two robots bend the bars to drawings, and two welding robots build rebar cages – the most valuable product.'],
+ robspd:['Raskere robotceller: flere kurver per minutt.','Faster robot cells: more cages per minute.'],
+ slagmill:['Slagget knuses og males til sementerstatning i stedet for å selges som pukk. Hvert nivå gir høyere slaggpris.','The slag is crushed and ground into a cement substitute instead of being sold as aggregate. Each level raises the slag price.'],
+ dheat:['Spillvarme fra kjølevannet og avgassen går til fjernvarme. Det gir inntekt hvert sekund ovnen går – mer jo større effekt.','Waste heat from the cooling water and the off-gas goes to district heating. It earns money every second the furnace runs – more the higher its power.'],
+ co2:['CO₂-fangst: et absorpsjonsanlegg vasker CO₂ ut av avgassen, og en kompressor fyller den på tank. Lavere CO₂ per tonn gir høyere grønn pris.','CO₂ capture: an absorber washes the CO₂ out of the off-gas and a compressor fills it into a tank. Lower CO₂ per tonne gives a higher green price.'],
+ twin:['Digital tvilling: en levende modell av hele verket i kontrollrommet. Operatørene planlegger smartere, så alt stål selges litt bedre. Det øverste trinnet for operatørene.','Digital twin: a live model of the whole plant in the control room. The operators plan smarter, so all steel sells a little better. The top tier for the operators.']});
+Object.assign(IX.zone,{
+ endl:['Endeløs linje: strengen går rett fra stranggjutingen gjennom varmer, valser og vannkjøling til ferdige bunter med armering.','Endless line: the strand runs straight from the caster through heater, stands and quench to finished bundles of rebar.'],
+ qa:['Støpeteknikk: strømforsyning og datamaskiner for fordelervarme, slaggvakt, omrøring, hurtigstreng og inspeksjon. Her styres overheting og emnekvalitet.','Casting tech: power supplies and computers for tundish heating, slag detection, stirring, the high-speed strand and inspection. This is where superheat and billet quality are managed.'],
+ byp:['Biprodukter: det som før var avfall blir inntekt – slagg blir sement, spillvarme blir fjernvarme, og CO₂ fanges.','By-products: what used to be waste becomes income – slag becomes cement, waste heat becomes district heating, and CO₂ is captured.'],
+ rob:['Robotceller: bøyeroboter og sveiseroboter lager armeringskurver av armeringen fra den endeløse linja. Førerløse vogner kjører dem ut.','Robot cells: bending and welding robots make rebar cages from the endless-line rebar. Driverless cars take them out.']});
+Object.assign(IX.kind,{
+ ebar:['Armering rett fra den endeløse linja – vannkjølt i linja, kappet og buntet. Ingen oppvarmingsovn betyr mindre CO₂.','Rebar straight off the endless line – quenched inline, cut and bundled. No reheating furnace means less CO₂.'],
+ cage:['Ferdig sveiste armeringskurver som går rett til byggeplassen – mest verdt per tonn.','Welded rebar cages that go straight to the building site – the most valuable per tonne.']});
+IX.p3={
+ grinder:['Sliperobot','Roboten sliper bort sprekker og slaggflekker på emnene som inspeksjonsbuen merket med rød ring. Litt stål går tapt, men emnet selges til full pris.','Grinding robot','The robot grinds away cracks and slag spots on the billets the inspection arch marked with a red ring. A little steel is lost, but the billet sells at full price.'],
+ shtag:['Overheting i fordeleren','Hvor mange grader stålet i fordeleren er over størkningstemperaturen. Vinduet er 20–40 °C: kaldere gror dysene igjen, varmere må strengen støpe saktere. Fordelervarme holder det jevnt.','Tundish superheat','How many degrees the steel in the tundish is above its solidification temperature. The window is 20–40 °C: colder and the nozzles clog, hotter and the strand must cast slower. Tundish heating keeps it steady.'],
+ el_loop:['Sløyfe','Strengen buer seg opp når den kommer fortere enn valsene tar den. Sløyfa holder også strengen mens valsene byttes.','Loop','The strand bows up when it arrives faster than the stands take it. The loop also holds the strand while the rolls are changed.'],
+ el_heat:['Induksjonsvarmer','Kobberspoler varmer strengen jevnt opp til valsetemperatur med strøm – i stedet for en gassfyrt oppvarmingsovn.','Induction heater','Copper coils heat the strand evenly to rolling temperature with electricity – instead of a gas-fired reheating furnace.'],
+ el_stands:['Valsestoler','Åtte valsestoler, annenhver vannrett og loddrett, hver med sin egen motor. Stangen blir tynnere for hvert stikk.','Roll stands','Eight stands, alternately horizontal and vertical, each with its own motor. The bar gets thinner with every pass.'],
+ el_quench:['Vannkjøling i linja','Kraftig vannkjøling gir hard overflate og seig kjerne – sterk armering uten dyre legeringer.','Inline quench','Strong water cooling gives a hard skin and a tough core – strong rebar without expensive alloys.'],
+ el_shear:['Laser og saks','En laser måler dimensjonen, og en flygende saks kapper stangen i lengder mens den går.','Laser and shear','A laser measures the size, and a flying shear cuts the bar to length while it runs.'],
+ el_bund:['Bunting','Stengene samles og bindes til bunter. Med produktpass får hver bunt en QR-kode.','Bundler','The bars are gathered and tied into bundles. With the product passport each bundle gets a QR code.']};
+/* live numbers for the Phase 3 bubbles */
+function p3Nums(id){const dq=t_('{0} % feil',Math.round(P3.dq*100))+' · '+t_('{0} slipt',fmt(S.st.ground||0));
+ if(id==='tdheat'||id==='shtag')return t_('Fordeler {0} °C · vindu 20–40 °C',Math.round(CAST.sh));
+ if(id==='slagdet'||id==='ems'||id==='hss'||id==='insp'||id==='grinder')return dq;
+ if(id.startsWith('el_')||id==='endless'||id==='loop'||id==='elspd')return t_('Strengfart {0} · valser {1} t/min · sløyfe {2} %',tf(EL.feedE*60)+' t/min',tf(elRate()*60),Math.round(clamp(EL.buf/max(.01,bufCap()),0,1)*100))+(elDiv()>.02?' · '+t_('{0} % til emner',Math.round(elDiv()*100)):'');
+ if(id==='slagmill')return t_('Slaggpris ×{0}',L1(slagK()))+' · '+kr(rate('v:slagc'),'/min');if(id==='dheat')return kr(rate('v:dheat'),'/min');
+ if(id==='co2'||id==='pass')return t_('CO₂ {0} t/t · grønn pris ×{1}',dsep(co2t().toFixed(2)),dsep(greenK().toFixed(2)));
+ if(id==='robot'||id==='robspd')return t_('{0} i kø',nodeQ('rob'))+' · '+tf(rate('o:rob'))+' t/min';
+ if(id==='sort')return t_('Cu {0} % · pris ×{1}',dsep(cuPct().toFixed(2)),dsep(cuK().toFixed(2)));if(id==='twin')return t_('Inntekt ×{0}',dsep(twinK().toFixed(2)));return''}
+/* what Phase 3 equipment is at a world point */
+function p3Hit(wx,wy){const o=(id,x,y)=>({type:'p3',key:'p3:'+id,id,x,y});
+ if(AUTO()&&B_('strang')){if(inR(wx,wy,(TD.x0+TD.x1)/2-30,TD.y0-58,60,18))return o('shtag',(TD.x0+TD.x1)/2,TD.y0-50);
+  if(lv('insp')&&hyp(wx-1771,wy-946)<20)return o('grinder',1771,946);if(lv('insp')&&inR(wx,wy,ARCHX-8,TD.y0-20,16,TD.y1-TD.y0+40))return o('insp',ARCHX,TUR.y);
+  if(lv('slagdet')&&hyp(wx-1386,wy-884)<16)return o('slagdet',1386,880);
+  if(lv('tdheat')&&(inR(wx,wy,TD.x0,TD.y0+28,TD.x1-TD.x0,32)||inR(wx,wy,TD.x0,TD.y1-60,TD.x1-TD.x0,32)))return o('tdheat',(TD.x0+TD.x1)/2,TUR.y);
+  for(let i=0;i<5;i++){const id=['tdheat','slagdet','ems','hss','insp'][i];if(lv(id)&&inR(wx,wy,QAX[i]-30,QAY-34,60,62))return o(id,QAX[i],QAY)}}
+ if(elOn()){const E=ELG,y=E.y;if(Math.abs(wy-y)<46){if(wx>E.loop0-6&&wx<E.loop1+6)return o('el_loop',(E.loop0+E.loop1)/2,y);if(wx>=E.heat0&&wx<=E.heat1)return o('el_heat',(E.heat0+E.heat1)/2,y);
+  if(wx>E.st0-16&&wx<E.st0+E.stN*E.stD)return o('el_stands',wx,y);if(wx>=E.q0&&wx<=E.q1)return o('el_quench',(E.q0+E.q1)/2,y);if(wx>E.q1&&wx<E.bund0)return o('el_shear',E.shear,y);if(wx>=E.bund0&&wx<=E.bund1)return o('el_bund',(E.bund0+E.bund1)/2,y)}}
+ if(AUTO()){const B=BYPG;for(const[id,X]of[['slagmill',B.slag],['dheat',B.heat],['co2',B.co2]])if(lv(id)&&inR(wx,wy,X.x0,B.y0-30,X.x1-X.x0,B.y1-B.y0+30))return o(id,(X.x0+X.x1)/2,(B.y0+B.y1)/2)}
+ if(lv('robot'))for(const c of[ROBG.bend,ROBG.weld])if(inR(wx,wy,c.x,c.y,c.w,c.h))return o('robot',c.x+c.w/2,c.y+c.h/2);
+ if(AUTO()&&lv('sort')&&inR(wx,wy,SORTG.x0,SORTG.y-22,SORTG.x1-SORTG.x0,44))return o('sort',(SORTG.x0+SORTG.x1)/2,SORTG.y);
+ if(AUTO()&&lv('twin')&&hyp(wx-TWINP.x,wy-TWINP.y)<28)return o('twin',TWINP.x,TWINP.y);
+ return null}
 const ixs=o=>o?(NO_()?o[0]:o[1]):'';
 const ix4=o=>o?(NO_()?[o[0],o[1]]:[o[2],o[3]]):['',''];
 const cap1=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
@@ -259,6 +317,7 @@ function hitInfo(wx,wy){
   if(inR(wx,wy,C.x0,C.y-28,C.xc-C.x0,56))return cs('charge',wx,C.y);
   if(inR(wx,wy,C.dx-C.dw/2-8,140,C.dw+16,C.y-C.hw-140)||inR(wx,wy,364,150,90,120))return cs('duct',C.dx,wy);
   if(inR(wx,wy,60,40,300,200))return cs('filter',wx,wy)}
+ {const p3=p3Hit(wx,wy);if(p3)return p3}
  if(inR(wx,wy,GAUGE.x-60,GAUGE.y-22,120,48)||(ET()==='sm'?inR(wx,wy,676,404,250,394):hyp(wx-POS.F.x,wy-POS.F.y)<112))return{type:'furnace',key:'furnace',x:POS.F.x,y:POS.F.y};
  if(!rjGone()&&Math.abs(wx-POS.rjF.x)<95&&wy>POS.rjF.y-260&&wy<POS.rjF.y+92)return{type:'rjf',key:'rjf',x:POS.rjF.x,y:POS.rjF.y};
  if(usesHM()&&hyp(wx-POS.hmL.x,wy-POS.hmL.y)<40)return{type:'misc',key:'misc:hmL',id:'hmL',x:POS.hmL.x,y:POS.hmL.y};
@@ -301,7 +360,7 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'tap':{const[ti,tx]=ix4(IX.ring.tap);return{t:ti,d:tx+(lv('operator')?' '+ixs(IX.up.operator):''),n:furnNums()}}
  case'drop':{const E=E_();return{t:cap1(t_(E.ch==='conv'?'skrapkassa':E.ch==='box'?'chargeringskassene':E.ch==='bucket'?'skrapkurv':'Chargeringsbånd')),d:ixs(IX.drop[E.ch]),n:t_('Fylt {0}/{1} t',tf(S.chg),tf(chgCap()))}}
  case'ring':{const z=h.o,[ti,tx]=ix4(IX.ring[z.id]);let n='';
-  if(z.sell)n=t_('Pris ×{0}',L1(SELLM[z.sell]()))+(z.cash>=1?' · '+t_('{0} å hente',kr(z.cash)):'');
+  if(z.sell)n=t_('Pris ×{0}',L1(SELLM[z.sell]()))+(lv('pass')&&AUTO()?' · '+t_('CO₂ {0} t/t · grønn pris ×{1}',dsep(co2t().toFixed(2)),dsep(greenK().toFixed(2))):'')+(z.cash>=1?' · '+t_('{0} å hente',kr(z.cash)):'');
   else if(z.id==='skip')n=tf(S.rj.ore)+'/'+skipCap()+' t';else if(z.id==='rack')n=t_('{0} av {1} elektroder',Math.round(S.elek),12);
   else if(z.id==='plate')n=t_('Kokiller {0}/{1}',S.kok.slots+PIT.n,slotsMax())+(lv('kanal')?' · '+t_('kanalstein')+' '+(S.kanal|0):'')+(lv('hette')?' · '+t_('varmholdsmasse')+' '+(S.hette|0):'');
   else if(z.id==='koklag')n=t_('{0} klare · {1} kjøles',S.kok.ready,S.kok.cool.length);
@@ -311,7 +370,7 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'src':{const s=h.o;if(s.id==='koklag')return infoFor({type:'ring',o:TGm.koklag});if(s.id==='pot'&&era()===5)return infoFor({type:'cs',id:'pit'});const[ti,tx]=ix4(IX.ring[s.id]);let n='';
   if(s.yard)n=tf(yardT(s))+'/'+(s.id==='ore'?oreYardCap():yardCap())+' t';else if(s.store)n=t_('{0} på lager',ST[s.store]|0);else if(s.id==='kokv')n=t_('{0} varme',S.kok.hot);else if(s.id==='pot')n=S.pot+'/'+potMax()+(lv('slaggbil')?' · '+t_('Slaggbil'):'');
   return{t:ti,d:tx,n}}
- case'pile':{const k=h.o.pile,a=PILE[k],top=a.length?a[a.length-1]:{k,t:1,q:qLF()},pr=val(top)*BASEP()*gm()/max(.001,top.t);return{t:t_(PR[k].n),d:ixs(IX.kind[k]),n:a.length+' '+t_('stk')+' · '+kr(pr,'/t')}}
+ case'pile':{const k=h.o.pile,a=PILE[k],top=a.length?a[a.length-1]:{k,t:1,q:qLF()},pr=val(top)*BASEP()*gm()/max(.001,top.t);return{t:t_(PR[k].n),d:ixs(IX.kind[k]),n:a.length+' '+t_('stk')+' · '+kr(pr,'/t')+(lv('pass')&&AUTO()?' · '+t_('CO₂ {0} t/t · grønn pris ×{1}',dsep(co2t().toFixed(2)),dsep(greenK().toFixed(2))):'')}}
  case'ladle':{const L=h.L,[ti,tx]=ix4(IX.misc.ladle),stx={park:'venter',filling:'fylles',await:'venter på kranen',carried:'løftes',lf:'i øseovnen',pit:'blokkstøping',tur:'på øsetårnet',cast:'støper'}[L.state]||'';
   return{t:ti,d:tx,n:(L.steel>.05?tf(L.steel)+' t · ':'')+t_(stx)+(L.q>1.001?' · '+t_('Kvalitet ×{0}',L1(L.q)):'')}}
  case'torp':{const t=h.t,[ti,tx]=ix4(IX.misc.torp);return{t:ti,d:tx,n:tf(t.load)+'/'+torpCap()+' t · '+t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())}}
@@ -328,6 +387,7 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'furnace':{const E=E_();return{t:t_(E.n)+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
  case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed),[,tm]=ix4(IX.misc.mb);return{t:t_(RJE[rjEra()].n),d:tx+' '+tm,n:t_('NEDLAGT')+(mbOn('rj')?' · '+t_('vedlikehold {0}',kr(MBU.rj.up,'/min')):'')}}const st=status('rj');return{t:t_(RJE[rjEra()].n)+' · '+RJE[rjEra()].yr,d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
  case'up':{const u=h.u;return infoFor({type:'pad',d:PAD['u_'+u.id]})}
+ case'p3':{const id=h.id;if(IX.p3[id]){const[ti,tx]=ix4(IX.p3[id]);return{t:ti,d:tx,n:p3Nums(id)}}const u=UPm[id];if(!u)return null;return{t:upName(u),d:ixs(IX.up[id]),n:p3Nums(id)+' · '+upNums(u)}}
  case'cast':{const[ti,tx]=ix4(IX.cast[h.id]);const n={turret:()=>upNums(UPm.turret),shroud:()=>t_(CAST.pour?'Skjermrør på':'Skjermrør parkert'),tundish:()=>t_('Stålnivå {0} %',Math.round(CAST.tlev*100)),
    mould:()=>t_('{0} av {1} strenger i bruk',CAST.on?min(nStr(),CAST.nOn):nStr(),8)+' · '+upNums(UPm.strands),spray:()=>upNums(UPm.caster),
    wsu:()=>t_('Støpefart {0} m/min ({1} % av maks)',L1(castMpm()*(CAST.on?CAST.spd:0)),Math.round((CAST.on?CAST.spd:0)*100))+' · '+upNums(UPm.caster),cutter:()=>upNums(UPm.torch),bed:()=>t_('{0} emner på kjølesenga',CAST.bed.length)}[h.id]();

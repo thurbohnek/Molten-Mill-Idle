@@ -9,6 +9,27 @@ function t_(s,...a){let o=s==null?'':''+s;
  else{const i=o.indexOf('§');if(i>=0)o=o.slice(i+1)}
  return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
 const EN={
+ /* --- Phase 3: the future downstream --- */
+ 'ENDELØS LINJE':'ENDLESS LINE','STØPETEKNIKK':'CASTING TECH','BIPRODUKTER':'BY-PRODUCTS','ROBOTCELLER':'ROBOT CELLS',
+ 'Endeløs armering':'Endless rebar','Armeringskurv':'Rebar cage','endeløs armering':'endless rebar','armeringskurver':'rebar cages','Armeringskurver':'Rebar cages','Rette stenger':'Straight bars',
+ 'Skrapsortering':'Scrap sorting','Fordelervarme':'Tundish heating','Slaggvakt':'Slag detection','EM-omrøring':'EM stirring','Hurtigstreng':'High-speed strand',
+ 'Inspeksjonsbue':'Inspection arch','Produktpass':'Product passport','Endeløs linje':'Endless line','Linjefart':'Line speed','Sløyfebuffer':'Loop buffer',
+ 'Robotcelle':'Robot cell','Robotfart':'Robot speed','Slagg til sement':'Slag to cement','Fjernvarme':'District heating','CO₂-fangst':'CO₂ capture','Digital tvilling':'Digital twin',
+ 'Robotceller':'Robot cells','Biprodukter':'By-products',
+ 'Cu {0} → {1} %':'Cu {0} → {1} %','Jevnere overheting':'Steadier superheat','Færre feilemner':'Fewer defects','Finner og sliper feil':'Finds and grinds defects','Grønn pris +{0} %':'Green price +{0} %',
+ 'Støp rett til armering':'Cast straight to rebar','Bøyer og sveiser kurver':'Bends and welds cages','Slaggpris ×{0}':'Slag price ×{0}','Varme fra ovnen blir inntekt':'Furnace heat becomes income','t CO₂/t':'t CO₂/t',
+ 'Klar for endeløs linje':'Ready for the endless line','Linja kommer med UHP-ovnen':'The line comes with the UHP furnace','Venter på strengen':'Waiting for the strand',
+ 'Valsebytte – sløyfa tar strengen':'Roll change – the loop takes the strand','Strengen går fortere enn valsene – {0} % kappes':'Strand faster than the stands – {0} % cut',
+ 'For varmt i fordeleren – lavere støpefart':'Tundish too hot – lower casting speed','For kaldt – dysene gror igjen':'Too cold – nozzles clogging','Overheting {0} °C · {1} % feil':'Superheat {0} °C · {1} % defects',
+ 'ΔT {0} °C':'ΔT {0} °C','Ny ordre fra en byggeplass – lever innen {0} min for bonus':'New order from a construction site – deliver within {0} min for a bonus',
+ 'Ordren er levert! Bonus +{0}':'Order delivered! Bonus +{0}','Ordren gikk ut – ingen straff':'The order expired – no penalty',
+ 'Den nederste strengen går nå rett inn i den endeløse linja – ingen kapping, kjøleseng eller oppvarmingsovn.':'The bottom strand now runs straight into the endless line – no cutting, cooling bed or reheating furnace.',
+ 'Endeløs armering → robotceller':'Endless rebar → robot cells','Byggeplassordre #{0}':'Site order #{0}','Bonus {0}':'Bonus {0}','Levert! +{0}':'Delivered! +{0}','Gikk ut – ingen straff':'Expired – no penalty',
+ '{0}/{1} t':'{0}/{1} t','CO₂ per tonn':'CO₂ per tonne','{0} t CO₂/t stål':'{0} t CO₂/t steel','Grønn pris':'Green price','Emnefeil':'Billet defects','Overheting':'Superheat',
+ 'Kobber i skrapet':'Copper in the scrap','Ordre levert':'Orders delivered','{0} slipt':'{0} ground',
+ 'Strengfart {0} · valser {1} t/min · sløyfe {2} %':'Strand {0} · stands {1} t/min · loop {2} %','{0} % til emner':'{0} % to billets',
+ 'Fordeler {0} °C · vindu 20–40 °C':'Tundish {0} °C · window 20–40 °C','{0} % feil':'{0} % defects','CO₂ {0} t/t · grønn pris ×{1}':'CO₂ {0} t/t · green price ×{1}',
+ 'Cu {0} % · pris ×{1}':'Cu {0} % · price ×{1}','{0} i biprodukter':'{0} from by-products','Inntekt ×{0}':'Income ×{0}','{0} i kø':'{0} queued',
  /* --- Phase 2: automation by era, control room, mothballed plants --- */
  'Kranfører':'Crane operator','Kontrollromsoperatør':'Control-room operator','Blokkoperatør':'Teeming operator','Strengoperatør':'Caster operator','Valseoperatør':'Mill operator',
  'Bråkjølingsoperatør':'Quench operator','Valstrådoperatør':'Wire-rod operator','Sveiseoperatør':'Welding operator','Bøyeoperatør':'Bending operator',

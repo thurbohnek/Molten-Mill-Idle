@@ -42,7 +42,7 @@ function padRects(W){W.layoutPads();const R=[];for(const d of W.PADS){if(!W.vis(
 function worldRects(W){const R=padRects(W),S=W.S;
  const lab=(id,own,x,y,w,h)=>R.push({id,own,lab:1,x,y,w,h});
  for(const s of W.SW)if(s.on())R.push({id:'sw:'+s.id,x:s.x-38,y:s.y-24,w:76,h:44,pad:1});
- for(const z of W.ZONES){if(!(!z.b||W.B_(z.b)))continue;const p=W.zonePlate(z),pw=W.plateW(p);lab('plate:'+z.id,'plate:'+z.id,p.x,p.y,pw,p.h);
+ for(const z of W.ZONES){if(z.on?!z.on():!(!z.b||W.B_(z.b)))continue;const p=W.zonePlate(z),pw=W.plateW(p);lab('plate:'+z.id,'plate:'+z.id,p.x,p.y,pw,p.h);
   /* status chip: every status text the game can show, at its widest after the chip clamping (zone edge / gauge) */
   let best=null;for(const t of STATUS_TEXTS){const c=W.chipLayout(z,t);if(!best||c.w>best.w)best=c}
   if(best&&!/^(salg1|salg2|utlast)$/.test(z.id)){lab('chip:'+z.id,'plate:'+z.id,best.x,best.y,best.w,20);if(best.x+best.w>z.x1-6)R.push({id:'chipEdge:'+z.id,lab:1,x:best.x,y:best.y,w:best.w,h:20,edge:1})}}
@@ -141,10 +141,10 @@ while(t<sim){try{if(MODE!=='idle')botStep();
  if(S.ph!==lastPh){const key=(S.pres.n?'r'+(S.pres.n+1)+':':'')+S.ph;if(phT[key]==null)phT[key]=t;lastPh=S.ph}
  if(eraT[W.era()]==null&&!S.pres.n)eraT[W.era()]=t;
  if(CHEAT){const m=t/60;
-  if(Math.abs(m-4)<DT/60){W.build('kai');for(const st in W.HIRE)W.hire(st,W.HIRE[st].costs.length);for(const id of['rullkob','ktrans','varm','bjelke','stelmor','splitt'])W.setLv(id,1)}
+  if(Math.abs(m-4)<DT/60){W.build('kai');for(const st in W.HIRE)W.hire(st,W.HIRE[st].costs.length);for(const id of['rullkob','ktrans','varm','bjelke','stelmor','splitt'])W.setLv(id,1);/* Phase 3: endless line + robot cells so every product is made */for(const[id,n]of[['endless',1],['elspd',8],['loop',2],['robot',1],['robspd',6],['pass',1],['insp',1],['tdheat',2]])W.setLv(id,n);W.rebuildSolids();W.bakeFloor()}
   if(Math.abs(m-1)<DT/60)S.tg.rj=0;if(Math.abs(m-2)<DT/60)S.tg.rj=1;
   if(Math.abs(m-5)<DT/60)S.cast='blokk';if(Math.abs(m-8)<DT/60)S.cast='strang';if(Math.abs(m-11)<DT/60)S.cast='auto';
-  if(Math.abs(m-6)<DT/60){S.tg.strang=0;S.tg.tc=0}if(Math.abs(m-9)<DT/60){S.tg.strang=1;S.tg.tc=1;S.tg.stel=0}if(Math.abs(m-12)<DT/60){S.tg.tc=0}if(Math.abs(m-16)<DT/60){S.tg.stel=1;S.tg.tc=1}
+  if(Math.abs(m-6)<DT/60){S.tg.strang=0;S.tg.tc=0}if(Math.abs(m-9)<DT/60){S.tg.strang=1;S.tg.tc=1;S.tg.stel=0}if(Math.abs(m-12)<DT/60){S.tg.tc=0;S.tg.endl=0}if(Math.abs(m-17)<DT/60)S.tg.endl=1;if(Math.abs(m-16)<DT/60){S.tg.stel=1;S.tg.tc=1}
   if(Math.abs(m-7)<DT/60)S.mix='vals';if(Math.abs(m-12)<DT/60)S.mix='arm';if(Math.abs(m-14)<DT/60)S.mix='begge';
   if(Math.abs(m-14)<DT/60){S.lv.slaggbil=0;S.pot=W.potMax()}if(Math.abs(m-15.5)<DT/60)S.lv.slaggbil=1}
  if(t>=nextLog){nextLog+=CHEAT?120:(MIN>100?900:180);const owned=Object.values(S.lv).reduce((a,b)=>a+b,0);

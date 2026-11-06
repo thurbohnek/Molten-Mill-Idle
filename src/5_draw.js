@@ -200,7 +200,7 @@ function drawTundish(n){const{x0,x1,y0,y1}=TD,lev=CAST.tlev,py=TUR.y,w=x1-x0,fl=
  g.strokeStyle='rgba(60,40,30,.8)';g.lineWidth=1.4;g.strokeRect(PBX-6,py-6,12,12);
  /* one nozzle per strand: stopper rod on a lever + mechanism at the inside edge; unused nozzles are plugged */
  for(let i=0;i<8;i++){const y=SY(i),nx=x1-8,dn=y>py?1:-1;
-  if(i<n){g.fillStyle='#2a1d18';circ(nx,y,5);g.fill();if(lev>.02&&(!CAST.flow||i<CAST.nOn)){/* a closed strand's stopper is shut */g.fillStyle=heat(.6+.38*lev*fl);g.globalAlpha=.4+.6*lev;circ(nx,y,4.2);g.fill();g.globalAlpha=1}
+  if(i<n){g.fillStyle='#2a1d18';circ(nx,y,5);g.fill();if(lev>.02&&(!CAST.flow||laneOn(i,n,CAST.nOn))){/* a closed strand's stopper is shut */g.fillStyle=heat(.6+.38*lev*fl);g.globalAlpha=.4+.6*lev;circ(nx,y,4.2);g.fill();g.globalAlpha=1}
    SK.line(g,nx,y,x0+9,y+7*dn,'#1d1f23',2.6);SK.line(g,nx,y,x0+9,y+7*dn,'#9aa2ad',1.2);SK.box(g,x0+5,dn>0?y+3:y-12,8,9,'#3d4756','#14171c',2);g.fillStyle='#d24b3a';g.fillRect(x0+6.5,dn>0?y+4.5:y-10.5,2,2);
    g.fillStyle='#2a2c30';circ(nx,y,2.6);g.fill();g.fillStyle='#8b939e';circ(nx-.7,y-.7,1);g.fill()}
   else{g.fillStyle='#5a5f66';circ(nx,y,4);g.fill();g.strokeStyle='#2a2d31';g.lineWidth=1;circ(nx,y,4);g.stroke()}}}
@@ -229,7 +229,8 @@ function drawCaster(){if(!B_('strang')||!inView(1540,830,320))return;const n=nSt
  /* the strand glow: one gradient from the mould exit to the cutter, shared by all strands */
  let sg=null;if(flow){sg=g.createLinearGradient(MCX+11,0,cx,0);sg.addColorStop(0,heat(.97));sg.addColorStop(.3,heat(.8));sg.addColorStop(.62,heat(.66));sg.addColorStop(1,heat(.56))}
  const off=RM?0:((CAST.pos||0)*v)%9;
- for(let i=0;i<8;i++){const y=SY(i),on=i<n,fl=flow&&i<nOn;
+ const l0=lv('endless')&&B_('strang')?n-nOn:0;/* first running strand (strands close from the top with the endless line) */
+ for(let i=0;i<8;i++){const y=SY(i),on=i<n,fl=flow&&laneOn(i,n,nOn);
   if(!on){/* not bought yet: covered mould position, bare floor */SK.box(g,MCX-11,y-11,22,22,'#2a2d33','#15171a',3);g.strokeStyle='rgba(255,255,255,.08)';g.lineWidth=1;g.beginPath();g.moveTo(MCX-7,y-7);g.lineTo(MCX+7,y+7);g.moveTo(MCX+7,y-7);g.lineTo(MCX-7,y+7);g.stroke();
    SK.box(g,WSX,y-12,26,24,'#24272c',null,3);continue}
   /* run-out rollers */
@@ -250,20 +251,23 @@ function drawCaster(){if(!B_('strang')||!inView(1540,830,320))return;const n=nSt
  /* water manifolds at both ends, spray headers along each strand with nozzles aimed at it */
  g.fillStyle='#2f5f8a';g.fillRect(1488,TD.y0-4,3,TD.y1-TD.y0+8);g.fillRect(1537,TD.y0-4,3,TD.y1-TD.y0+8);
  for(let i=0;i<n;i++){const y=SY(i);g.fillStyle='#3a6f9e';g.fillRect(1490,y-10,48,2);g.fillRect(1490,y+8,48,2);
-  if(flow&&i<nOn){g.fillStyle='rgba(190,225,255,.3)';g.beginPath();for(let hx=1496;hx<1536;hx+=12){g.moveTo(hx,y-8);g.lineTo(hx-3,y-4.5);g.lineTo(hx+3,y-4.5);g.closePath();g.moveTo(hx,y+8);g.lineTo(hx-3,y+4.5);g.lineTo(hx+3,y+4.5);g.closePath()}g.fill()}}
- if(flow){if(RM){g.fillStyle='rgba(235,240,245,.18)';for(let i=0;i<nOn;i++){SK.circ(g,1508,SY(i)-14,9);g.fill()}}
-  else SK.parts(10+nOn*2,.55,9,T,(f,a,b)=>{const y=SY(floor(b*nOn*.999));g.fillStyle=`rgba(235,240,245,${.3*(1-f)})`;SK.circ(g,1492+a*44+f*6,y-6-f*20,3+f*9);g.fill()})}
+  if(flow&&laneOn(i,n,nOn)){g.fillStyle='rgba(190,225,255,.3)';g.beginPath();for(let hx=1496;hx<1536;hx+=12){g.moveTo(hx,y-8);g.lineTo(hx-3,y-4.5);g.lineTo(hx+3,y-4.5);g.closePath();g.moveTo(hx,y+8);g.lineTo(hx-3,y+4.5);g.lineTo(hx+3,y+4.5);g.closePath()}g.fill()}}
+ if(flow){if(RM){g.fillStyle='rgba(235,240,245,.18)';for(let i=0;i<nOn;i++){SK.circ(g,1508,SY(l0+i)-14,9);g.fill()}}
+  else SK.parts(10+nOn*2,.55,9,T,(f,a,b)=>{const y=SY(l0+floor(b*nOn*.999));g.fillStyle=`rgba(235,240,245,${.3*(1-f)})`;SK.circ(g,1492+a*44+f*6,y-6-f*20,3+f*9);g.fill()})}
  /* billets: cut pieces on the run-out; when the strand has stopped, the uncut tails */
- for(const r of CAST.run){if(r.x>cx)SK.billetBar(g,r.x-40,SY(r.lane),40,9,.5);else if(!(flow&&r.lane<nOn))SK.billetBar(g,max(MCX+12,r.x-40),SY(r.lane),min(40,r.x-MCX-12),9,.55)}
+ for(const r of CAST.run){if(r.x>cx)SK.billetBar(g,r.x-40,SY(r.lane),40,9,.5);else if(!(flow&&laneOn(r.lane,n,nOn)))SK.billetBar(g,max(MCX+12,r.x-40),SY(r.lane),min(40,r.x-MCX-12),9,.55);if(r.dd&&r.x>ARCHX+20)defRing(max(MCX+12,r.x-40),SY(r.lane),min(40,r.x-MCX-12))}
  /* cooling bed: billets walk across and cool from orange to grey */
- for(const b of CAST.bed){const k=b.it.hot?clamp(.62-(b.va||0)*.055,.07,.62):.07;SK.billetBar(g,1658,b.y,98,7,k)}
+ for(const b of CAST.bed){const k=b.it.hot?clamp(.62-(b.va||0)*.055,.07,.62):.07;SK.billetBar(g,1658,b.y,98,7,k);if(b.it.dd)defRing(1658,b.y,98)}
+ /* the endless strand runs on past the cutter (it is not cut) */
+ if(elOn()&&flow&&elDiv()<.6){const y=SY(n-1);g.fillStyle=sg||heat(.6);g.fillRect(MCX+10,y-4.5,cx-MCX-10,9)}
  /* cutters: hydraulic shear (old) or torch cutting machine (upgrade) */
  for(let i=0;i<n;i++){const y=SY(i),cut=CAST.cut.find(c=>c.lane===i),ph=cut?cut.t/.6:0,bx=cx;
   if(!lv('torch')){SK.box(g,bx-9,y-16,18,32,'#6b6f76','#1d1f23',2);SK.hazardBar(g,bx-9,y-16,18,4);g.fillStyle='#2a2c30';g.fillRect(bx-1.5,y-11,3,22);if(cut&&ph<.3){g.fillStyle=`rgba(255,250,220,${1-ph/.3})`;g.fillRect(bx-3,y-10,6,20)}}
   else{const carX=bx-6+(cut?ph*10:0);g.fillStyle='#6d6358';g.fillRect(bx-22,y-15,44,1.6);g.fillRect(bx-22,y+13.5,44,1.6);
    SK.box(g,carX-6,y-16,12,32,'#4a5058','#1b1e22',2);SK.hazardBar(g,carX-6,y-16,12,3);SK.line(g,carX-3,y-16,carX-3,y-21,'#d24b3a',1.4);SK.line(g,carX+2,y-16,carX+2,y-21,'#3a8fd0',1.4);
    if(cut&&ph<.8){const ny=lerp(y-6,y+6,ph/.8);g.fillStyle='#b87333';circ(carX+6,ny,2.4);g.fill();if(!RM)SK.parts(10,3,i*7,T,(ff,a,b)=>{g.fillStyle=`rgba(255,${190+60*a|0},${90+80*b|0},${1-ff})`;SK.circ(g,carX+6+(a-.3)*10*ff,ny+ff*16,1+1.2*(1-ff));g.fill()})}
-   else{g.fillStyle='#b87333';circ(carX+6,y-6,2);g.fill()}}}}
+   else{g.fillStyle='#b87333';circ(carX+6,y-6,2);g.fill()}}}
+ drawCastTech(n,nOn)}
 /* ---- downstream stations ---- */
 function nodeQ(id){const n=NODE[id];return n.in.length+(n.cur?1:0)}
 function drawGjv(){if(!B_('vv')||!inView(POS.gjv.x,POS.gjv.y,200))return;const x0=2035,x1=2275,y0=520,h=160,walk=lv('bjelke')>0,fl=i=>RM?.7:.5+.5*Math.sin(T*9+i*1.7),busy=!!NODE.gjv.cur;
@@ -311,7 +315,8 @@ function drawKob(){if(!B_('kob')||!inView(POS.kob.x,POS.kob.y,200))return;const 
 function drawPileK(k){const p=PR[k].pile,a=PILE[k];if(!pileOn(k)||!inView(p.x,p.y,80))return;const n=min(a.length,32);
  g.fillStyle='rgba(0,0,0,.22)';SK.rr(g,p.x-42,p.y-34,84,68,8);g.fill();g.setLineDash([6,5]);g.strokeStyle='rgba(245,197,24,.45)';g.lineWidth=2;SK.rr(g,p.x-42,p.y-34,84,68,8);g.stroke();g.setLineDash([]);
  for(let i=0;i<n;i++){const lay=floor(i/8),c=i%8,cx=p.x-22+(c%4)*15,cy=p.y-6+floor(c/4)*16-lay*5;
-  if(k==='pig')drawPig(cx+4,cy,.75);else if(k==='ingot')SK.ingot(g,cx+4,cy,7,0);else if(k==='billet')SK.billetBar(g,p.x-32,p.y+18-(i%8)*5-lay*2,64,4,.06);else if(k==='coil')SK.coilTop(g,cx+4,cy,8,'#7a6a5c');else if(k==='mesh')drawMesh(p.x,p.y+14-i*3,2.2);else if(k==='bent')drawBent(cx+4,cy,1.3);else SK.bundle(g,p.x-30,p.y+12-(i%8)*6-lay*2,60,3,[.15,.5,.85],k==='tcore'?'#3a4350':C.rebar)}
+  if(k==='pig')drawPig(cx+4,cy,.75);else if(k==='ingot')SK.ingot(g,cx+4,cy,7,0);else if(k==='billet')SK.billetBar(g,p.x-32,p.y+18-(i%8)*5-lay*2,64,4,.06);else if(k==='coil')SK.coilTop(g,cx+4,cy,8,'#7a6a5c');else if(k==='mesh')drawMesh(p.x,p.y+14-i*3,2.2);else if(k==='bent')drawBent(cx+4,cy,1.3);else if(k==='cage')drawCage(cx+4,cy,1.1);else SK.bundle(g,p.x-30,p.y+12-(i%8)*6-lay*2,60,3,[.15,.5,.85],k==='tcore'?'#3a4350':k==='ebar'?'#4a4f58':C.rebar)}
+ if(lv('pass')&&AUTO()&&n&&k!=='pig'&&k!=='ingot')qrTag(p.x+34,p.y-26,6);
  const top=a.length?a[a.length-1]:{k,t:1,q:qLF()},pr=val(top)*BASEP()*gm()/max(.001,top.t),n1=a.length+' '+t_('stk'),n2=kr(pr,'/t'),pn=t_(PR[k].n);
  ctx.font=`800 9.5px ${FONT}`;let PW=ctx.measureText(pn).width;ctx.font=`700 9px ${FONT}`;PW=Math.ceil(max(88,PW+14,ctx.measureText(n1+' · '+n2).width+14));const hw=PW/2;
  LBL.push({k:'p'+k,x:p.x-hw,y:p.y+38,w:PW,h:30,pr:1,ax:p.x,f:(lx,ly)=>{g.fillStyle='rgba(16,19,26,.9)';SK.rr(g,lx,ly,PW,30,8);g.fill();g.strokeStyle='rgba(245,197,24,.6)';g.lineWidth=1;SK.rr(g,lx+.5,ly+.5,PW-1,29,8);g.stroke();txt(pn,lx+hw,ly+9,9.5,C.ui,800);txt(n1+' · '+n2,lx+hw,ly+21,9,C.coin,700)}})}
@@ -587,7 +592,7 @@ function bolt(x,y,len){const a=rnd(0,TAU);ctx.beginPath();ctx.moveTo(x,y);let px
 function glowC(x,y,r,col,a){if(!inView(x,y,r))return;const gr=ctx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,rgba(col,a));gr.addColorStop(1,rgba(col,0));ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2)}
 function stream(x0,y0,x1,y1,w){ctx.lineCap='round';ctx.strokeStyle=rgba(C.molten,.9);ctx.lineWidth=9*w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo((x0+x1)/2,min(y0,y1)-14,x1,y1);ctx.stroke();ctx.strokeStyle=rgba(C.moltenhi,.9);ctx.lineWidth=3.5*w;ctx.setLineDash([10,8]);ctx.lineDashOffset=-T*160;ctx.stroke();ctx.setLineDash([]);ctx.lineCap='butt'}
 function drawMovers(){for(const m of movers){const[x,y]=moverPos(m);if(!inView(x,y,30))continue;const it=m.it;
- if(it.k==='billet'||it.k==='rebar'&&m.to==='tc'||m.to==='stel')SK.billetBar(g,x-18,y,36,6,.6);else if(it.k==='coil')SK.coilTop(g,x,y,9,'#7a6a5c');else SK.bundle(g,x-18,y-4,36,3,[.2,.5,.8],it.k==='tcore'?'#3a4350':C.rebar)}}
+ if(it.k==='billet'||it.k==='rebar'&&m.to==='tc'||m.to==='stel')SK.billetBar(g,x-18,y,36,6,.6);else if(it.k==='coil')SK.coilTop(g,x,y,9,'#7a6a5c');else SK.bundle(g,x-18,y-4,36,3,[.2,.5,.8],it.k==='tcore'?'#3a4350':it.k==='ebar'?'#4a4f58':C.rebar)}}
 /* the walk path: a dotted line from the player along the remaining waypoints, and a ring where he stops */
 function drawGoPath(){const g=G.go;if(!g||g.crane)return;const a=G.crane?CRm[G.crane]:P;
  ctx.save();ctx.lineCap='round';ctx.setLineDash([2,11]);ctx.lineDashOffset=RM?0:-T*22;ctx.lineWidth=4.5;ctx.strokeStyle='rgba(0,0,0,.35)';
@@ -595,6 +600,159 @@ function drawGoPath(){const g=G.go;if(!g||g.crane)return;const a=G.crane?CRm[G.c
  path();ctx.stroke();ctx.lineWidth=3.2;ctx.strokeStyle='rgba(255,236,170,.95)';path();ctx.stroke();ctx.setLineDash([]);
  const m=g.pts[g.pts.length-1],k=RM?1:.85+.15*Math.sin(T*6);ctx.strokeStyle='rgba(245,197,24,.95)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(m.x,m.y+8,13*k,7*k,0,0,PI*2);ctx.stroke();
  ctx.fillStyle='rgba(245,197,24,.35)';ctx.beginPath();ctx.ellipse(m.x,m.y+8,5,3,0,0,PI*2);ctx.fill();ctx.restore()}
+/* ======== Phase 3 drawing: the future downstream ======== */
+/* a tiny QR code: the digital product passport on a bundle */
+function qrTag(x,y,s){s=s||6;g.fillStyle='#f4f1ea';g.fillRect(x-s/2-1,y-s/2-1,s+2,s+2);g.fillStyle='#14161a';const k=s/3;for(let i=0;i<3;i++)for(let j=0;j<3;j++)if((i*7+j*3+i*j)%3!==1)g.fillRect(x-s/2+i*k,y-s/2+j*k,k,k)}
+/* an industrial robot seen from above: base, upper arm, forearm, tool. a1/a2 = joint angles; tool 'grip' | 'weld' | 'grind' */
+function robotArm(x,y,a1,a2,L1_,L2_,col,tool,on){SK.shadow(g,x+3,y+4,12,10,.3);g.fillStyle='#2a2d33';circ(x,y,11);g.fill();g.fillStyle=col;circ(x,y,8);g.fill();
+ const ex=x+Math.cos(a1)*L1_,ey=y+Math.sin(a1)*L1_,tx=ex+Math.cos(a1+a2)*L2_,ty=ey+Math.sin(a1+a2)*L2_;g.lineCap='round';
+ SK.line(g,x,y,ex,ey,'#1d1f23',8);SK.line(g,x,y,ex,ey,col,5.5);SK.line(g,ex,ey,tx,ty,'#1d1f23',6);SK.line(g,ex,ey,tx,ty,mix(col,'#ffffff',.25),3.8);g.lineCap='butt';
+ g.fillStyle='#2a2d33';circ(ex,ey,4.2);g.fill();g.fillStyle='#8b939e';circ(ex,ey,2);g.fill();
+ if(tool==='weld'){g.fillStyle='#3a3f46';circ(tx,ty,3.4);g.fill();if(on){g.fillStyle=`rgba(220,240,255,${RM?.8:.55+.45*Math.random()})`;circ(tx+Math.cos(a1+a2)*4,ty+Math.sin(a1+a2)*4,3);g.fill()}}
+ else if(tool==='grind'){g.fillStyle='#6b7079';circ(tx,ty,4);g.fill();g.strokeStyle='#c9ced6';g.lineWidth=1;circ(tx,ty,4);g.stroke()}
+ else{g.fillStyle='#3a3f46';g.fillRect(tx-3,ty-3,6,6);g.fillStyle='#c9ced6';g.fillRect(tx-4,ty-1,8,2)}
+ return[tx,ty]}
+/* a dashed outline where equipment can be bought (nothing built yet) */
+function siteBox(x,y,w,h){g.save();g.setLineDash([5,5]);g.strokeStyle='rgba(244,241,234,.18)';g.lineWidth=1.5;SK.rr(g,x,y,w,h,6);g.stroke();g.restore()}
+function cabinet(x,y,w,h,top){SK.shadow(g,x+w/2+3,y+h/2+4,w*.55,h*.5,.3);SK.box(g,x,y,w,h,'#3b4048','#15171a',4);g.fillStyle=top||'#4a5058';SK.rr(g,x+3,y+3,w-6,8,2);g.fill();
+ g.fillStyle='rgba(0,0,0,.25)';for(let yy=y+16;yy<y+h-6;yy+=5)g.fillRect(x+5,yy,w-10,1.5)}
+/* ---- casting tech on the caster: tundish heating, slag detection camera, EMS coils, inspection arch + grinding robot ---- */
+const ARCHX=1584;
+function drawCastTech(n,nOn){if(!B_('strang')||!AUTO()||!inView(1540,830,340))return;const flow=CAST.flow;
+ /* tundish heating: two induction channels on the lid, glowing while they heat */
+ if(lv('tdheat')){const hk=[0,.5,.8,1][lv('tdheat')],gl=RM?.6:.5+.3*Math.sin(T*7);for(const yy of[TD.y0+44,TD.y1-44]){SK.box(g,TD.x0+3,yy-14,TD.x1-TD.x0-6,28,'#2a2d33','#111',3);
+   g.strokeStyle='#b87333';g.lineWidth=1.6;for(let k=0;k<5;k++){g.beginPath();g.moveTo(TD.x0+6,yy-10+k*5);g.lineTo(TD.x1-6,yy-10+k*5);g.stroke()}
+   if(CAST.tm>.1){g.fillStyle=rgba('#ff8a20',gl*hk*.7);g.fillRect(TD.x0+6,yy-3,TD.x1-TD.x0-12,6)}}
+  /* power cables to the casting-tech room */g.strokeStyle='#1d1f23';g.lineWidth=3;g.beginPath();g.moveTo(TD.x1-6,TD.y1-30);g.lineTo(TD.x1+4,TD.y1+12);g.stroke()}
+ /* EMS: stirring coils around every mould */
+ if(lv('ems'))for(let i=0;i<n;i++){const y=SY(i),on=flow&&laneOn(i,n,nOn);g.strokeStyle=on?rgba('#4f8fd8',RM?.9:.6+.4*Math.sin(T*10+i)):'#2f4a68';g.lineWidth=2.4;SK.rr(g,MCX-15,y-15,30,30,5);g.stroke();
+  g.strokeStyle='#b87333';g.lineWidth=1;for(let k=-10;k<=10;k+=5){g.beginPath();g.moveTo(MCX-15,y+k);g.lineTo(MCX-13,y+k);g.moveTo(MCX+13,y+k);g.lineTo(MCX+15,y+k);g.stroke()}}
+ /* high-speed strand: speed chevrons on the withdrawal units */
+ if(lv('hss'))for(let i=0;i<n;i++){const y=SY(i);g.fillStyle=C.hazard;for(let k=0;k<lv('hss');k++){const x=WSX+4+k*7;g.beginPath();g.moveTo(x,y-3);g.lineTo(x+4,y);g.lineTo(x,y+3);g.closePath();g.fill()}}
+ /* slag detection: an IR camera on a post aimed at the ladle's slide gate; red while it sees slag and shuts the gate */
+ if(lv('slagdet')){const cx=1386,cy=880,Lc=LADLES.find(l=>l.state==='cast'),slag=Lc&&Lc.sm>0&&Lc.steel/Lc.sm<.08&&Lc.steel>.01;
+  SK.line(g,cx,cy,cx,cy+18,'#2a2d31',3);SK.box(g,cx-7,cy-6,14,10,'#3d4756','#111',2);g.fillStyle='#14171c';circ(cx-6,cy-1,2.6);g.fill();
+  g.fillStyle=slag?'#ff4a3a':'#5fd38d';circ(cx+4,cy-4,1.8);g.fill();
+  if(Lc&&CAST.rf>=1){const gp=gatePt(Lc);g.fillStyle=rgba(slag?'#ff4a3a':'#ffd36b',slag?.35:.12);g.beginPath();g.moveTo(cx-6,cy-1);g.lineTo(gp[0]-6,gp[1]-6);g.lineTo(gp[0]+6,gp[1]+6);g.closePath();g.fill()}}
+ /* inspection arch: a gantry across the strands with a camera and a laser line per strand */
+ if(lv('insp')){const y0=TD.y0-12,y1=TD.y1+10;SK.box(g,ARCHX-5,y0-8,10,8,'#4a5058','#111',2);SK.box(g,ARCHX-5,y1,10,8,'#4a5058','#111',2);
+  g.fillStyle='#565c65';g.fillRect(ARCHX-3,y0,6,y1-y0);SK.hazardBar(g,ARCHX-3,y0,6,6);
+  for(let i=0;i<n;i++){const y=SY(i),on=flow&&laneOn(i,n,nOn);SK.box(g,ARCHX-6,y-13,12,7,'#2a2d33','#111',2);g.fillStyle=on?'#7fe0ff':'#3a4350';circ(ARCHX,y-9.5,1.6);g.fill();
+   if(on){g.strokeStyle=rgba('#ff3b30',RM?.8:.5+.4*Math.sin(T*16+i));g.lineWidth=1.2;g.beginPath();g.moveTo(ARCHX,y-6);g.lineTo(ARCHX,y+6);g.stroke()}}
+  /* grinding robot beside the cooling bed: grinds the flagged billets */
+  const gb=CAST.bed.find(b=>b.it.dd),rx=1771,ry=946;let a1=-2.4,a2=.6;if(gb){const tx=1730,ty=gb.y;a1=Math.atan2(ty-ry,tx-rx)-.25;a2=.5}
+  const tp=robotArm(rx,ry,a1,a2,18,16,'#e0b020','grind',!!gb);if(gb&&!RM)SK.parts(8,4,9,T,(f,a,b)=>{g.fillStyle=`rgba(255,${200+50*a|0},120,${1-f})`;SK.circ(g,tp[0]+(a-.5)*14*f,tp[1]+(b-.2)*14*f,1+1.2*(1-f));g.fill()})}
+ /* superheat tag above the tundish */
+ {const st=shState(),col=st==='ok'?C.good:st==='hot'?C.danger:'#7fb8ff',t=t_('ΔT {0} °C',Math.round(CAST.sh)),x=(TD.x0+TD.x1)/2,y=TD.y0-50;ctx.font=`800 9px ${FONT}`;const w=ctx.measureText(t).width+12;
+  ctx.fillStyle='rgba(16,19,26,.9)';rr(x-w/2,y-7,w,14,7);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.2;rr(x-w/2+.5,y-6.5,w-1,13,7);ctx.stroke();txt(t,x,y+.5,9,col,800);LOBS.push({x:x-w/2,y:y-7,w,h:14})}}
+/* red ring around a flagged billet */
+function defRing(x,y,L){g.strokeStyle=rgba('#ff3b30',RM?.95:.65+.35*Math.sin(T*9));g.lineWidth=2;SK.ell(g,x+L/2,y,L/2+5,8,0);g.stroke()}
+/* ---- endless line: the strand from the caster through the loop, induction heater, driven stands, quench, shear and bundler ---- */
+function elPts(){const n=nStr(),y0=SY(n-1),E=ELG;return[[1652,y0],[1772,y0],[E.bend,y0+18],[E.bend,E.y-18],[E.bend+18,E.y]]}
+function drawEndless(){if(!lv('endless')||!B_('strang'))return;const E=ELG,y=E.y,on=EL.outE>.02||EL.buf>.05,feed=CAST.flow&&elDiv()<.6,v=EL.v,off=RM?0:(EL.pos*30)%9;
+ if(!inView((1652+E.end)/2,(SY(nStr()-1)+y)/2,(E.end-1652)/2+80))return;
+ /* roller bed under the whole line */
+ g.fillStyle='#24272c';g.fillRect(E.bend+10,y-9,E.end-E.bend-10,18);g.fillStyle='#4f555e';for(let x=E.bend+16;x<E.end;x+=12)g.fillRect(x,y-8,4,16);
+ const P_=elPts();g.lineJoin='round';g.lineCap='butt';
+ /* strand from the caster to the loop: glowing when it runs */
+ const bar=(pts,w,k)=>{g.strokeStyle='#1a1c20';g.lineWidth=w+3;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();g.strokeStyle=k>0?SK.heat(k):'#3f4248';g.lineWidth=w;g.stroke()};
+ bar(P_,8,feed?.66:0);
+ /* loop buffer: the strand bows up as the loop fills */
+ const lk=clamp(EL.buf/max(.01,bufCap()),0,1),hump=6+30*lk;g.strokeStyle='#1a1c20';g.lineWidth=11;g.beginPath();g.moveTo(E.loop0,y);g.bezierCurveTo(E.loop0+18,y-hump,E.loop1-18,y-hump,E.loop1,y);g.lineTo(E.heat0,y);g.stroke();
+ g.strokeStyle=on||feed?SK.heat(.66):'#3f4248';g.lineWidth=8;g.stroke();
+ for(const x of[E.loop0,E.loop1]){g.fillStyle='#2a2d33';circ(x,y+6,5);g.fill();g.fillStyle='#8b939e';circ(x,y+6,2);g.fill()}
+ SK.line(g,(E.loop0+E.loop1)/2,y-hump,(E.loop0+E.loop1)/2,y+22,'#565c65',2);g.fillStyle=lk>.85?C.danger:C.hazard;g.fillRect((E.loop0+E.loop1)/2-3,y+18,6,6);
+ /* induction heater: copper coils around the bar */
+ SK.shadow(g,(E.heat0+E.heat1)/2+3,y+5,(E.heat1-E.heat0)/2+4,26,.3);SK.box(g,E.heat0,y-24,E.heat1-E.heat0,48,'#3b4048','#15171a',5);
+ g.fillStyle=on?SK.heat(.86):'#3f4248';g.fillRect(E.heat0,y-4,E.heat1-E.heat0,8);
+ for(let x=E.heat0+6;x<E.heat1-4;x+=7){g.strokeStyle='#b87333';g.lineWidth=2.4;g.beginPath();g.moveTo(x,y-16);g.lineTo(x+3,y+16);g.stroke()}
+ if(on){g.fillStyle=rgba('#ff8a20',RM?.35:.25+.15*Math.sin(T*8));g.fillRect(E.heat0+3,y-20,E.heat1-E.heat0-6,40)}
+ /* the bar through the stands gets thinner; each stand has its own drive motor */
+ const xs=[];for(let i=0;i<E.stN;i++)xs.push(E.st0+i*E.stD);
+ for(let i=0;i<=E.stN;i++){const a=i?xs[i-1]:E.heat1,b=i<E.stN?xs[i]:E.q0,w=max(3,7.5-i*.55);g.fillStyle=on?SK.heat(.84-i*.01):'#3f4248';g.fillRect(a,y-w/2,b-a,w)}
+ xs.forEach((x,i)=>{const H=i%2===0,up=i%2===0?-1:1;SK.line(g,x,y+up*26,x,y+up*32,'#5b616a',3);SK.box(g,x-9,up<0?y-44:y+30,18,14,'#2f5f8a','#14171c',3);g.fillStyle='#14171c';circ(x,up<0?y-37:y+37,3);g.fill();
+  if(on&&!RM){g.fillStyle='rgba(255,255,255,.5)';const a=T*12+i;g.fillRect(x-1+Math.cos(a)*2.5,(up<0?y-37:y+37)-1+Math.sin(a)*2.5,2,2)}
+  const hw=H?22:12;SK.shadow(g,x+3,y+4,11,hw+3,.3);SK.box(g,x-8,y-hw,16,hw*2,'#6b7079','#1d2024',3);g.fillStyle='#b9c1cb';if(H)g.fillRect(x-3,y-hw+4,6,hw*2-8);else{SK.circ(g,x,y-5,4);g.fill();SK.circ(g,x,y+5,4);g.fill()}});
+ /* inline quench: water box with nozzles and steam */
+ g.fillStyle=on?SK.heat(.75):'#3f4248';g.fillRect(E.q0,y-3,E.q1-E.q0,6);
+ SK.shadow(g,(E.q0+E.q1)/2+3,y+5,(E.q1-E.q0)/2+3,24,.3);SK.box(g,E.q0,y-22,E.q1-E.q0,44,'#3d4756','#14171c',5);g.fillStyle='rgba(58,143,208,.5)';g.fillRect(E.q0+4,y-18,E.q1-E.q0-8,36);
+ for(let i=0;i<8;i++)for(let j=0;j<2;j++){g.fillStyle='#9cc8ff';SK.circ(g,E.q0+10+i*15,y-10+j*20,2);g.fill()}
+ if(on&&!RM)SK.parts(12,.35,17,T,(f,a)=>{g.fillStyle=`rgba(230,236,242,${.34*(1-f)})`;SK.circ(g,E.q0+8+a*(E.q1-E.q0-16)-f*14,y-26-f*36,4+f*10);g.fill()});
+ /* laser gauge, flying shear, run-out with cut bars, bundler with QR printer */
+ g.fillStyle=on?SK.heat(.22):'#3f4248';g.fillRect(E.q1,y-3,E.bund0-E.q1,6);
+ SK.box(g,E.gauge-6,y-20,12,10,'#2a2d33','#111',2);SK.box(g,E.gauge-6,y+10,12,10,'#2a2d33','#111',2);if(on){g.strokeStyle=rgba('#ff3b30',.8);g.lineWidth=1.2;g.beginPath();g.moveTo(E.gauge,y-10);g.lineTo(E.gauge,y+10);g.stroke()}
+ SK.box(g,E.shear-9,y-24,18,48,'#6b6f76','#1d1f23',2);SK.hazardBar(g,E.shear-9,y-24,18,4);g.fillStyle='#2a2c30';g.fillRect(E.shear-1.5,y-18,3,36);
+ if(on){const L=40,ph=((EL.pos*14)%1+1)%1;for(let k=0;k<5;k++){const x=E.shear+12+((k+ph)*L)%(E.bund0-E.shear-14);g.fillStyle=SK.heat(.16);g.fillRect(x,y-2.5,L-8,5)}}
+ SK.shadow(g,(E.bund0+E.bund1)/2+3,y+6,(E.bund1-E.bund0)/2+4,34,.3);SK.box(g,E.bund0,y-32,E.bund1-E.bund0,64,'#4a5058','#1d2024',5);SK.hazardBar(g,E.bund0,y-32,E.bund1-E.bund0,5);
+ SK.bundle(g,E.bund0+8,y-8,E.bund1-E.bund0-16,5,[.2,.5,.8],'#4a4f58');if(lv('pass')){SK.box(g,E.bund1-18,y+14,14,12,'#2a2d33','#111',2);qrTag(E.bund1-11,y+20,5)}}
+/* ---- casting-tech room: power and data cabinets for each upgrade (dashed outline until bought) ---- */
+function drawQA(){if(!zoneBuilt(ZN.qa)||!inView(2040,1380,300))return;const ids=['tdheat','slagdet','ems','hss','insp'];
+ for(let i=0;i<5;i++){const x=QAX[i]-30,y=QAY-34,w=60,h=62,l=lv(ids[i]);if(!l){siteBox(x,y,w,h);continue}cabinet(x,y,w,h,['#b87333','#ff8a20','#4f8fd8',C.hazard,'#7fe0ff'][i]);
+  const sx=x+8,sy=y+18,sw=w-16,sh=24;g.fillStyle='#0d1117';g.fillRect(sx,sy,sw,sh);
+  if(i===0){/* induction power: output bar */const k=shOn()&&CAST.tm>.1?[0,.5,.8,1][l]:0;g.fillStyle=rgba('#ff8a20',.3+.6*k*(RM?1:.75+.25*Math.sin(T*5)));g.fillRect(sx+3,sy+sh-6,(sw-6)*max(.15,k),3);g.strokeStyle='#b87333';g.lineWidth=1.4;for(let k2=0;k2<4;k2++){g.beginPath();g.arc(sx+sw/2,sy+9,3+k2*2.2,PI,TAU);g.stroke()}}
+  else if(i===1){/* IR picture of the stream */const gr=g.createLinearGradient(sx,0,sx+sw,0);gr.addColorStop(0,'#2a1060');gr.addColorStop(.5,'#ff8a20');gr.addColorStop(1,'#2a1060');g.fillStyle=gr;g.fillRect(sx+sw/2-5,sy+2,10,sh-4);const Lc=LADLES.find(l2=>l2.state==='cast'),sl=Lc&&Lc.sm>0&&Lc.steel/Lc.sm<.08&&Lc.steel>.01;if(sl){g.fillStyle='#ffffff';circ(sx+sw/2,sy+sh-6,3);g.fill()}}
+  else if(i===2){/* stirring field */const a=RM?0:T*4;g.strokeStyle='#4f8fd8';g.lineWidth=1.2;for(let k2=0;k2<3;k2++){g.beginPath();g.ellipse(sx+sw/2,sy+sh/2,4+k2*4,3+k2*2.5,a+k2,0,TAU);g.stroke()}}
+  else if(i===3){/* breakout prediction: mould temperatures as a trace */g.strokeStyle='#5fd38d';g.lineWidth=1.2;g.beginPath();for(let k2=0;k2<=sw;k2+=3){const v=Math.sin(k2*.4+(RM?0:T*3))*4+Math.sin(k2*.13)*3;k2?g.lineTo(sx+k2,sy+sh/2+v):g.moveTo(sx,sy+sh/2+v)}g.stroke()}
+  else{/* surface scan of a billet with the defects marked */g.fillStyle='#565c65';g.fillRect(sx+3,sy+8,sw-6,8);const nd=min(4,Math.round(P3.dq*40));for(let k2=0;k2<nd;k2++){g.strokeStyle='#ff3b30';g.lineWidth=1.2;circ(sx+8+k2*8,sy+12,3);g.stroke()}}
+  g.fillStyle=rgba('#5fd38d',RM?.9:.5+.4*Math.sin(T*3+i));circ(x+w-8,y+h-8,2.2);g.fill()}}
+/* ---- by-product plants: slag → cement, waste heat → district heating, CO₂ capture ---- */
+function drawByp(){if(!AUTO()||!inView(2720,1360,440))return;const B=BYPG,y0=B.y0,y1=B.y1,ym=(y0+y1)/2,arc=F.arc>0?F.arc:0;
+ /* slag → cement: slag heap, crusher, conveyor, rotating ball mill, cement silo */
+ {const l=lv('slagmill'),X=B.slag;if(!l)siteBox(X.x0,y0,X.x1-X.x0,y1-y0);else{const run=F.rate>0;
+  for(let i=0;i<10;i++){const a=hsh(i)*PI,r=12+hsh(i+5)*22;drawSlag(X.x0+34+Math.cos(a)*r,ym+12-Math.sin(a)*r*.5,7,i)}
+  SK.box(g,X.x0+70,ym-26,36,36,'#4a5058','#15171a',4);g.fillStyle='#22252b';g.beginPath();g.moveTo(X.x0+76,ym-20);g.lineTo(X.x0+100,ym-20);g.lineTo(X.x0+90,ym+2);g.closePath();g.fill();
+  SK.belt(g,X.x0+106,ym-8,X.x0+130,ym-8,8,T);
+  const mx=X.x0+130,mw=82,my=ym-8;SK.shadow(g,mx+mw/2+3,my+6,mw/2+4,18,.3);g.fillStyle='#6b7079';SK.rr(g,mx,my-16,mw,32,10);g.fill();g.strokeStyle='#2a2d31';g.lineWidth=1.5;SK.rr(g,mx,my-16,mw,32,10);g.stroke();
+  const ph=RM||!run?0:(T*2)%1;g.fillStyle='rgba(0,0,0,.25)';for(let k=0;k<6;k++){const x=mx+6+((k+ph)/6)*(mw-12);g.fillRect(x,my-15,2,30)}SK.box(g,mx+mw/2-6,my-22,12,6,'#3a3f46','#111',2);
+  SK.silo(g,X.x1-24,ym+2,20,'#c9c3b4');if(run&&!RM)SK.parts(8,.6,31,T,(f,a)=>{g.fillStyle=`rgba(210,205,190,${.3*(1-f)})`;SK.circ(g,mx+20+a*40,my-20-f*20,3+f*6);g.fill()});
+  SK.pipe(g,[[mx+mw,my],[X.x1-44,my],[X.x1-44,ym-16]],4,'#8b939e',T)}}
+ /* district heating: hot and cold pipes, a plate heat exchanger and circulation pumps; the pipes leave toward the town */
+ {const l=lv('dheat'),X=B.heat;if(!l)siteBox(X.x0,y0,X.x1-X.x0,y1-y0);else{const hx=X.x0+70,hw=60;
+  SK.pipe(g,[[X.x0,ym-20],[hx,ym-20]],7,'#c2410c',T,{flow:arc>0?'#ffb030':null,speed:20+40*arc});SK.pipe(g,[[X.x0,ym+20],[hx,ym+20]],7,'#2f6fb5',T,{flow:arc>0?'#9cc8ff':null,speed:20+40*arc});
+  SK.shadow(g,hx+hw/2+3,ym+5,hw/2+4,36,.3);SK.box(g,hx,ym-34,hw,68,'#4a5058','#15171a',4);for(let k=0;k<9;k++){g.fillStyle=k%2?'#c2410c':'#2f6fb5';g.fillRect(hx+6+k*5.6,ym-28,3.6,56)}
+  for(const[k,py]of[[0,ym-22],[1,ym+22]]){const px=hx+hw+30;SK.fan(g,px,py,12,T,arc>0?8+arc*10:0);SK.pipe(g,[[hx+hw,py],[px-12,py]],6,k?'#2f6fb5':'#c2410c',T)}
+  SK.pipe(g,[[hx+hw+42,ym-22],[X.x1-14,ym-22],[X.x1-14,WH-12]],7,'#c2410c',T,{flow:arc>0?'#ffb030':null,speed:20+40*arc});SK.pipe(g,[[hx+hw+42,ym+22],[X.x1-34,ym+22],[X.x1-34,WH-12]],7,'#2f6fb5',T,{flow:arc>0?'#9cc8ff':null,speed:20+40*arc})}}
+ /* CO₂ capture: absorber and stripper columns, compressor, CO₂ tank */
+ {const l=lv('co2'),X=B.co2;if(!l)siteBox(X.x0,y0-6,X.x1-X.x0,y1-y0+6);else{const ax=X.x0+34,sx=X.x0+92,by=y1-12,run=arc>0;
+  SK2.cyl(g,ax,by,20,0,96,'#8b939e','#c9ced6',18);SK2.cap(g,ax,by-96*OK,20,'#b9c1cb');SK2.cyl(g,sx,by,15,0,78,'#7d858f','#b9c1cb',16);SK2.cap(g,sx,by-78*OK,15,'#a7adb7');
+  SK.pipe(g,[[ax,by-96*OK],[ax,by-104*OK],[sx,by-104*OK],[sx,by-78*OK]],3,'#565c65',T,{flow:run?'#c9ced6':null});
+  const cx=X.x0+128,cw=50;SK.box(g,cx,ym-20,cw,34,'#3b4048','#15171a',4);SK.fan(g,cx+16,ym-3,10,T,run?14:0);SK.fan(g,cx+36,ym-3,10,T,run?14:0);
+  const tx=X.x0+186,tw=56;SK.shadow(g,tx+tw/2+3,ym+26,tw/2+3,10,.3);g.fillStyle='#e9eef2';SK.rr(g,tx,ym+10,tw,22,11);g.fill();g.strokeStyle='#4f8fd8';g.lineWidth=2;SK.rr(g,tx,ym+10,tw,22,11);g.stroke();
+  for(let k=0;k<l;k++){g.fillStyle='#4f8fd8';g.fillRect(tx+10+k*12,ym+17,8,8)}
+  SK.pipe(g,[[sx+15,by-30],[cx,by-30],[cx,ym+14-6]],3,'#565c65',T);SK.pipe(g,[[cx+cw,ym],[tx+tw/2,ym],[tx+tw/2,ym+10]],3,'#4f8fd8',T,{flow:run?'#ffffff':null});
+  if(run&&!RM)SK.parts(10,.5,41,T,(f,a)=>{g.fillStyle=`rgba(235,240,245,${.28*(1-f)})`;SK.circ(g,ax+(a-.5)*14,by-96*OK-4-f*24,3+f*7);g.fill()})}}}
+/* ---- robot cells: two bending robots at the input table, two welding robots building cages on a jig ---- */
+function drawRob(){if(!lv('robot')||!inView(3340,1300,240))return;const n=NODE.rob,busy=!!n.cur,p=busy?n.p:0,b=ROBG.bend,w=ROBG.weld;
+ for(const c of[b,w]){g.fillStyle='rgba(0,0,0,.18)';SK.rr(g,c.x,c.y,c.w,c.h,8);g.fill();g.save();g.setLineDash([6,4]);g.strokeStyle=rgba(C.hazard,.55);g.lineWidth=2;SK.rr(g,c.x+1,c.y+1,c.w-2,c.h-2,8);g.stroke();g.restore()}
+ /* bending table: input rollers, a bar being bent into a shape */
+ const ty=1200;g.fillStyle='#24272c';g.fillRect(b.x+4,ty-8,b.w-8,16);g.fillStyle='#4f555e';for(let x=b.x+8;x<b.x+b.w-6;x+=10)g.fillRect(x,ty-7,3,14);
+ SK.box(g,b.x+56,ty-22,40,44,'#3b4048','#15171a',4);g.fillStyle='#8b939e';circ(b.x+76,ty,8);g.fill();g.fillStyle='#2a2d33';circ(b.x+76,ty,3);g.fill();
+ if(busy){const a=p*PI/2;g.strokeStyle=C.rebar;g.lineWidth=3;g.lineCap='round';g.beginPath();g.moveTo(b.x+20,ty);g.lineTo(b.x+76,ty);g.lineTo(b.x+76+Math.cos(-a)*26,ty+Math.sin(-a)*26);g.stroke();g.lineCap='butt'}
+ const sw=RM?0:Math.sin(T*2.2);robotArm(b.x+30,b.y+b.h-14,-1.2+sw*.3,-.9,24,20,'#ff8a20','grip',busy);robotArm(b.x+b.w-24,b.y+16,2.0-sw*.3,.9,24,20,'#ff8a20','grip',busy);
+ /* welding jig: a cage frame growing, sparks at the welding torches */
+ const jx=w.x+40,jy=w.y+50,jw=80,jh=50,k=busy?p:0;g.strokeStyle='#8a6a52';g.lineWidth=2;g.strokeRect(jx,jy,jw,jh);g.strokeStyle=C.rebar;g.lineWidth=1.4;
+ const nl=Math.round(2+k*8);for(let i=0;i<nl;i++){const x=jx+4+i*(jw-8)/9;g.beginPath();g.moveTo(x,jy);g.lineTo(x,jy+jh);g.stroke()}g.beginPath();g.moveTo(jx,jy+jh/2);g.lineTo(jx+jw,jy+jh/2);g.stroke();
+ const s2=RM?0:Math.sin(T*3.1);const t1=robotArm(w.x+18,w.y+20,.6+s2*.25,.7,26,22,'#e0b020','weld',busy),t2=robotArm(w.x+w.w-16,w.y+w.h-18,-2.4-s2*.25,.6,26,22,'#e0b020','weld',busy);
+ if(busy&&!RM)for(const tp of[t1,t2])SK.parts(6,3,tp[0],T,(f,a,bb)=>{g.fillStyle=`rgba(255,${210+40*a|0},150,${1-f})`;SK.circ(g,tp[0]+(a-.5)*16*f,tp[1]+(bb-.5)*16*f,1+(1-f));g.fill()});
+ /* finished cages roll out toward the pile */g.fillStyle='#24272c';g.fillRect(3420,w.y+w.h,16,1430-(w.y+w.h));}
+/* ---- AI scrap sorting line in the scrap yard: conveyor, camera + laser hood, air jets kick copper into the reject bin ---- */
+function drawSort(){if(!AUTO()||!lv('sort')||!inView((SORTG.x0+SORTG.x1)/2,SORTG.y,240))return;const X=SORTG,y=X.y,sp=RM?0:T*(14+6*lv('sort'));
+ SK.belt(g,X.x0,y,X.x1-40,y,18,T,{speed:14+6*lv('sort'),items:(gg,L)=>{for(let i=0;i<14;i++){const x=((i*27+sp)%L);const cu=(i*7)%5===0;if(cu&&x>230)continue;
+   SK.chunk(gg,x,(hsh(i)-.5)*8,cu?3.2:4.2,hsh(i+3),cu?'#c87533':SK.SCRAPC[i%5])}}});
+ /* camera + laser hood */const hx=X.x0+120;SK.shadow(g,hx+20,y+6,26,20,.3);SK.box(g,hx,y-20,40,40,'#2a2d33','#111',5);g.fillStyle='#14171c';circ(hx+20,y,6);g.fill();g.fillStyle=rgba('#7fe0ff',RM?.9:.6+.4*Math.sin(T*6));circ(hx+20,y,2.4);g.fill();
+ g.strokeStyle=rgba('#ff3b30',.7);g.lineWidth=1.2;g.beginPath();g.moveTo(hx+42,y-9);g.lineTo(hx+42,y+9);g.stroke();
+ /* air-jet manifold + puffs, copper reject bin */const jx=X.x0+190;SK.box(g,jx,y-14,10,28,'#4a5058','#111',2);if(!RM&&Math.sin(T*9)>.6){g.fillStyle='rgba(220,235,255,.45)';SK.circ(g,jx+16,y-4,6);g.fill()}
+ SK.box(g,jx+20,y-17,34,12,'#5a3a24','#111',3);for(let i=0;i<min(6,1+lv('sort')*2);i++)SK.chunk(g,jx+26+i*4,y-11,2.2,i*.3,'#c87533');
+ /* clean scrap drops into the bunker at the end */SK.box(g,X.x1-40,y-18,40,36,'#3b4048','#15171a',4);for(let i=0;i<5;i++)SK.chunk(g,X.x1-32+i*6,y-4+(i%2)*6,3.5,i*.2,SK.SCRAPC[i%5])}
+/* ---- digital twin in the control room: a hologram table with the plant as a live wireframe ---- */
+function drawTwin(){if(!AUTO()||!lv('twin')||!inView(TWINP.x,TWINP.y,90))return;const x=TWINP.x,y=TWINP.y,l=lv('twin'),a=RM?0:T*.8;
+ SK.shadow(g,x+3,y+5,30,26,.35);g.fillStyle='#14181f';circ(x,y,28);g.fill();g.strokeStyle=rgba('#7fe0ff',.8);g.lineWidth=2;circ(x,y,28);g.stroke();
+ {const gr=g.createRadialGradient(x,y,4,x,y,28);gr.addColorStop(0,'rgba(127,224,255,.35)');gr.addColorStop(1,'rgba(127,224,255,0)');g.fillStyle=gr;circ(x,y,27);g.fill()}
+ g.strokeStyle=rgba('#7fe0ff',.3);g.lineWidth=1;for(let k=-2;k<=2;k++){g.beginPath();g.moveTo(x-22,y+k*8);g.lineTo(x+22,y+k*8);g.stroke()}
+ g.strokeStyle=rgba('#7fe0ff',.55+.2*l/3);g.lineWidth=1.2;for(let k=0;k<l;k++){g.beginPath();g.ellipse(x,y,9+k*4,5+k*2.5,a+k*.6,0,TAU);g.stroke()}
+ /* furnace with three electrodes and the strands as light lines */g.fillStyle=rgba(C.molten,F.arc>0?.7:.3);circ(x-6,y-2,4.5);g.fill();for(let k=0;k<3;k++){g.fillStyle='#d6ecff';circ(x-6+Math.cos(a*3+k*2.1)*2,y-2+Math.sin(a*3+k*2.1)*2,.9);g.fill()}
+ g.strokeStyle=rgba('#ff8a5a',CAST.flow?.85:.3);g.lineWidth=1;for(let k=0;k<3;k++){g.beginPath();g.moveTo(x+2,y-4+k*3);g.lineTo(x+14,y-4+k*3);g.stroke()}
+ /* a twin screen on the room's wall */const b=CRB;g.fillStyle='rgba(127,224,255,.16)';g.fillRect(b.x0+14,b.y0+20,b.x1-b.x0-28,6)}
 function draw(){
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=C.frame;ctx.fillRect(0,0,cssW,cssH);
  VX0=cam.x-cssW/2/zoom-20;VX1=cam.x+cssW/2/zoom+20;VY0=cam.y-cssH/2/zoom-60;VY1=cam.y+cssH/2/zoom+60;
@@ -615,10 +773,10 @@ function draw(){
  if(B_('kob'))padRing(POS.kobIn.x,POS.kobIn.y,36,t_('STENGER'),0,1-nodeRoom('kob')/NODE.kob.cap,'#3a6ea8');
  drawMovers();
  for(const s of SRC){if(s.yard)drawYard(s);else if(s.store)drawStore(s)}
- drawRJ();drawTorps();drawMB();drawCR();
+ drawRJ();drawTorps();drawMB();drawCR();drawTwin();
  drawKok();for(const k of PRK)drawPileK(k);
  for(const z of TG)drawCash(z);
- drawSupply();if(E_().ch!=='belt')dropRing();drawCharge();if(E_().ch==='belt')dropRing();drawPit();drawCaster();drawGjv();drawVV();drawTC();drawStel();drawNett();drawKob();drawOvnSide();
+ drawSupply();if(E_().ch!=='belt')dropRing();drawCharge();if(E_().ch==='belt')dropRing();drawPit();drawCaster();drawEndless();drawGjv();drawVV();drawTC();drawStel();drawNett();drawKob();drawQA();drawByp();drawRob();drawSort();drawOvnSide();
  if(inView(POS.truck1.x,POS.truck1.y,300))drawTruckV(POS.truck1.x,POS.truck1.y,VEH.bil1);if(B_('stel')&&inView(POS.truck2.x+200,POS.truck2.y,400))drawTruckH(POS.truck2.x,POS.truck2.y,VEH.bil2);
  drawTrain();drawShip();
  drawHMStation();drawTRob();drawFurnace();drawBucketFlight();drawHMPour();

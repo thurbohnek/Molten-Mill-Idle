@@ -62,7 +62,13 @@ const ZONES=[
  {id:'mbp3',x0:-293,y0:1132,x1:142,y1:1536,col:'#8d96a3',n:'RESERVETOMT',b:'mb',mbp:1},
  {id:'mbp4',x0:-744,y0:1132,x1:-309,y1:1536,col:'#8d96a3',n:'RESERVETOMT',b:'mb',mbp:1},
  /* the control room for the furnace, ladle crane and caster (arc-furnace eras) */
- {id:'cr',x0:1060,y0:1132,x1:1300,y1:1536,col:'#7fe0ff',n:'KONTROLLROM',b:'mb',cr:1}];
+ {id:'cr',x0:1060,y0:1132,x1:1300,y1:1536,col:'#7fe0ff',n:'KONTROLLROM',b:'mb',cr:1},
+ /* Phase 3 (modern eras): the endless cast-to-rebar line in the band under the rolling mill, and below it casting tech,
+    by-products and the robot cells (the lower strip exists from the arc-furnace era on). on() = the plot is shown and its pads open. */
+ {id:'endl',x0:1796,y0:956,x1:3140,y1:1236,col:'#ffa04a',n:'ENDELØS LINJE',on:()=>AUTO()&&B_('vv')&&B_('strang')},
+ {id:'qa',x0:1796,y0:1252,x1:2290,y1:1536,col:'#7fd6ff',n:'STØPETEKNIKK',on:()=>AUTO()&&B_('strang')},
+ {id:'byp',x0:2306,y0:1252,x1:3140,y1:1536,col:'#9be08a',n:'BIPRODUKTER',on:()=>AUTO()},
+ {id:'rob',x0:3156,y0:1132,x1:3520,y1:1536,col:'#f0a0ff',n:'ROBOTCELLER',on:()=>AUTO()&&lv('endless')>0}];
 const ZN=Object.fromEntries(ZONES.map(z=>[z.id,z]));
 const inZone=(z,x,y,m)=>{m=m||0;return x>=z.x0+m&&x<=z.x1-m&&y>=z.y0+m&&y<=z.y1-m};
 const POS={
@@ -85,7 +91,14 @@ const CRNX={malm:{x0:-716,x1:-424,y0:620,y1:1050,park:{x:-560,y:1010}}};
 const CRN={
  skrap:{x0:56,x1:512,y0:330,y1:1100,park:{x:300,y:440}},
  ose:{x0:930,x1:1770,y0:40,y1:1100,park:{x:1240,y:470}},
- mag:{x0:1600,x1:2120,y0:590,y1:1100,park:{x:1860,y:1010}},malm:CRNX.malm};
+ mag:{x0:1600,x1:2120,y0:590,y1:1100,park:{x:1860,y:900}},malm:CRNX.malm};
+/* Phase 3 geometry: the endless line (along y), casting-tech cabinets, by-product plants, robot cells, scrap sorting line */
+const ELG={y:1040,bend:1790,loop0:1806,loop1:1870,heat0:1884,heat1:1958,st0:2000,stN:8,stD:36,q0:2300,q1:2430,gauge:2452,shear:2478,bund0:2700,bund1:2764,end:2770};
+const QAX=[1836,1914,1992,2070,2148],QAY=1350;
+const BYPG={slag:{x0:2330,x1:2580},heat:{x0:2616,x1:2830},co2:{x0:2866,x1:3112},y0:1296,y1:1404};
+const ROBG={bend:{x:3196,y:1160,w:150,h:96},weld:{x:3340,y:1236,w:160,h:150}};
+const SORTG={x0:60,x1:420,y:1072};
+const TWINP={x:1180,y:1372};
 /* Consteel line (era 5), left → right along the spine: open charging section in the scrap yard (pan conveyor, loaded by the
    magnet crane) → dynamic seal → preheating tunnel (the off-gas leaves at its charging end, dx) → connecting car into the shell.
    The gas cleaning (drop-out box → bag filter → fan → stack) stands in the free strip above the scrap yard. */
@@ -107,9 +120,12 @@ const PR={
  coil:{n:'Valstråd',p:13.9,z:'stel',pile:{x:3070,y:244},col:'#c39bff'},
  mesh:{n:'Armeringsnett',p:15,z:'nett',pile:{x:3456,y:330},col:'#9bd35f'},
  bent:{n:'Bøyd armering',p:16.5,z:'kob',pile:{x:3456,y:1050},col:'#4dd0c8'},
+ /* Phase 3: rebar straight off the endless line (no reheating), and welded rebar cages from the robot cells */
+ ebar:{n:'Endeløs armering',p:14.6,z:'endl',pile:{x:2830,y:1150},col:'#ffb36b'},
+ cage:{n:'Armeringskurv',p:19,z:'rob',pile:{x:3446,y:1460},col:'#f0a0ff'},
  slag:{n:'Slagg (pukk)',p:.6}};
-const PRK=['pig','ingot','billet','rebar','tcore','coil','mesh','bent'];
-const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektroder',kokk:'kokiller',kokv:'varme kokiller',kanal:'kanalstein',hette:'varmholdsmasse',ingot:'støpeblokker',billet:'emner',rebar:'armeringsstål',tcore:'Bråkjølt armering',coil:'valstråd',mesh:'armeringsnett',bent:'bøyd armering'};
+const PRK=['pig','ingot','billet','rebar','tcore','coil','mesh','bent','ebar','cage'];
+const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektroder',kokk:'kokiller',kokv:'varme kokiller',kanal:'kanalstein',hette:'varmholdsmasse',ingot:'støpeblokker',billet:'emner',rebar:'armeringsstål',tcore:'Bråkjølt armering',coil:'valstråd',mesh:'armeringsnett',bent:'bøyd armering',ebar:'endeløs armering',cage:'armeringskurver'};
 
 /* ---------- steel furnace eras (same plot), following the works' history: Bessemer → SM → LD → [Omlegging] → arc furnaces.
    type conv = converter (charge råjern + skrap, blow, tilt to tap), sm = open hearth, eaf = arc furnace.
@@ -160,6 +176,7 @@ const UP=[
  {id:'yard2',st:'skrap',n:'Skraphaug 2',max:1,costs:[900],req:()=>scrapUse()},
  {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>era()===5},
  {id:'forvarm',st:'skrap',n:'Kurvforvarming',max:1,costs:[1e5],req:()=>era()===3||era()===4},
+ {id:'sort',st:'skrap',n:'Skrapsortering',max:3,costs:[1.2e5,1.5e6,2e7],req:()=>AUTO()},
  {id:'furnace',st:'ovn',n:()=>ET()==='conv'?'Større konverter':'Større ovn',max:20,base:120,m:1.5},
  {id:'power',st:'ovn',n:()=>['Sterkere blåsemaskin','Sterkere brennere','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt'][era()],max:20,base:160,m:1.5},
  {id:'refine',st:'ovn',n:()=>ET()==='sm'?'Raskere raffinering':'Raskere tapping',max:8,base:300,m:1.9},
@@ -211,7 +228,24 @@ const UP=[
  {id:'nettup',st:'nett',n:'Sveisefart',max:24,base:1.2e7,m:1.42},
  {id:'kobup',st:'kob',n:'Bøyefart',max:24,base:6e7,m:1.42},
  {id:'togp',st:'utlast',n:'Togavtale',max:20,base:6e5,m:1.55,req:()=>B_('tog')},
- {id:'kaip',st:'utlast',n:'Kaiavtale',max:20,base:1.5e8,m:1.55,req:()=>B_('kai')}];
+ {id:'kaip',st:'utlast',n:'Kaiavtale',max:20,base:1.5e8,m:1.55,req:()=>B_('kai')},
+ /* Phase 3: casting tech (tundish heating + slag detection, stirring, high-speed strand, inspection), the endless line,
+    robot cells, by-products and the digital twin */
+ {id:'tdheat',st:'qa',n:'Fordelervarme',max:3,costs:[1.5e5,2e6,2.5e7]},
+ {id:'slagdet',st:'qa',n:'Slaggvakt',max:1,costs:[2.5e5]},
+ {id:'ems',st:'qa',n:'EM-omrøring',max:2,costs:[4e5,8e6]},
+ {id:'hss',st:'qa',n:'Hurtigstreng',max:3,costs:[1e6,1.2e7,1.5e8]},
+ {id:'insp',st:'qa',n:'Inspeksjonsbue',max:1,costs:[6e5]},
+ {id:'pass',st:'endl',n:'Produktpass',max:1,costs:[3e5]},
+ {id:'endless',st:'endl',n:'Endeløs linje',max:1,costs:[4e7],req:()=>era()>=4},
+ {id:'elspd',st:'endl',n:'Linjefart',max:20,base:3e6,m:1.42,req:()=>lv('endless')>0},
+ {id:'loop',st:'endl',n:'Sløyfebuffer',max:4,costs:[4e6,2e7,8e7,3e8],req:()=>lv('endless')>0},
+ {id:'robot',st:'rob',n:'Robotcelle',max:1,costs:[1.5e8]},
+ {id:'robspd',st:'rob',n:'Robotfart',max:24,base:4e7,m:1.42,req:()=>lv('robot')>0},
+ {id:'slagmill',st:'byp',n:'Slagg til sement',max:10,base:3e5,m:1.7},
+ {id:'dheat',st:'byp',n:'Fjernvarme',max:10,base:5e5,m:1.75,req:()=>era()>=4},
+ {id:'co2',st:'byp',n:'CO₂-fangst',max:3,costs:[8e6,8e7,6e8],req:()=>era()>=4},
+ {id:'twin',st:'cr',n:'Digital tvilling',max:3,costs:[2e7,2e8,1.5e9],req:()=>era()>=4&&lv('h_ovn')>=1}];
 const UPm=Object.fromEntries(UP.map(u=>[u.id,u]));
 UP.forEach(u=>{if(u.costs)u.max=u.costs.length});
 const HIRE={
@@ -244,7 +278,12 @@ const UPROW={
  stel:{s:R_(2352,236,3,78),lw:74},
  nett:{s:[[3330,362]],lw:74},
  kob:{s:[[3214,1062]],lw:74},
- utlast:{s:R_(3920,600,2,78),lw:74}};
+ utlast:{s:R_(3920,600,2,78),lw:74},
+ qa:{s:R_(1836,1490,5,78),lw:74},
+ endl:{s:R_(2110,1190,4,78),lw:74},
+ byp:{s:[[2400,1490],[2680,1490],[2960,1490]],lw:74},
+ rob:{s:[[3200,1490],[3278,1490]],lw:74},
+ cr:{s:[[1180,1480]],lw:74}};
 const HIREPOS={rj:{x:-444,y:932},skrap:{x:296,y:930},ovn:{x:600,y:930},blokk:{x:1346,y:484,lw:74},strang:{x:1354,y:690},vv:{x:2596,y:840},tc:{x:2968,y:830},stel:{x:2352,y:130},nett:{x:3456,y:130},kob:{x:3350,y:1062}};
 /* where an idle helper goes when automation has his route covered: a control desk in the station (and the crane cab) */
 const POSTS={rj:{x:-660,y:560,crane:'malm'},skrap:{x:490,y:840,crane:'skrap'},ovn:{x:900,y:745},blokk:{x:1372,y:196},strang:{x:1700,y:628,crane:'mag'},
@@ -257,7 +296,7 @@ const CRPOST={ovn:CRDESK.furnace,strang:CRDESK.caster};
 /* the plant runs from control rooms from the first arc furnace on: nobody carries where a crane, conveyor or car does the job */
 const AUTO=()=>era()>=3;
 /* stations whose products leave on automatic transport cars in the automated eras */
-const AGVK={blokk:'ingot',strang:'billet',vv:'rebar',tc:'tcore',stel:'coil',nett:'mesh',kob:'bent'};
+const AGVK={blokk:'ingot',strang:'billet',vv:'rebar',tc:'tcore',stel:'coil',nett:'mesh',kob:'bent',endl:'ebar',rob:'cage'};
 const postOf=r=>AUTO()&&CRPOST[r]?Object.assign({crane:POSTS[r]&&POSTS[r].crane},CRPOST[r]):POSTS[r];
 const opN=st=>AUTO()&&HIRE[st]?lv(HIRE[st].id):0;
 const PADPOS=Object.fromEntries(Object.keys(UPROW).map(k=>[k,{up:{x:UPROW[k].s[0][0],y:UPROW[k].s[0][1]},hire:HIREPOS[k]}]));
@@ -290,11 +329,11 @@ const rjGone=()=>mbSt('rj')==='gone';
 /* ---------- save ---------- */
 const KEY='smelteverket.v6';
 function rawLoad(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null}catch(e){return null}}
-function freshS(){return{v:6,money:0,earned:0,life:0,heats:0,ph:0,lv:{},paid:{},b:{},tg:{strang:1,vv:1,tc:1,stel:1,rj:1},cast:'auto',mix:'begge',
+function freshS(){return{v:6,money:0,earned:0,life:0,heats:0,ph:0,lv:{},paid:{},b:{},tg:{strang:1,vv:1,tc:1,stel:1,rj:1,endl:1},cast:'auto',mix:'begge',
  mute:false,vib:true,dest:'best',moved:false,t:0,rate:0,lvl:0,pres:{pts:0,n:0},
- st:{sold:0,scrap:0,heats:0,play:0,best:0,prod:{},soldK:{},castB:0,castS:0,slagStops:0,slagT:0,eraT:{},hm:0,ore:0},
+ st:{sold:0,scrap:0,heats:0,play:0,best:0,prod:{},soldK:{},castB:0,castS:0,slagStops:0,slagT:0,eraT:{},hm:0,ore:0,def:0,ground:0,byp:0,ord:0,ordN:0},
  piles:{},nodes:{},store:{},cash:{},kok:{slots:6,hot:0,ready:6,cool:[]},pot:0,elek:12,chg:0,yard:{y0:24,y1:0,ore:40},F:{bath:0,solid:0},
- rj:{ore:14,hearth:6},hm:10,torp:[],mb:{},bonusGiven:false}}
+ rj:{ore:14,hearth:6},hm:10,torp:[],mb:{},bonusGiven:false,ord:null}}
 let S=freshS();
 const num=v=>isFinite(v)&&v>=0?+v:0;
 (()=>{const s=rawLoad(KEY);
@@ -310,6 +349,10 @@ const num=v=>isFinite(v)&&v>=0?+v:0;
  for(const k of['money','earned','life','heats','lvl','rate','pot','elek','chg','hm'])S[k]=num(S[k]);
  for(const k of['ore','hearth'])S.rj[k]=num(S.rj[k]);
  if(!isFinite(S.pres.pts)||S.pres.pts<0)S.pres.pts=0;
+ /* Phase 3: a construction-site order in progress (anything malformed is dropped; a new order comes later) */
+ {const o=S.ord;let ok=o&&typeof o==='object'&&o.q&&typeof o.q==='object'&&o.g&&typeof o.g==='object'&&isFinite(o.left)&&isFinite(o.bonus)&&o.bonus>=0;
+  if(ok)for(const c in o.q){if(['straight','bent','mesh','cage'].indexOf(c)<0||!isFinite(o.q[c])||o.q[c]<=0){ok=false;break}o.g[c]=clamp(num(+o.g[c]),0,o.q[c])}
+  if(ok){o.done=o.done===1||o.done===2?o.done:0;o.fin=num(+o.fin);o.dur=isFinite(o.dur)&&o.dur>0?+o.dur:300;o.left=clamp(+o.left,-1,o.dur)}else S.ord=null}
 })();
 function HIREbyId(id){for(const k in HIRE)if(HIRE[k].id===id)return HIRE[k];return null}
 const lv=id=>S.lv[id]||0;
@@ -325,9 +368,9 @@ const usesHM=()=>E_().hm[1]>0;
 /* scrap matters for this era (Bessemer only takes a little cooling scrap) */
 const scrapUse=()=>era()>=1||S.heats>=4;
 /* a station exists when its build is done (base stations always exist); the råjernsverk closes at the Omlegging */
-const zoneBuilt=z=>z.mbp?MBK.some(u=>mbOn(u)&&S.mb[u].p===z.id):z.cr?AUTO():(!z.b||B_(z.b))&&!(z.rj&&rjClosed());
+const zoneBuilt=z=>z.on?z.on():z.mbp?MBK.some(u=>mbOn(u)&&S.mb[u].p===z.id):z.cr?AUTO():(!z.b||B_(z.b))&&!(z.rj&&rjClosed());
 const stOn=id=>zoneBuilt(ZN[id]);
-const pileOn=k=>stOn(PR[k].z)||(k==='pig'&&PILE.pig.length>0);
+const pileOn=k=>k==='ebar'?lv('endless')>0||PILE.ebar.length>0:k==='cage'?lv('robot')>0||PILE.cage.length>0:stOn(PR[k].z)||(k==='pig'&&PILE.pig.length>0);
 
 /* ---------- tuning ---------- */
 const capCarry=()=>4+2*lv('carry');
@@ -387,7 +430,7 @@ const qLF=()=>B_('lf')?1.08+.03*lv('lfq'):1;
 const oseSpd=()=>230*(1+.25*lv('osekran'));
 const nStr=()=>1+lv('strands');
 /* the player at the caster desk pushes the casting speed: +15 % */
-const strandRate=()=>.6*Math.pow(1.11,lv('caster'))*(G.ctl==='caster'?1.15:1);
+const strandRate=()=>.6*Math.pow(1.11,lv('caster'))*(G.ctl==='caster'?1.15:1)*hssK();
 const billetT=()=>clamp(Math.round(fcap()*(1-E_().heel)/18),2,12);
 const gjvRate=()=>.5*Math.pow(1.16,lv('gjvup'))*(lv('bjelke')?1.6:1);
 const vvRate=()=>.7*Math.pow(1.16,lv('vvup'))*(lv('splitt')?1.3:1);
@@ -395,6 +438,21 @@ const tcRate=()=>1.2*Math.pow(1.16,lv('tcup'));
 const stelRate=()=>1*Math.pow(1.16,lv('stelup'))*(lv('stelmor')?1.25:1);
 const nettRate=()=>1*Math.pow(1.16,lv('nettup'));
 const kobRate=()=>1*Math.pow(1.16,lv('kobup'));
+/* ---------- Phase 3 tuning ---------- */
+const robRate=()=>1.2*Math.pow(1.16,lv('robspd'));
+const elRate=()=>.9*Math.pow(1.16,lv('elspd'));
+/* high-speed strand: every strand casts faster (more defects without electromagnetic stirring) */
+const hssK=()=>1+.12*lv('hss');
+/* CO₂ per tonne of steel by furnace era (t CO₂/t): the ore-based routes are high, scrap + arc furnace low. Capture, the endless
+   line (no reheating furnace) and sorted scrap lower it further. With the product passport the buyers pay a green premium. */
+const CO2E=[2.3,2.1,1.9,.75,.6,.45];
+const co2t=()=>max(.05,CO2E[era()]-(lv('endless')?.04:0)-.09*lv('co2')-.01*lv('sort'));
+const greenK=()=>lv('pass')?1+clamp((1.05-co2t())*.14,0,.14):1;
+/* copper in the scrap (%): the sorting line picks out copper; clean scrap gives better steel (price) and fewer surface cracks */
+const cuPct=()=>.22-.14*[0,.4,.7,1][lv('sort')];
+const cuK=()=>AUTO()?1+(.22-cuPct())*.3:1;
+const twinK=()=>1+.02*lv('twin');
+const p3K=()=>greenK()*cuK()*twinK();
 const magLoad=()=>2+lv('magkran');
 const storeMax=()=>24,storeIv=()=>1.2;
 const gm=()=>(1+.5*S.pres.pts)*(1+.03*S.lvl);
@@ -405,7 +463,7 @@ const presGain=()=>floor(Math.sqrt(S.earned/PRES_NEED));
 const LVL_T=n=>Math.round(400*Math.pow(3.2,n));
 /* spesialstål: after the caster is built, ingots are the small special-steel route and sell at a premium */
 const prem=it=>it.k==='ingot'&&B_('strang')?1.35:1;
-const val=it=>it.t*PR[it.k].p*(it.q||1)*prem(it);
+const val=it=>it.t*PR[it.k].p*(it.q||1)*prem(it)*p3K();
 function upCost(u){const l=lv(u.id);if(u.costs)return u.costs[min(l,u.costs.length-1)];return Math.round(u.base*Math.pow(u.m||1,l)/5)*5}
 const helpersHired=()=>Object.values(HIRE).some(h=>lv(h.id)>0);
 const upRaw=u=>typeof u.n==='function'?u.n():u.n;
@@ -413,7 +471,7 @@ const upRaw=u=>typeof u.n==='function'?u.n():u.n;
 const PN={yard:'Skrap\u00ADtilførsel',forvarm:'Kurv\u00ADforvarming',elekkran:'Elektrode\u00ADkran',o2:'Oksygen\u00ADanlegg',kull:'Kull\u00ADinjeksjon',malmtog:'Malm\u00ADtilførsel',
  kanal:'Kanalstein\u00ADlager',hette:'Varmholds\u00ADmasse',torch:'Skjære\u00ADbrenner',varm:'Varm\u00ADinnsetting',hcap:'Hjelper\u00ADkapasitet',gjvup:'Ovns\u00ADkapasitet',
  splitt:'Splitt\u00ADvalsing',stelup:'Finverks\u00ADfart',ktrans:'Kveile\u00ADtransport',hspeed:'Hjelper\u00ADfart',slagcap:'Større slagg\u00ADpotte',kokup:'Flere kokiller',
- operator:'Tapper'};
+ operator:'Tapper',sort:'Skrap\u00ADsortering',tdheat:'Fordeler\u00ADvarme',hss:'Hurtig\u00ADstreng',insp:'Inspeksjons\u00ADbue',loop:'Sløyfe\u00ADbuffer',slagmill:'Slagg til sement',dheat:'Fjern\u00ADvarme',twin:'Digital tvilling'};
 const padTitleNo=u=>{const n=upRaw(u);if(u.id==='hcap'&&AUTO())return'Vogn\u00ADkapasitet';if(u.id==='hspeed'&&AUTO())return'Vognfart';if(u.id==='lans')return lv('lans')?'Vegg\u00ADinjektorer':'Dørlanse';if(u.id==='charge'&&era()===1)return'Flere kasser';if(u.id==='charge'&&era()===5)return'Raskere bånd';if(u.id==='skip'&&rjEra())return'Større bånd';
  if(u.id==='power'&&era()===0)return'Sterkere blåse\u00ADmaskin';return PN[u.id]||n};
 /* English pad titles come from the dictionary (keyed by the Norwegian text without soft hyphens) */
@@ -444,7 +502,12 @@ function upSub(u){const l=lv(u.id),nx=l+1,ar=(a,b,un)=>a+' → '+b+(un?' '+un:''
  case'rullkob':case'ktrans':return t_('Automatisk');
  case'rjsize':return rjEra()?t_('+{0} % effekt',17):t_('+{0} % råjern',17);case'malmtog':return t_('+{0} % malm',22);case'malmkran':return l?ar(tf(malmLoad()),tf(4*(1+.38*l)),'t'):t_('Henter selv');
  case'skip':return ar(skipCap(),skipCap()+8,'t');case'torp':return ar(torpCap(),Math.round(12*(1+.22*nx)*(rjEra()?1.6:1)),'t');case'torpn':return ar(nTorp(),nTorp()+1,t_('vogner'));
- case'koks':case'cowper':return l?ka(24):t_('Bygg anlegget');case'sinter':return t_('{0} → {1} % jern',Math.round(feY()*100),Math.round([.5,.58,.64][min(2,l+1)]*100));case'togp':case'kaip':return t_('+{0} % pris',8);}
+ case'koks':case'cowper':return l?ka(24):t_('Bygg anlegget');
+ /* Phase 3 */
+ case'sort':return t_('Cu {0} → {1} %',dsep(cuPct().toFixed(2)),dsep((.22-.14*[0,.4,.7,1][min(3,nx)]).toFixed(2)));case'tdheat':return t_('Jevnere overheting');case'slagdet':case'ems':return t_('Færre feilemner');
+ case'hss':return fa(12);case'insp':return t_('Finner og sliper feil');case'pass':return t_('Grønn pris +{0} %',Math.round(clamp((1.05-co2t())*.14,0,.14)*100));case'endless':return t_('Støp rett til armering');
+ case'elspd':return fa(16);case'loop':return ar(L1(1.2+1.3*l),L1(1.2+1.3*nx),'s');case'robot':return t_('Bøyer og sveiser kurver');case'robspd':return fa(16);
+ case'slagmill':return t_('Slaggpris ×{0}',L1(1+1.2*nx));case'dheat':return t_('Varme fra ovnen blir inntekt');case'co2':return ar(L1(co2t()),L1(max(.05,co2t()-.09)),t_('t CO₂/t'));case'twin':return t_('+{0} % pris',2);case'sinter':return t_('{0} → {1} % jern',Math.round(feY()*100),Math.round([.5,.58,.64][min(2,l+1)]*100));case'togp':case'kaip':return t_('+{0} % pris',8);}
  return fa(16)}
 
 /* ---------- runtime state ---------- */

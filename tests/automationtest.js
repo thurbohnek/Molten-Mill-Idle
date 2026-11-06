@@ -14,8 +14,8 @@ for(const b of['eaf1','uhp','consteel','kai']){const W=setup(b),S=W.S,P=W.P;cons
  ok(carry===0,tag+': no operator carries anything ('+carry+')');ok(offPost===0,tag+': operators stay at desks / cabs ('+offPost+')');
  ok(goalCarry===0,tag+': the goal never asks the player to carry ('+goalCarry+')');ok(statusCarry===0,tag+': no "carry here" status ('+statusCarry+')');
  ok(W.carryTask()===null,tag+': no carry task');
- const ag=W.helpers.filter(h=>h.agv);const want=Object.keys(W.AGVK).filter(st=>W.stOn(st)).reduce((a,st)=>a+1+W.lv(W.HIRE[st].id),0);ok(ag.length===want&&want>0,tag+': transport cars '+ag.length+'/'+want);
- const prods=Object.keys(W.AGVK).filter(st=>W.stOn(st)).map(st=>W.AGVK[st]);const nSold=prods.reduce((a,k)=>a+(S.st.soldK[k]||0)-(sold0[k]||0),0),maxPile=Math.max(...prods.map(k=>W.PILE[k].length));
+ const ag=W.helpers.filter(h=>h.agv);const want=Object.keys(W.AGVK).reduce((a,st)=>a+W.nAGV(st),0);ok(ag.length===want&&want>0,tag+': transport cars '+ag.length+'/'+want);
+ const prods=Object.keys(W.AGVK).filter(st=>W.nAGV(st)>0).map(st=>W.AGVK[st]);const nSold=prods.reduce((a,k)=>a+(S.st.soldK[k]||0)-(sold0[k]||0),0),maxPile=Math.max(...prods.map(k=>W.PILE[k].length));
  ok(nSold>0&&maxPile<40,tag+': products leave by car (sold '+nSold+', biggest pile '+maxPile+')');
  ok(W.lv('slaggbil')>0&&W.lv('elekkran')>0,tag+': slag pot carrier + electrode crane come with the shop');
  ok(!W.upOpen(W.UPm.carry),tag+': no "Bigger carry" upgrade');

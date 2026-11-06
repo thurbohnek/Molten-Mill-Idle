@@ -23,7 +23,7 @@ await p.addInitScript(()=>{window.__TX=[];window.__PN=[];let seq=0;const P=Canva
   return ft.apply(this,arguments)}});
 fs.writeFileSync(require('path').join(require('os').tmpdir(),'tc_page.html'),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">'+fs.readFileSync(FILE,'utf8')+'</body></html>');await p.goto('file://'+require('path').join(require('os').tmpdir(),'tc_page.html'));await p.waitForTimeout(600);
 const scan=async(tag)=>{const r=await p.evaluate(tag=>{const W=window.__smelt,out=[];const dpr=devicePixelRatio;
-  const pts=[];for(let x=-640;x<=4100;x+=Math.round(innerWidth*.7))for(let y=150;y<=1000;y+=Math.round(innerHeight*.6))pts.push([x,y]);
+  const pts=[];for(let x=-640;x<=4100;x+=Math.round(innerWidth*.7))for(let y=150;y<=(W.WH>1200?1460:1000);y+=Math.round(innerHeight*.6))pts.push([x,y]);
   for(const [x,y] of pts){W.P.x=x;W.P.y=y;W.cam.x=x;W.cam.y=y;for(let k=0;k<3;k++)W.update(1/60);window.__TX=[];window.__PN=[];window.__TXon=1;W.draw();window.__TXon=0;
    const A=window.__TX.filter(o=>o.w>2),PN=window.__PN;const ov=(a,c)=>[Math.min(a.x+a.w,c.x+c.w)-Math.max(a.x,c.x),Math.min(a.y+a.h,c.y+c.h)-Math.max(a.y,c.y)];
    const hud=[...document.querySelectorAll('#hud *, .hud *, header *')].length;
@@ -46,5 +46,6 @@ await st(upto('eaf1'),40);await scan('omlegging '+VW);
 await st("for(const b of W.BUILDS){if(b.id==='consteel')break;if(!W.B_(b.id))W.build(b.id)}W.setLv('ladle',3);W.setLv('strands',6)",60);await scan('uhp '+VW);
 await st("for(const b of W.BUILDS)if(!W.B_(b.id))W.build(b.id);for(const u of W.UP)W.S.lv[u.id]=Math.min(u.max,(W.S.lv[u.id]||0)+3);W.bakeFloor();W.rebuildSolids()",60);await scan('all '+VW);
 await st("W.S.st.slagT=0;W.S.pot=999",5);await scan('slagstop '+VW);
+await st("for(const[k,v]of Object.entries({endless:1,loop:2,elspd:4,robot:1,robspd:3,tdheat:1,slagdet:1,ems:1,hss:1,insp:1,sort:2,pass:1,dheat:3,slagmill:3,co2:2,twin:1}))W.setLv(k,v);W.S.st.slagT=999;W.S.pot=0;W.rebuildSolids();W.bakeFloor();W.P3.ordT=0",60);await scan('phase3 '+VW);
 console.log(VW,'errs',errs.slice(0,3));await p.close()}
 for(const v of found.values())console.log(v);console.log('unique',found.size);await b.close()})();

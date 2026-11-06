@@ -47,7 +47,15 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 #toast{position:absolute;left:50%;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translate(-50%,0) scale(.9);background:rgba(16,19,26,.92);border:2px solid var(--hazard);border-radius:16px;padding:10px 16px;font-weight:800;font-size:16px;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:80%}
 #toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 #toast.big{border-color:var(--good);font-size:20px}
-#stage.intro .hud,#stage.intro #goal,#stage.intro #stat{opacity:0}
+#stage.intro .hud,#stage.intro #goal,#stage.intro #stat,#stage.intro #ord{opacity:0}
+/* construction-site order card: bottom-left above the status chip, never takes input */
+#ord{position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 54px);width:min(186px,46%);box-sizing:border-box;background:var(--panel2);border:1.5px solid rgba(255,159,69,.75);border-radius:14px;padding:7px 10px 8px;font-size:11px;font-weight:700;line-height:1.25;pointer-events:none;display:none;z-index:3;font-variant-numeric:tabular-nums}
+#ord.on{display:block}#ord .oh{display:flex;justify-content:space-between;gap:6px;color:#ffb36b;font-weight:800;font-size:11.5px;margin-bottom:3px}
+#ord .or{display:flex;justify-content:space-between;gap:6px;color:var(--ui)}#ord .or span:last-child{color:var(--uidim)}#ord .or.ok span:last-child{color:var(--good)}
+#ord .ob{height:4px;border-radius:2px;background:rgba(255,255,255,.1);margin:2px 0 4px;overflow:hidden}#ord .ob i{display:block;height:100%;background:#ffb36b}#ord .or.ok+.ob i{background:var(--good)}
+#ord small{display:block;color:var(--coin);font-size:10.5px;font-weight:800}#ord.done{border-color:var(--good)}#ord.exp{border-color:rgba(167,173,183,.6);opacity:.85}
+#stage.ordon #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 170px)}
+@media (max-height:520px){#ord{width:min(168px,40%);font-size:10px;padding:5px 8px 6px;line-height:1.15;bottom:calc(env(safe-area-inset-bottom,0px) + 50px)}#ord .oh{font-size:10.5px;margin-bottom:1px}#ord .ob{height:3px;margin:1px 0 2px}#ord small{font-size:10px}#stage.ordon #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 130px)}}
 #menu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);right:12px;width:min(290px,calc(100% - 24px));box-sizing:border-box;background:#10131a;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:6px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:none;z-index:5;font-size:14px}
 #menu.on{display:block}
 #menu h2{font-size:15px;margin:8px 0 4px;font-weight:800}
@@ -142,6 +150,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
   <div id="goal" role="status" aria-live="polite"><div id="gm"></div><div id="gbar"><i id="gbi"></i></div><small id="gs"></small></div>
   <button id="craneBtn" type="button" hidden>Styr kranen</button>
   <div id="stat" class="chip"><i id="sdot"></i><span id="st"></span></div>
+  <div id="ord" role="status" aria-live="polite"></div>
   <div id="menu" role="dialog" aria-label="Meny" data-ia="Meny">
     <div class="mrow"><span lang="en">Language / Språk</span><div class="seg" role="group" aria-label="Language / Språk"><button class="mbtn" id="mLangEn" type="button" aria-pressed="true" lang="en" aria-label="English">EN</button><button class="mbtn" id="mLangNo" type="button" aria-pressed="false" lang="nb" aria-label="Norsk">NO</button></div></div>
     <div class="mrow"><span>Zoom</span><div class="seg"><button class="mbtn" id="mZo" type="button" aria-label="Zoom ut" data-ia="Zoom ut">−</button><button class="mbtn" id="mZi" type="button" aria-label="Zoom inn" data-ia="Zoom inn">+</button></div></div>
