@@ -106,7 +106,7 @@ const EN={
  'Mens du var borte: +{0}':'While you were away: +{0}',
  'Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.':'New Mill! You now start right from the ore: blast furnace, torpedo cars and a Bessemer converter.',
  'Startbonus fra forrige verk: +{0}':'Starting bonus from your previous mill: +{0}','Fase 1: Masovn og Bessemer-konverter':'Phase 1: Blast furnace and Bessemer converter',
- 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
+ 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','Hold fingeren på en ting for å få en forklaring':'Press and hold anything for an explanation','Trykk for å gå · sveip for å se deg rundt':'Tap to walk · swipe to look around','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
  /* status chips */
  'Flaskehals: skrap til ovnen':'Bottleneck: scrap to the furnace','Skrapkassa er full (litt kjøleskrap)':'Scrap box full (a little cooling scrap)','Chargering full':'Charging full',
  'Flaskehals: øse ({0})':'Bottleneck: ladle ({0})','Flaskehals: øse':'Bottleneck: ladle','blokkstøping':'ingot casting','streng':'caster','øseovn':'ladle furnace','kø':'queue','kran':'crane',

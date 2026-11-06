@@ -101,7 +101,7 @@ function checkHelpers(){for(const h of W.helpers){const p=prev.get(h)||{state:h.
 // ---------- bot ----------
 const J=W.J;
 function goTo(x,y,tol){const d=Math.hypot(x-P.x,y-P.y);if(d<(tol||12)){J.on=false;return true}const w=W.navStep(P,x,y);const dx=w.x-P.x,dy=w.y-P.y,m=Math.hypot(dx,dy)||1;
- J.on=true;J.ox=200;J.oy=400;const k=Math.min(48,Math.max(14,d));J.x=200+dx/m*k;J.y=400+dy/m*k;return false}
+ J.on=true;J.virt=true;J.ox=200;J.oy=400;const k=Math.min(48,Math.max(14,d));J.x=200+dx/m*k;J.y=400+dy/m*k;return false}
 let botIdle=0;
 function nearSrc(){for(const s of W.SRC)if(s.open()&&Math.hypot(P.x-s.x,P.y-s.y)<s.r)return s;return null}
 function choose(){const S=W.S,n=P.stack.length;
@@ -128,7 +128,7 @@ if(CHEAT){const S=W.S;S.money=1e7;S.heats=40;S.st.slagT=999;W.build('vv');for(co
 const t0=Date.now();let craneManT=0;
 while(t<sim){try{if(MODE!=='idle')botStep();
   /* exercise manual crane override in cheat mode */
-  if(CHEAT){const m=t/60;if(Math.abs(m-2)<DT/60&&!global.__crT){global.__crT=1;W.P.x=300;W.P.y=600;const ch=W.craneHere();if(process.env.DBG)console.log("crane?",ch&&ch.id,W.G.crane,W.S.lv.kran);if(ch)W.toggleCrane()}if(W.G.crane){craneManT+=DT;const c=W.CRm[W.G.crane];const j=c.job;const tg=j?(c.state==='toPick'?j.from:j.to):null;if(tg){const dx=tg.x-c.x,dy=tg.y-c.y,d=Math.hypot(dx,dy)||1;J.on=true;J.ox=200;J.oy=400;J.x=200+dx/d*40;J.y=400+dy/d*40}}if(m>=3&&W.G.crane&&global.__crT===1){global.__crT=2;W.toggleCrane()}}
+  if(CHEAT){const m=t/60;if(Math.abs(m-2)<DT/60&&!global.__crT){global.__crT=1;W.P.x=300;W.P.y=600;const ch=W.craneHere();if(process.env.DBG)console.log("crane?",ch&&ch.id,W.G.crane,W.S.lv.kran);if(ch)W.toggleCrane()}if(W.G.crane){craneManT+=DT;const c=W.CRm[W.G.crane];const j=c.job;const tg=j?(c.state==='toPick'?j.from:j.to):null;if(tg){const dx=tg.x-c.x,dy=tg.y-c.y,d=Math.hypot(dx,dy)||1;J.on=true;J.virt=true;J.ox=200;J.oy=400;J.x=200+dx/d*40;J.y=400+dy/d*40}}if(m>=3&&W.G.crane&&global.__crT===1){global.__crT=2;W.toggleCrane()}}
   W.update(DT);if(((t*30)|0)%45===0)W.draw();}catch(e){exc++;if(exc<4)console.log('EXC',e.stack)}
  checkHelpers();t+=DT;const S=W.S;
  if(process.env.STUCK){global.__ps=global.__ps||{x:0,y:0,t:0};const ps=global.__ps;if(Math.hypot(P.x-ps.x,P.y-ps.y)>8){ps.x=P.x;ps.y=P.y;ps.t=t}else if(t-ps.t>15&&task&&Math.hypot(task.x-P.x,task.y-P.y)>40&&!global.__pr){global.__pr=1;console.log('STUCK at',(t/60).toFixed(1),'min P',P.x.toFixed(0),P.y.toFixed(0),'v',P.vx.toFixed(1),P.vy.toFixed(1),'modal',!!W.G.modal,'crane',W.G.crane,'map',W.G.mapOn,'wpt',JSON.stringify(W.navStep(P,task.x,task.y)),'task',JSON.stringify(task),'J',JSON.stringify(J),'blocked',W.blockedPt(P.x,P.y,0),'solids',JSON.stringify(W.SOLIDS().filter(o=>Math.abs((o.x+(o.w||0)/2)-P.x)<200&&Math.abs((o.y+(o.h||0)/2)-P.y)<200)))}}

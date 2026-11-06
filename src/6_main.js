@@ -21,13 +21,19 @@ function endIntro(){if(G.mode!=='intro')return;G.mode='play';stage.classList.rem
  if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(ERA[0].yr+' · '+t_('Fase 1: Masovn og Bessemer-konverter'),true);
  if(!S.introSeen&&!S.heats&&!S.ph&&!S.pres.n)showStart();
  /* once per player: everything in the plant can be tapped for an explanation */
- if(!S.infoHint){S.infoHint=1;toast(t_('Trykk på hva som helst for en forklaring'));save()}}
+ if(!S.infoHint){S.infoHint=1;toast(t_('Hold fingeren på en ting for å få en forklaring'));save()}}
 
 /* ---------- input ---------- */
 const rel=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
-cv.addEventListener('pointerdown',e=>{initAudio();if(G.mapOn)return;if(menu.classList.contains('on'))openMenu(false);if(G.mode==='intro'){endIntro();return}if(J.on||G.modal)return;const[x,y]=rel(e);J.on=true;J.id=e.pointerId;J.ox=J.x=x;J.oy=J.y=y;J.t0=performance.now();try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
-cv.addEventListener('pointermove',e=>{if(!J.on||e.pointerId!==J.id)return;const[x,y]=rel(e);J.x=x;J.y=y});
-const pUp=e=>{if(e.pointerId!==J.id)return;if(J.on&&e.type==='pointerup'&&performance.now()-(J.t0||0)<350&&Math.hypot(J.x-J.ox,J.y-J.oy)<12){const wx=cam.x+(J.ox-cssW/2)/zoom,wy=cam.y+(J.oy-cssH/2)/zoom;if(!padUnlock(wx,wy))tapInfo(wx,wy,J.t0||0)}J.on=false};cv.addEventListener('pointerup',pUp);cv.addEventListener('pointercancel',pUp);cv.addEventListener('lostpointercapture',pUp);
+cv.addEventListener('pointerdown',e=>{initAudio();if(G.mapOn)return;if(menu.classList.contains('on'))openMenu(false);if(G.mode==='intro'){endIntro();return}if(J.on||G.modal)return;const[x,y]=rel(e);J.on=true;J.virt=false;J.id=e.pointerId;J.ox=J.x=J.lx=x;J.oy=J.y=J.ly=y;J.drag=false;J.lp=false;J.closed=!!INFO.closedKey;J.t0=performance.now();/* what is under the finger now (a moving car may have left when the press turns long) */J.hit=G.mode==='play'?hitInfo(cam.x+(x-cssW/2)/zoom,cam.y+(y-cssH/2)/zoom):null;try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+/* swipe = move the world (look around); the player keeps walking where you sent him */
+cv.addEventListener('pointermove',e=>{if(!J.on||e.pointerId!==J.id)return;const[x,y]=rel(e);J.x=x;J.y=y;
+ if(!J.drag&&!J.lp&&Math.hypot(x-J.ox,y-J.oy)>10){J.drag=true;J.lx=J.ox;J.ly=J.oy}
+ if(J.drag&&!G.crane){cam.x-=(x-J.lx)/zoom;cam.y-=(y-J.ly)/zoom;G.free=true}J.lx=x;J.ly=y});
+/* tap = walk there (a dotted line shows the way); a tap on a waiting pad next to you buys the next level;
+   a tap that only closes an explanation bubble does nothing else */
+const pUp=e=>{if(e.pointerId!==J.id)return;if(J.on&&e.type==='pointerup'&&!J.drag&&!J.lp){const wx=cam.x+(J.ox-cssW/2)/zoom,wy=cam.y+(J.oy-cssH/2)/zoom;
+  if(!J.closed&&!padUnlock(wx,wy))goTo(wx,wy)}J.on=false;J.drag=false};cv.addEventListener('pointerup',pUp);cv.addEventListener('pointercancel',pUp);cv.addEventListener('lostpointercapture',pUp);
 const KM={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:'d'};
 addEventListener('keydown',e=>{initAudio();if(G.mode==='intro'&&(e.key===' '||e.key==='Enter'||KM[e.code])){endIntro()}
  if(e.key==='Escape'){if(INFO.on){hideInfo();if(!G.modal&&!G.mapOn&&!menu.classList.contains('on'))return}if(G.modal)closeModal();else if(G.mapOn){openMap(false);try{$('mapBtn').focus()}catch(_){}}else if(menu.classList.contains('on')){openMenu(false);try{mBtn.focus()}catch(_){}}return}
@@ -77,6 +83,7 @@ window.__smelt={get S(){return S},t_,setLang,get LANG(){return LANG},I18N_MISS,E
  build:id=>{const i=BUILDS.findIndex(b=>b.id===id);for(let k=S.ph;k<=i;k++){S.b[BUILDS[k].id]=1;S.ph=k+1;onBuild(BUILDS[k])}},
  hire:(st,n)=>{S.lv[HIRE[st].id]=n;syncHelpers()},setLv:(id,n)=>{S.lv[id]=n;syncHelpers();syncLadles();if(id==='yard2'||id==='magkran'||id==='varm')bakeFloor()},
  collide,SOLIDS:()=>SOLIDS,blockedPt,field,rebuildNav,rebuildSolids,bakeFloor,POS,WW,WH,QX,QY,START:POS.start,SUPN,PR,PRK,ROUTES,startTap,tapLadle,potMax,slotsMax,cam,setZoom:z=>{zoom=z},padLab,zonePlate,plateW,B_,lv,CY,cashAt,prodOn,ROLL,get zoom(){return zoom},ws,nextBuild,nodeRoom,yardT,PADPOS,inZone,SY,layoutPads,padShown,padMaks,padUrgent,upOpen,upAvail,routeWork,POSTS,inCab,postCrane,TAPDESK,UPROW,HIREPOS,padTitle,TUR,armPt,setUZ,CSB,CSG,CSN,TROB:()=>TROB,csSum,csLim,csCap,csX,csI,CSI1,csGasT,craneLift,beltRate,kwh,eraLayout,LAY5,TROBP,CS:()=>({chg:+S.chg.toFixed(1),cap:+chgCap().toFixed(1),v:+CSB.v.toFixed(1),vmax:+CSB.vmax.toFixed(1),feed:+CSB.feed.toFixed(2),pre:Math.round(CSB.pre),lim:csLim(),rob:TROB.n,crane:CRm.skrap.state}),pause:v=>{G.dbgPause=!!v},get RM(){return RM},setRM:v=>{RM=!!v}};
+ Object.defineProperties(window.__smelt,{P:{get:()=>P,configurable:true},G:{get:()=>G,configurable:true}});Object.assign(window.__smelt,{goTo,planPath});
 }
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 </script>

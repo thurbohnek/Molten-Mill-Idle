@@ -63,6 +63,15 @@ function navStep(a,tx,ty){if(navDirty)rebuildNav();
   if(b<0){WPT.x=tx;WPT.y=ty;return WPT}WPT.x=WX0+(b%GW)*NC+NC/2;WPT.y=floor(b/GW)*NC+NC/2;return WPT}
  for(let k=0;k<3;k++){const n=f[c];if(n<0||n===c)break;c=n}
  WPT.x=WX0+(c%GW)*NC+NC/2;WPT.y=floor(c/GW)*NC+NC/2;return WPT}
+/* tap-to-walk: a path from (ax,ay) to the tapped point over the nav grid, pulled tight where the line is clear.
+   A tap on a building ends at the nearest free spot beside it. */
+function planPath(ax,ay,tx,ty){if(navDirty)rebuildNav();const f=field(tx,ty);
+ const cell=(x,y)=>clamp(floor(y/NC),0,GH-1)*GW+clamp(floor((x-WX0)/NC),0,GW-1),ctr=c=>({x:WX0+(c%GW)*NC+NC/2,y:floor(c/GW)*NC+NC/2});
+ let c=cell(ax,ay);if(f[c]<0){const ci=c%GW,cj=(c-ci)/GW;let b=-1,bd=1e9;for(let j=max(0,cj-3);j<=min(GH-1,cj+3);j++)for(let i=max(0,ci-3);i<=min(GW-1,ci+3);i++){const n=j*GW+i;if(f[n]<0)continue;const dd=hyp(i-ci,j-cj);if(dd<bd){bd=dd;b=n}}if(b<0)return null;c=b}
+ const pts=[];let g=0;while(g++<4000){const n=f[c];if(n<0||n===c)break;c=n;pts.push(ctr(c))}
+ const free=!blockedPt(tx,ty,14);if(free)pts.push({x:tx,y:ty});else if(!pts.length){const e=ctr(c);if(hyp(e.x-ax,e.y-ay)<8)return null;pts.push(e)}
+ const out=[];let a={x:ax,y:ay},i=0;while(i<pts.length){let j=i;while(j+1<pts.length&&losClear(a.x,a.y,pts[j+1].x,pts[j+1].y))j++;out.push(pts[j]);a=pts[j];i=j+1}
+ return out}
 function collide(a){
  for(const s of SOLIDS){if(s.r){const dx=a.x-s.x,dy=a.y-s.y,d=hyp(dx,dy),m=s.r+14;if(d<m){if(d<.01){a.y=s.y+m}else{a.x=s.x+dx/d*m;a.y=s.y+dy/d*m}}}
   else{const nx=clamp(a.x,s.x,s.x+s.w),ny=clamp(a.y,s.y,s.y+s.h),dx=a.x-nx,dy=a.y-ny,d=hyp(dx,dy);if(d<14){if(d>.01){a.x=nx+dx/d*14;a.y=ny+dy/d*14}else{const l=a.x-s.x,r=s.x+s.w-a.x,t=a.y-s.y,b=s.y+s.h-a.y,m=min(l,r,t,b);if(m===l)a.x=s.x-14;else if(m===r)a.x=s.x+s.w+14;else if(m===t)a.y=s.y-14;else a.y=s.y+s.h+14}}}}

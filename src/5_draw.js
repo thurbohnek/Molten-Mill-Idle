@@ -540,6 +540,13 @@ function glowC(x,y,r,col,a){if(!inView(x,y,r))return;const gr=ctx.createRadialGr
 function stream(x0,y0,x1,y1,w){ctx.lineCap='round';ctx.strokeStyle=rgba(C.molten,.9);ctx.lineWidth=9*w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo((x0+x1)/2,min(y0,y1)-14,x1,y1);ctx.stroke();ctx.strokeStyle=rgba(C.moltenhi,.9);ctx.lineWidth=3.5*w;ctx.setLineDash([10,8]);ctx.lineDashOffset=-T*160;ctx.stroke();ctx.setLineDash([]);ctx.lineCap='butt'}
 function drawMovers(){for(const m of movers){const[x,y]=moverPos(m);if(!inView(x,y,30))continue;const it=m.it;
  if(it.k==='billet'||it.k==='rebar'&&m.to==='tc'||m.to==='stel')SK.billetBar(g,x-18,y,36,6,.6);else if(it.k==='coil')SK.coilTop(g,x,y,9,'#7a6a5c');else SK.bundle(g,x-18,y-4,36,3,[.2,.5,.8],it.k==='tcore'?'#3a4350':C.rebar)}}
+/* the walk path: a dotted line from the player along the remaining waypoints, and a ring where he stops */
+function drawGoPath(){const g=G.go;if(!g||g.crane)return;const a=G.crane?CRm[G.crane]:P;
+ ctx.save();ctx.lineCap='round';ctx.setLineDash([2,11]);ctx.lineDashOffset=RM?0:-T*22;ctx.lineWidth=4.5;ctx.strokeStyle='rgba(0,0,0,.35)';
+ const path=()=>{ctx.beginPath();ctx.moveTo(a.x,a.y+8);for(let i=g.i;i<g.pts.length;i++)ctx.lineTo(g.pts[i].x,g.pts[i].y+8)};
+ path();ctx.stroke();ctx.lineWidth=3.2;ctx.strokeStyle='rgba(255,236,170,.95)';path();ctx.stroke();ctx.setLineDash([]);
+ const m=g.pts[g.pts.length-1],k=RM?1:.85+.15*Math.sin(T*6);ctx.strokeStyle='rgba(245,197,24,.95)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(m.x,m.y+8,13*k,7*k,0,0,PI*2);ctx.stroke();
+ ctx.fillStyle='rgba(245,197,24,.35)';ctx.beginPath();ctx.ellipse(m.x,m.y+8,5,3,0,0,PI*2);ctx.fill();ctx.restore()}
 function draw(){
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=C.frame;ctx.fillRect(0,0,cssW,cssH);
  VX0=cam.x-cssW/2/zoom-20;VX1=cam.x+cssW/2/zoom+20;VY0=cam.y-cssH/2/zoom-60;VY1=cam.y+cssH/2/zoom+60;
@@ -572,6 +579,7 @@ function draw(){
  drawDesks();
  const ents=[[P,C.vest,C.helmet,capCarry()]];for(const h of helpers)if(inView(h.x,h.y,60)&&!inCab(h))ents.push([h,ROUTES[h.r].col,'#f8f6ee',0]);/* the MAX marker is for the player only */
  if(lv('operator'))ents.push([TAPPER,'#e84d3a','#f8f6ee',0]);
+ drawGoPath();
  ents.sort((a,b)=>a[0].y-b[0].y);for(const e of ents)drawWorker(e[0],e[1],e[2],e[3]);
  for(const L of LADLES)if(L.state==='carried')drawLadle(L);
  for(const c of CRANES)drawCraneBridge(c);
@@ -601,8 +609,8 @@ function draw(){
  for(const c of coins){const t=ease(min(1,c.t)),x=lerp(c.x0,c.tx,t),y=lerp(c.y0,c.ty,t)-Math.sin(PI*t)*60;ctx.fillStyle=C.coin;circ(x,y,7);ctx.fill();ctx.fillStyle='#fff3b0';circ(x-2,y-2,2.5);ctx.fill();ctx.strokeStyle='#c98a00';ctx.lineWidth=1.5;circ(x,y,7);ctx.stroke()}
  if(G.lvlFx>0&&!RM){ctx.globalAlpha=clamp(G.lvlFx,0,1)*.35;ctx.strokeStyle=C.good;ctx.lineWidth=10;ctx.strokeRect(5,5,cssW-10,cssH-10);ctx.globalAlpha=1}
  if(G.chFx>0&&!RM){ctx.globalAlpha=clamp(G.chFx,0,1)*.4;ctx.strokeStyle=C.hazard;ctx.lineWidth=12;ctx.strokeRect(6,6,cssW-12,cssH-12);ctx.globalAlpha=1}
- if(J.on){ctx.fillStyle='rgba(255,255,255,.08)';circ(J.ox,J.oy,JR);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=2;ctx.stroke();const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy),k=m>JR?JR/m:1;ctx.fillStyle=G.crane?'rgba(224,176,32,.9)':'rgba(245,197,24,.85)';circ(J.ox+dx*k,J.oy+dy*k,22);ctx.fill()}
- else if(!S.moved){const a=.6+.4*Math.sin(T*4);ctx.globalAlpha=a;txt(t_('Dra hvor som helst for å gå'),cssW/2,cssH-80,15,C.ui,800,'center',4);ctx.globalAlpha=1}}
+ if(false){ctx.fillStyle='rgba(255,255,255,.08)';circ(J.ox,J.oy,JR);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=2;ctx.stroke();const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy),k=m>JR?JR/m:1;ctx.fillStyle=G.crane?'rgba(224,176,32,.9)':'rgba(245,197,24,.85)';circ(J.ox+dx*k,J.oy+dy*k,22);ctx.fill()}
+ else if(!S.moved){const a=.6+.4*Math.sin(T*4);ctx.globalAlpha=a;txt(t_('Trykk for å gå · sveip for å se deg rundt'),cssW/2,cssH-80,15,C.ui,800,'center',4);ctx.globalAlpha=1}}
 /* goal arrow: above pads and their labels, or at the screen edge pointing the way */
 const PADT={};function arrow(tx,ty){const[sx,sy]=ws(tx,ty),m=34,top=max(124,HUDM.top+10),bot=cssH-max(56,HUDM.bot+6);ctx.fillStyle=C.hazard;ctx.strokeStyle='#111';ctx.lineWidth=2.5;ctx.lineJoin='round';
  const isPad=PADS.some(d=>vis(d)&&d.x===tx&&d.y===ty);

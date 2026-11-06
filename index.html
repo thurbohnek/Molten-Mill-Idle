@@ -705,7 +705,7 @@ const EN={
  'Mens du var borte: +{0}':'While you were away: +{0}',
  'Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.':'New Mill! You now start right from the ore: blast furnace, torpedo cars and a Bessemer converter.',
  'Startbonus fra forrige verk: +{0}':'Starting bonus from your previous mill: +{0}','Fase 1: Masovn og Bessemer-konverter':'Phase 1: Blast furnace and Bessemer converter',
- 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
+ 'Trykk på hva som helst for en forklaring':'Tap anything for an explanation','Hold fingeren på en ting for å få en forklaring':'Press and hold anything for an explanation','Trykk for å gå · sveip for å se deg rundt':'Tap to walk · swipe to look around','presenterer':'presents','Dra hvor som helst for å gå':'Drag anywhere to walk',
  /* status chips */
  'Flaskehals: skrap til ovnen':'Bottleneck: scrap to the furnace','Skrapkassa er full (litt kjøleskrap)':'Scrap box full (a little cooling scrap)','Chargering full':'Charging full',
  'Flaskehals: øse ({0})':'Bottleneck: ladle ({0})','Flaskehals: øse':'Bottleneck: ladle','blokkstøping':'ingot casting','streng':'caster','øseovn':'ladle furnace','kø':'queue','kran':'crane',
@@ -1314,6 +1314,15 @@ function navStep(a,tx,ty){if(navDirty)rebuildNav();
   if(b<0){WPT.x=tx;WPT.y=ty;return WPT}WPT.x=WX0+(b%GW)*NC+NC/2;WPT.y=floor(b/GW)*NC+NC/2;return WPT}
  for(let k=0;k<3;k++){const n=f[c];if(n<0||n===c)break;c=n}
  WPT.x=WX0+(c%GW)*NC+NC/2;WPT.y=floor(c/GW)*NC+NC/2;return WPT}
+/* tap-to-walk: a path from (ax,ay) to the tapped point over the nav grid, pulled tight where the line is clear.
+   A tap on a building ends at the nearest free spot beside it. */
+function planPath(ax,ay,tx,ty){if(navDirty)rebuildNav();const f=field(tx,ty);
+ const cell=(x,y)=>clamp(floor(y/NC),0,GH-1)*GW+clamp(floor((x-WX0)/NC),0,GW-1),ctr=c=>({x:WX0+(c%GW)*NC+NC/2,y:floor(c/GW)*NC+NC/2});
+ let c=cell(ax,ay);if(f[c]<0){const ci=c%GW,cj=(c-ci)/GW;let b=-1,bd=1e9;for(let j=max(0,cj-3);j<=min(GH-1,cj+3);j++)for(let i=max(0,ci-3);i<=min(GW-1,ci+3);i++){const n=j*GW+i;if(f[n]<0)continue;const dd=hyp(i-ci,j-cj);if(dd<bd){bd=dd;b=n}}if(b<0)return null;c=b}
+ const pts=[];let g=0;while(g++<4000){const n=f[c];if(n<0||n===c)break;c=n;pts.push(ctr(c))}
+ const free=!blockedPt(tx,ty,14);if(free)pts.push({x:tx,y:ty});else if(!pts.length){const e=ctr(c);if(hyp(e.x-ax,e.y-ay)<8)return null;pts.push(e)}
+ const out=[];let a={x:ax,y:ay},i=0;while(i<pts.length){let j=i;while(j+1<pts.length&&losClear(a.x,a.y,pts[j+1].x,pts[j+1].y))j++;out.push(pts[j]);a=pts[j];i=j+1}
+ return out}
 function collide(a){
  for(const s of SOLIDS){if(s.r){const dx=a.x-s.x,dy=a.y-s.y,d=hyp(dx,dy),m=s.r+14;if(d<m){if(d<.01){a.y=s.y+m}else{a.x=s.x+dx/d*m;a.y=s.y+dy/d*m}}}
   else{const nx=clamp(a.x,s.x,s.x+s.w),ny=clamp(a.y,s.y,s.y+s.h),dx=a.x-nx,dy=a.y-ny,d=hyp(dx,dy);if(d<14){if(d>.01){a.x=nx+dx/d*14;a.y=ny+dy/d*14}else{const l=a.x-s.x,r=s.x+s.w-a.x,t=a.y-s.y,b=s.y+s.h-a.y,m=min(l,r,t,b);if(m===l)a.x=s.x-14;else if(m===r)a.x=s.x+s.w+14;else if(m===t)a.y=s.y-14;else a.y=s.y+s.h+14}}}}
@@ -2033,13 +2042,23 @@ function bumpMoney(){const e=$('money');e.classList.remove('bump');void e.offset
 function ws(x,y){return[(x-cam.x)*zoom+cssW/2+shx,(y-cam.y)*zoom+cssH/2+shy]}
 
 /* ---------- main update ---------- */
-const J={on:false,id:0,ox:0,oy:0,x:0,y:0};const JR=48;const keys={};
+const J={on:false,id:0,ox:0,oy:0,x:0,y:0,lx:0,ly:0,drag:false,lp:false};const JR=48;const keys={};
 const HUDM={t:-9,top:0,bot:0};
 function update(dt){
  T+=dt;S.st.play+=dt;
  let ix=0,iy=0;
- if(!G.modal&&!G.mapOn){if(J.on){const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy);if(m>6){const k=min(1,m/JR);ix=dx/m*k;iy=dy/m*k}}
-  if(keys.l)ix-=1;if(keys.r)ix+=1;if(keys.u)iy-=1;if(keys.d)iy+=1}
+ if(!G.modal&&!G.mapOn){
+  /* hold still on something = explanation bubble */
+  if(J.on&&!J.drag&&!J.lp&&performance.now()-J.t0>450){J.lp=true;if(J.hit&&G.mode==='play'&&!G.modal&&showInfo(J.hit)){G.go=null;vib(8)}}
+  /* analog stick for scripted input (tests/bots): J.virt */
+  if(J.on&&J.virt){const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy);if(m>6){const k=min(1,m/JR);ix=dx/m*k;iy=dy/m*k}}
+  if(keys.l)ix-=1;if(keys.r)ix+=1;if(keys.u)iy-=1;if(keys.d)iy+=1;
+  if(ix||iy){G.go=null;G.free=false}
+  else if(G.go){const cr0=G.crane?CRm[G.crane]:null,a=cr0||P,g=G.go,w=g.pts[g.i],dx=w.x-a.x,dy=w.y-a.y,dd=hyp(dx,dy),last=g.i===g.pts.length-1;
+   if(dd<(last?(cr0?6:5):16)){if(last)G.go=null;else g.i++}
+   else{const k=last?min(1,dd/40+.25):1;ix=dx/dd*k;iy=dy/dd*k;
+    /* stuck (pushed by something): plan again once, then give up */
+    g.st=(g.st||0)+dt;if(g.st>.6){g.st=0;if(g.best!=null&&dd>g.best-6){g.tries=(g.tries||0)+1;if(g.tries>2||cr0)G.go=null;else{const np=planPath(a.x,a.y,g.tx,g.ty);if(np&&np.length){g.pts=np;g.i=0;g.best=null}else G.go=null}}else g.best=dd}}}}
  const im=hyp(ix,iy);if(im>1){ix/=im;iy/=im}
  if(im>.1&&!S.moved)S.moved=true;
  const cr=G.crane?CRm[G.crane]:null;if(cr&&!canMan(cr)){G.crane=null;cr.man=false}
@@ -2067,7 +2086,8 @@ function update(dt){
  if(!workAvail()){G.idleT+=dt;G.idleS+=dt}else if(!workAvail(1))G.idleS+=dt;
  /* camera: follows the player, or the crane hook while you steer a crane */
  const vw=cssW/zoom,vh=cssH/zoom,lk=min(1,dt*6),fx=cr?cr.x:P.x+P.vx*.15,fy=cr?cr.y:P.y+P.vy*.15;
- cam.x=lerp(cam.x,fx,lk);cam.y=lerp(cam.y,fy,lk);
+ /* after a swipe the camera stays where you put it, until you walk again */
+ if(!G.free){cam.x=lerp(cam.x,fx,lk);cam.y=lerp(cam.y,fy,lk)}
  if(T-HUDM.t>.5){HUDM.t=T;try{const st=$('stage').getBoundingClientRect(),g=$('goal').getBoundingClientRect(),s=$('stat').getBoundingClientRect();
    if(g.height>0)HUDM.top=g.bottom-st.top+10;if(s.height>0)HUDM.bot=st.bottom-s.top+10}catch(e){}}
  const pt=max(150,HUDM.top/zoom),pb=max(90,HUDM.bot/zoom);
@@ -2165,7 +2185,12 @@ function hud(){const mvT=NO_()?fmt(S.money):'$'+fmt(S.money);setT('mv',mvT);{con
  /* crane button: shown in a zone whose crane you can take over */
  const cz=craneHere();const cb=$('craneBtn');const ct=cz?t_(G.crane===cz.id?'Slipp {0}':'Styr {0}',t_(cz.n)):'';if(lastHud.cb!==ct){lastHud.cb=ct;cb.hidden=!cz;cb.textContent=ct;cb.classList.toggle('on',!!cz&&G.crane===cz.id);cb.setAttribute('aria-pressed',cz&&G.crane===cz.id?'true':'false')}}
 function craneHere(){if(G.crane)return CRm[G.crane];for(const c of CRANES){if(!canMan(c))continue;const d=c.d;if(P.x>d.x0-40&&P.x<d.x1+40&&P.y>d.y0-40&&P.y<d.y1+40)return c}return null}
-function toggleCrane(){const c=craneHere();if(!c)return;if(G.crane===c.id){c.man=false;G.crane=null;toast(t_('Kranen kjører selv igjen'))}else{G.crane=c.id;c.man=true;J.on=false;toast(t_('Du styrer {0} ({1})',t_(c.n),t_(c.bonus)))}hudT=0;sfx('tick',200);buzz(12)}
+/* start walking (or steering the crane hook) to a world point; the camera follows again */
+function goTo(wx,wy){const cr=G.crane?CRm[G.crane]:null;G.free=false;
+ if(cr){G.go={pts:[{x:wx,y:wy}],i:0,tx:wx,ty:wy,crane:1};return true}
+ const pts=planPath(P.x,P.y,wx,wy);if(!pts||!pts.length){G.go=null;return false}
+ G.go={pts,i:0,tx:wx,ty:wy,mk:pts[pts.length-1],t:T};if(!S.moved){S.moved=true}return true}
+function toggleCrane(){const c=craneHere();if(!c)return;if(G.crane===c.id){c.man=false;G.crane=null;toast(t_('Kranen kjører selv igjen'))}else{G.crane=c.id;c.man=true;J.on=false;G.go=null;toast(t_('Du styrer {0} ({1})',t_(c.n),t_(c.bonus)))}hudT=0;sfx('tick',200);buzz(12)}
 $('craneBtn').addEventListener('click',e=>{initAudio();toggleCrane();e.stopPropagation()});
 
 /* ---------- menu + modal ---------- */
@@ -2867,6 +2892,13 @@ function glowC(x,y,r,col,a){if(!inView(x,y,r))return;const gr=ctx.createRadialGr
 function stream(x0,y0,x1,y1,w){ctx.lineCap='round';ctx.strokeStyle=rgba(C.molten,.9);ctx.lineWidth=9*w;ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo((x0+x1)/2,min(y0,y1)-14,x1,y1);ctx.stroke();ctx.strokeStyle=rgba(C.moltenhi,.9);ctx.lineWidth=3.5*w;ctx.setLineDash([10,8]);ctx.lineDashOffset=-T*160;ctx.stroke();ctx.setLineDash([]);ctx.lineCap='butt'}
 function drawMovers(){for(const m of movers){const[x,y]=moverPos(m);if(!inView(x,y,30))continue;const it=m.it;
  if(it.k==='billet'||it.k==='rebar'&&m.to==='tc'||m.to==='stel')SK.billetBar(g,x-18,y,36,6,.6);else if(it.k==='coil')SK.coilTop(g,x,y,9,'#7a6a5c');else SK.bundle(g,x-18,y-4,36,3,[.2,.5,.8],it.k==='tcore'?'#3a4350':C.rebar)}}
+/* the walk path: a dotted line from the player along the remaining waypoints, and a ring where he stops */
+function drawGoPath(){const g=G.go;if(!g||g.crane)return;const a=G.crane?CRm[G.crane]:P;
+ ctx.save();ctx.lineCap='round';ctx.setLineDash([2,11]);ctx.lineDashOffset=RM?0:-T*22;ctx.lineWidth=4.5;ctx.strokeStyle='rgba(0,0,0,.35)';
+ const path=()=>{ctx.beginPath();ctx.moveTo(a.x,a.y+8);for(let i=g.i;i<g.pts.length;i++)ctx.lineTo(g.pts[i].x,g.pts[i].y+8)};
+ path();ctx.stroke();ctx.lineWidth=3.2;ctx.strokeStyle='rgba(255,236,170,.95)';path();ctx.stroke();ctx.setLineDash([]);
+ const m=g.pts[g.pts.length-1],k=RM?1:.85+.15*Math.sin(T*6);ctx.strokeStyle='rgba(245,197,24,.95)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(m.x,m.y+8,13*k,7*k,0,0,PI*2);ctx.stroke();
+ ctx.fillStyle='rgba(245,197,24,.35)';ctx.beginPath();ctx.ellipse(m.x,m.y+8,5,3,0,0,PI*2);ctx.fill();ctx.restore()}
 function draw(){
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=C.frame;ctx.fillRect(0,0,cssW,cssH);
  VX0=cam.x-cssW/2/zoom-20;VX1=cam.x+cssW/2/zoom+20;VY0=cam.y-cssH/2/zoom-60;VY1=cam.y+cssH/2/zoom+60;
@@ -2899,6 +2931,7 @@ function draw(){
  drawDesks();
  const ents=[[P,C.vest,C.helmet,capCarry()]];for(const h of helpers)if(inView(h.x,h.y,60)&&!inCab(h))ents.push([h,ROUTES[h.r].col,'#f8f6ee',0]);/* the MAX marker is for the player only */
  if(lv('operator'))ents.push([TAPPER,'#e84d3a','#f8f6ee',0]);
+ drawGoPath();
  ents.sort((a,b)=>a[0].y-b[0].y);for(const e of ents)drawWorker(e[0],e[1],e[2],e[3]);
  for(const L of LADLES)if(L.state==='carried')drawLadle(L);
  for(const c of CRANES)drawCraneBridge(c);
@@ -2928,8 +2961,8 @@ function draw(){
  for(const c of coins){const t=ease(min(1,c.t)),x=lerp(c.x0,c.tx,t),y=lerp(c.y0,c.ty,t)-Math.sin(PI*t)*60;ctx.fillStyle=C.coin;circ(x,y,7);ctx.fill();ctx.fillStyle='#fff3b0';circ(x-2,y-2,2.5);ctx.fill();ctx.strokeStyle='#c98a00';ctx.lineWidth=1.5;circ(x,y,7);ctx.stroke()}
  if(G.lvlFx>0&&!RM){ctx.globalAlpha=clamp(G.lvlFx,0,1)*.35;ctx.strokeStyle=C.good;ctx.lineWidth=10;ctx.strokeRect(5,5,cssW-10,cssH-10);ctx.globalAlpha=1}
  if(G.chFx>0&&!RM){ctx.globalAlpha=clamp(G.chFx,0,1)*.4;ctx.strokeStyle=C.hazard;ctx.lineWidth=12;ctx.strokeRect(6,6,cssW-12,cssH-12);ctx.globalAlpha=1}
- if(J.on){ctx.fillStyle='rgba(255,255,255,.08)';circ(J.ox,J.oy,JR);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=2;ctx.stroke();const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy),k=m>JR?JR/m:1;ctx.fillStyle=G.crane?'rgba(224,176,32,.9)':'rgba(245,197,24,.85)';circ(J.ox+dx*k,J.oy+dy*k,22);ctx.fill()}
- else if(!S.moved){const a=.6+.4*Math.sin(T*4);ctx.globalAlpha=a;txt(t_('Dra hvor som helst for å gå'),cssW/2,cssH-80,15,C.ui,800,'center',4);ctx.globalAlpha=1}}
+ if(false){ctx.fillStyle='rgba(255,255,255,.08)';circ(J.ox,J.oy,JR);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=2;ctx.stroke();const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy),k=m>JR?JR/m:1;ctx.fillStyle=G.crane?'rgba(224,176,32,.9)':'rgba(245,197,24,.85)';circ(J.ox+dx*k,J.oy+dy*k,22);ctx.fill()}
+ else if(!S.moved){const a=.6+.4*Math.sin(T*4);ctx.globalAlpha=a;txt(t_('Trykk for å gå · sveip for å se deg rundt'),cssW/2,cssH-80,15,C.ui,800,'center',4);ctx.globalAlpha=1}}
 /* goal arrow: above pads and their labels, or at the screen edge pointing the way */
 const PADT={};function arrow(tx,ty){const[sx,sy]=ws(tx,ty),m=34,top=max(124,HUDM.top+10),bot=cssH-max(56,HUDM.bot+6);ctx.fillStyle=C.hazard;ctx.strokeStyle='#111';ctx.lineWidth=2.5;ctx.lineJoin='round';
  const isPad=PADS.some(d=>vis(d)&&d.x===tx&&d.y===ty);
@@ -3447,13 +3480,19 @@ function endIntro(){if(G.mode!=='intro')return;G.mode='play';stage.classList.rem
  if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(ERA[0].yr+' · '+t_('Fase 1: Masovn og Bessemer-konverter'),true);
  if(!S.introSeen&&!S.heats&&!S.ph&&!S.pres.n)showStart();
  /* once per player: everything in the plant can be tapped for an explanation */
- if(!S.infoHint){S.infoHint=1;toast(t_('Trykk på hva som helst for en forklaring'));save()}}
+ if(!S.infoHint){S.infoHint=1;toast(t_('Hold fingeren på en ting for å få en forklaring'));save()}}
 
 /* ---------- input ---------- */
 const rel=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
-cv.addEventListener('pointerdown',e=>{initAudio();if(G.mapOn)return;if(menu.classList.contains('on'))openMenu(false);if(G.mode==='intro'){endIntro();return}if(J.on||G.modal)return;const[x,y]=rel(e);J.on=true;J.id=e.pointerId;J.ox=J.x=x;J.oy=J.y=y;J.t0=performance.now();try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
-cv.addEventListener('pointermove',e=>{if(!J.on||e.pointerId!==J.id)return;const[x,y]=rel(e);J.x=x;J.y=y});
-const pUp=e=>{if(e.pointerId!==J.id)return;if(J.on&&e.type==='pointerup'&&performance.now()-(J.t0||0)<350&&Math.hypot(J.x-J.ox,J.y-J.oy)<12){const wx=cam.x+(J.ox-cssW/2)/zoom,wy=cam.y+(J.oy-cssH/2)/zoom;if(!padUnlock(wx,wy))tapInfo(wx,wy,J.t0||0)}J.on=false};cv.addEventListener('pointerup',pUp);cv.addEventListener('pointercancel',pUp);cv.addEventListener('lostpointercapture',pUp);
+cv.addEventListener('pointerdown',e=>{initAudio();if(G.mapOn)return;if(menu.classList.contains('on'))openMenu(false);if(G.mode==='intro'){endIntro();return}if(J.on||G.modal)return;const[x,y]=rel(e);J.on=true;J.virt=false;J.id=e.pointerId;J.ox=J.x=J.lx=x;J.oy=J.y=J.ly=y;J.drag=false;J.lp=false;J.closed=!!INFO.closedKey;J.t0=performance.now();/* what is under the finger now (a moving car may have left when the press turns long) */J.hit=G.mode==='play'?hitInfo(cam.x+(x-cssW/2)/zoom,cam.y+(y-cssH/2)/zoom):null;try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+/* swipe = move the world (look around); the player keeps walking where you sent him */
+cv.addEventListener('pointermove',e=>{if(!J.on||e.pointerId!==J.id)return;const[x,y]=rel(e);J.x=x;J.y=y;
+ if(!J.drag&&!J.lp&&Math.hypot(x-J.ox,y-J.oy)>10){J.drag=true;J.lx=J.ox;J.ly=J.oy}
+ if(J.drag&&!G.crane){cam.x-=(x-J.lx)/zoom;cam.y-=(y-J.ly)/zoom;G.free=true}J.lx=x;J.ly=y});
+/* tap = walk there (a dotted line shows the way); a tap on a waiting pad next to you buys the next level;
+   a tap that only closes an explanation bubble does nothing else */
+const pUp=e=>{if(e.pointerId!==J.id)return;if(J.on&&e.type==='pointerup'&&!J.drag&&!J.lp){const wx=cam.x+(J.ox-cssW/2)/zoom,wy=cam.y+(J.oy-cssH/2)/zoom;
+  if(!J.closed&&!padUnlock(wx,wy))goTo(wx,wy)}J.on=false;J.drag=false};cv.addEventListener('pointerup',pUp);cv.addEventListener('pointercancel',pUp);cv.addEventListener('lostpointercapture',pUp);
 const KM={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:'d'};
 addEventListener('keydown',e=>{initAudio();if(G.mode==='intro'&&(e.key===' '||e.key==='Enter'||KM[e.code])){endIntro()}
  if(e.key==='Escape'){if(INFO.on){hideInfo();if(!G.modal&&!G.mapOn&&!menu.classList.contains('on'))return}if(G.modal)closeModal();else if(G.mapOn){openMap(false);try{$('mapBtn').focus()}catch(_){}}else if(menu.classList.contains('on')){openMenu(false);try{mBtn.focus()}catch(_){}}return}
@@ -3503,6 +3542,7 @@ window.__smelt={get S(){return S},t_,setLang,get LANG(){return LANG},I18N_MISS,E
  build:id=>{const i=BUILDS.findIndex(b=>b.id===id);for(let k=S.ph;k<=i;k++){S.b[BUILDS[k].id]=1;S.ph=k+1;onBuild(BUILDS[k])}},
  hire:(st,n)=>{S.lv[HIRE[st].id]=n;syncHelpers()},setLv:(id,n)=>{S.lv[id]=n;syncHelpers();syncLadles();if(id==='yard2'||id==='magkran'||id==='varm')bakeFloor()},
  collide,SOLIDS:()=>SOLIDS,blockedPt,field,rebuildNav,rebuildSolids,bakeFloor,POS,WW,WH,QX,QY,START:POS.start,SUPN,PR,PRK,ROUTES,startTap,tapLadle,potMax,slotsMax,cam,setZoom:z=>{zoom=z},padLab,zonePlate,plateW,B_,lv,CY,cashAt,prodOn,ROLL,get zoom(){return zoom},ws,nextBuild,nodeRoom,yardT,PADPOS,inZone,SY,layoutPads,padShown,padMaks,padUrgent,upOpen,upAvail,routeWork,POSTS,inCab,postCrane,TAPDESK,UPROW,HIREPOS,padTitle,TUR,armPt,setUZ,CSB,CSG,CSN,TROB:()=>TROB,csSum,csLim,csCap,csX,csI,CSI1,csGasT,craneLift,beltRate,kwh,eraLayout,LAY5,TROBP,CS:()=>({chg:+S.chg.toFixed(1),cap:+chgCap().toFixed(1),v:+CSB.v.toFixed(1),vmax:+CSB.vmax.toFixed(1),feed:+CSB.feed.toFixed(2),pre:Math.round(CSB.pre),lim:csLim(),rob:TROB.n,crane:CRm.skrap.state}),pause:v=>{G.dbgPause=!!v},get RM(){return RM},setRM:v=>{RM=!!v}};
+ Object.defineProperties(window.__smelt,{P:{get:()=>P,configurable:true},G:{get:()=>G,configurable:true}});Object.assign(window.__smelt,{goTo,planPath});
 }
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 </script>

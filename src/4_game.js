@@ -10,13 +10,23 @@ function bumpMoney(){const e=$('money');e.classList.remove('bump');void e.offset
 function ws(x,y){return[(x-cam.x)*zoom+cssW/2+shx,(y-cam.y)*zoom+cssH/2+shy]}
 
 /* ---------- main update ---------- */
-const J={on:false,id:0,ox:0,oy:0,x:0,y:0};const JR=48;const keys={};
+const J={on:false,id:0,ox:0,oy:0,x:0,y:0,lx:0,ly:0,drag:false,lp:false};const JR=48;const keys={};
 const HUDM={t:-9,top:0,bot:0};
 function update(dt){
  T+=dt;S.st.play+=dt;
  let ix=0,iy=0;
- if(!G.modal&&!G.mapOn){if(J.on){const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy);if(m>6){const k=min(1,m/JR);ix=dx/m*k;iy=dy/m*k}}
-  if(keys.l)ix-=1;if(keys.r)ix+=1;if(keys.u)iy-=1;if(keys.d)iy+=1}
+ if(!G.modal&&!G.mapOn){
+  /* hold still on something = explanation bubble */
+  if(J.on&&!J.drag&&!J.lp&&performance.now()-J.t0>450){J.lp=true;if(J.hit&&G.mode==='play'&&!G.modal&&showInfo(J.hit)){G.go=null;vib(8)}}
+  /* analog stick for scripted input (tests/bots): J.virt */
+  if(J.on&&J.virt){const dx=J.x-J.ox,dy=J.y-J.oy,m=hyp(dx,dy);if(m>6){const k=min(1,m/JR);ix=dx/m*k;iy=dy/m*k}}
+  if(keys.l)ix-=1;if(keys.r)ix+=1;if(keys.u)iy-=1;if(keys.d)iy+=1;
+  if(ix||iy){G.go=null;G.free=false}
+  else if(G.go){const cr0=G.crane?CRm[G.crane]:null,a=cr0||P,g=G.go,w=g.pts[g.i],dx=w.x-a.x,dy=w.y-a.y,dd=hyp(dx,dy),last=g.i===g.pts.length-1;
+   if(dd<(last?(cr0?6:5):16)){if(last)G.go=null;else g.i++}
+   else{const k=last?min(1,dd/40+.25):1;ix=dx/dd*k;iy=dy/dd*k;
+    /* stuck (pushed by something): plan again once, then give up */
+    g.st=(g.st||0)+dt;if(g.st>.6){g.st=0;if(g.best!=null&&dd>g.best-6){g.tries=(g.tries||0)+1;if(g.tries>2||cr0)G.go=null;else{const np=planPath(a.x,a.y,g.tx,g.ty);if(np&&np.length){g.pts=np;g.i=0;g.best=null}else G.go=null}}else g.best=dd}}}}
  const im=hyp(ix,iy);if(im>1){ix/=im;iy/=im}
  if(im>.1&&!S.moved)S.moved=true;
  const cr=G.crane?CRm[G.crane]:null;if(cr&&!canMan(cr)){G.crane=null;cr.man=false}
@@ -44,7 +54,8 @@ function update(dt){
  if(!workAvail()){G.idleT+=dt;G.idleS+=dt}else if(!workAvail(1))G.idleS+=dt;
  /* camera: follows the player, or the crane hook while you steer a crane */
  const vw=cssW/zoom,vh=cssH/zoom,lk=min(1,dt*6),fx=cr?cr.x:P.x+P.vx*.15,fy=cr?cr.y:P.y+P.vy*.15;
- cam.x=lerp(cam.x,fx,lk);cam.y=lerp(cam.y,fy,lk);
+ /* after a swipe the camera stays where you put it, until you walk again */
+ if(!G.free){cam.x=lerp(cam.x,fx,lk);cam.y=lerp(cam.y,fy,lk)}
  if(T-HUDM.t>.5){HUDM.t=T;try{const st=$('stage').getBoundingClientRect(),g=$('goal').getBoundingClientRect(),s=$('stat').getBoundingClientRect();
    if(g.height>0)HUDM.top=g.bottom-st.top+10;if(s.height>0)HUDM.bot=st.bottom-s.top+10}catch(e){}}
  const pt=max(150,HUDM.top/zoom),pb=max(90,HUDM.bot/zoom);
@@ -142,7 +153,12 @@ function hud(){const mvT=NO_()?fmt(S.money):'$'+fmt(S.money);setT('mv',mvT);{con
  /* crane button: shown in a zone whose crane you can take over */
  const cz=craneHere();const cb=$('craneBtn');const ct=cz?t_(G.crane===cz.id?'Slipp {0}':'Styr {0}',t_(cz.n)):'';if(lastHud.cb!==ct){lastHud.cb=ct;cb.hidden=!cz;cb.textContent=ct;cb.classList.toggle('on',!!cz&&G.crane===cz.id);cb.setAttribute('aria-pressed',cz&&G.crane===cz.id?'true':'false')}}
 function craneHere(){if(G.crane)return CRm[G.crane];for(const c of CRANES){if(!canMan(c))continue;const d=c.d;if(P.x>d.x0-40&&P.x<d.x1+40&&P.y>d.y0-40&&P.y<d.y1+40)return c}return null}
-function toggleCrane(){const c=craneHere();if(!c)return;if(G.crane===c.id){c.man=false;G.crane=null;toast(t_('Kranen kjører selv igjen'))}else{G.crane=c.id;c.man=true;J.on=false;toast(t_('Du styrer {0} ({1})',t_(c.n),t_(c.bonus)))}hudT=0;sfx('tick',200);buzz(12)}
+/* start walking (or steering the crane hook) to a world point; the camera follows again */
+function goTo(wx,wy){const cr=G.crane?CRm[G.crane]:null;G.free=false;
+ if(cr){G.go={pts:[{x:wx,y:wy}],i:0,tx:wx,ty:wy,crane:1};return true}
+ const pts=planPath(P.x,P.y,wx,wy);if(!pts||!pts.length){G.go=null;return false}
+ G.go={pts,i:0,tx:wx,ty:wy,mk:pts[pts.length-1],t:T};if(!S.moved){S.moved=true}return true}
+function toggleCrane(){const c=craneHere();if(!c)return;if(G.crane===c.id){c.man=false;G.crane=null;toast(t_('Kranen kjører selv igjen'))}else{G.crane=c.id;c.man=true;J.on=false;G.go=null;toast(t_('Du styrer {0} ({1})',t_(c.n),t_(c.bonus)))}hudT=0;sfx('tick',200);buzz(12)}
 $('craneBtn').addEventListener('click',e=>{initAudio();toggleCrane();e.stopPropagation()});
 
 /* ---------- menu + modal ---------- */
