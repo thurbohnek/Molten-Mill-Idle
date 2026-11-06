@@ -19,7 +19,8 @@ function drawTitle(t){ctx.fillStyle=C.bg;ctx.fillRect(0,0,cssW,cssH);const cx=cs
  txt('IDLE · STEEL TYCOON',cx,cy+fs*1.05+22,13,C.uidim,800);ctx.globalAlpha=1}
 function endIntro(){if(G.mode!=='intro')return;G.mode='play';stage.classList.remove('intro');try{cv.focus({preventScroll:true})}catch(e){}
  if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(ERA[0].yr+' · '+t_('Fase 1: Masovn og Bessemer-konverter'),true);
- if(!S.introSeen&&!S.heats&&!S.ph&&!S.pres.n)showStart();
+ /* every new game (first start, reset or a new mill) opens with the How to play card */
+ if(!S.introSeen&&!S.heats)showStart();
  /* once per player: everything in the plant can be tapped for an explanation */
  if(!S.infoHint){S.infoHint=1;toast(t_('Hold fingeren på en ting for å få en forklaring'));save()}}
 
