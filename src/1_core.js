@@ -110,7 +110,7 @@ const ERA=[
  {n:'LD-konverter',k:'LD-KONVERTER',yr:1960,type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
  {n:'Lysbueovn',k:'LYSBUEOVN',yr:1975,type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
  {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',yr:1985,cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
- {n:'Båndchargert ovn',k:'CONSTEEL-OVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
+ {n:'Båndchargert ovn',k:'BÅNDOVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
 const RJE=[{n:'Koksmasovn',k:'MASOVN',yr:1880,rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',yr:1965,rate:.75}];
@@ -144,7 +144,7 @@ const UP=[
  {id:'carry',st:'skrap',n:'Større bæring',max:16,base:20,m:1.55,intro:1},
  {id:'speed',st:'skrap',n:'Raskere gange',max:12,base:45,m:1.6},
  {id:'yard',st:'skrap',n:'Skraptilførsel',max:20,base:70,m:1.55,req:()=>scrapUse()},
- {id:'kran',st:'skrap',n:'Skrapkran',max:20,base:180,m:1.52,req:()=>scrapUse()},
+ {id:'kran',st:'skrap',n:'Skrapkran',max:23,base:180,m:1.52,req:()=>scrapUse()},
  {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere chargeringsbånd'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
  {id:'yard2',st:'skrap',n:'Skraphaug 2',max:1,costs:[900],req:()=>scrapUse()},
  {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>era()===5},
@@ -156,7 +156,7 @@ const UP=[
  {id:'ladle',st:'ovn',n:'Ekstra øse',max:2,costs:[450,2.5e4]},
  {id:'slagcap',st:'ovn',n:'Større slaggpotte',max:10,base:1500,m:1.7,req:()=>slagOn()},
  {id:'slaggbil',st:'ovn',n:'Slaggbil',max:1,costs:[6e4],req:()=>slagOn()},
- {id:'kalk',st:'sup',n:'Kalk og dolo',max:21,base:60,m:1.5,sup:1,req:()=>E_().req.indexOf('kalk')>=0||lv('kalk')>0},
+ {id:'kalk',st:'sup',n:'Kalk og dolo',max:23,base:60,m:1.5,sup:1,req:()=>E_().req.indexOf('kalk')>=0||lv('kalk')>0},
  {id:'o2',st:'sup',n:'Oksygenanlegg',max:21,base:500,m:1.5,sup:1,req:()=>E_().req.indexOf('o2')>=0||lv('o2')>0},
  {id:'lans',st:'sup',n:()=>lv('lans')?'Veggmonterte injektorer':'Dørlansemanipulator',max:2,costs:[2e4,6e5],req:()=>isEAF()&&lv('o2')>0&&(lv('lans')<1||era()>=4)},
  {id:'elekkran',st:'sup',n:'Elektrodekran',max:1,costs:[9e4],req:()=>isEAF()},
@@ -174,9 +174,9 @@ const UP=[
  {id:'lft',st:'lf',n:'Raskere behandling',max:12,base:600,m:1.65},
  {id:'osekran',st:'lf',n:'Ny øsekran',max:10,base:900,m:1.75},
  {id:'kokup',st:'blokk',n:'Flere kokiller',max:6,base:150,m:1.75},
- {id:'kokbig',st:'blokk',n:'Større kokiller',max:14,base:450,m:1.6},
+ {id:'kokbig',st:'blokk',n:'Større kokiller',max:16,base:450,m:1.6},
  {id:'solid',st:'blokk',n:'Raskere størkning',max:14,base:300,m:1.6},
- {id:'kran2',st:'blokk',n:'Raskere kokillekran',max:14,base:400,m:1.6},
+ {id:'kran2',st:'blokk',n:'Raskere kokillekran',max:18,base:400,m:1.6},
  {id:'kanal',st:'blokk',n:'Kanalsteinlager',max:1,costs:[350]},
  {id:'hette',st:'blokk',n:'Varmholdsmasse',max:1,costs:[1500]},
  {id:'strands',st:'strang',n:'Flere strenger',max:7,costs:[2.5e4,8e4,2.5e5,7e5,2e6,5e6,1.2e7]},
@@ -186,7 +186,7 @@ const UP=[
  {id:'truck',st:'salg1',n:'Salgsavtale',max:30,base:200,m:1.5},
  {id:'hspeed',st:'salg1',n:'Hjelperfart',max:14,base:400,m:1.65,req:()=>helpersHired()},
  {id:'hcap',st:'salg1',n:'Hjelperkapasitet',max:14,base:500,m:1.65,req:()=>helpersHired()},
- {id:'gjvup',st:'gjv',n:'Ovnskapasitet',max:24,base:3e4,m:1.42},
+ {id:'gjvup',st:'gjv',n:'Ovnskapasitet',max:25,base:3e4,m:1.42},
  {id:'bjelke',st:'gjv',n:'Bjelkeovn',max:1,costs:[1.5e6]},
  {id:'magkran',st:'gjv',n:'Magnetkran',max:12,base:1e5,m:1.6},
  {id:'varm',st:'gjv',n:'Varminnsetting',max:1,costs:[1e6]},

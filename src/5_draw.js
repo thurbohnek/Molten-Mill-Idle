@@ -200,7 +200,7 @@ function drawTundish(n){const{x0,x1,y0,y1}=TD,lev=CAST.tlev,py=TUR.y,w=x1-x0,fl=
  g.strokeStyle='rgba(60,40,30,.8)';g.lineWidth=1.4;g.strokeRect(PBX-6,py-6,12,12);
  /* one nozzle per strand: stopper rod on a lever + mechanism at the inside edge; unused nozzles are plugged */
  for(let i=0;i<8;i++){const y=SY(i),nx=x1-8,dn=y>py?1:-1;
-  if(i<n){g.fillStyle='#2a1d18';circ(nx,y,5);g.fill();if(lev>.02){g.fillStyle=heat(.6+.38*lev*fl);g.globalAlpha=.4+.6*lev;circ(nx,y,4.2);g.fill();g.globalAlpha=1}
+  if(i<n){g.fillStyle='#2a1d18';circ(nx,y,5);g.fill();if(lev>.02&&(!CAST.flow||i<CAST.nOn)){/* a closed strand's stopper is shut */g.fillStyle=heat(.6+.38*lev*fl);g.globalAlpha=.4+.6*lev;circ(nx,y,4.2);g.fill();g.globalAlpha=1}
    SK.line(g,nx,y,x0+9,y+7*dn,'#1d1f23',2.6);SK.line(g,nx,y,x0+9,y+7*dn,'#9aa2ad',1.2);SK.box(g,x0+5,dn>0?y+3:y-12,8,9,'#3d4756','#14171c',2);g.fillStyle='#d24b3a';g.fillRect(x0+6.5,dn>0?y+4.5:y-10.5,2,2);
    g.fillStyle='#2a2c30';circ(nx,y,2.6);g.fill();g.fillStyle='#8b939e';circ(nx-.7,y-.7,1);g.fill()}
   else{g.fillStyle='#5a5f66';circ(nx,y,4);g.fill();g.strokeStyle='#2a2d31';g.lineWidth=1;circ(nx,y,4);g.stroke()}}}
@@ -216,7 +216,7 @@ function drawShroudPark(){const on=LADLES.some(l=>l.state==='cast')&&CAST.rf>=1,
  SK.shadow(g,x+2,y+3,8,7,.3);g.fillStyle='#2a2d31';circ(x,y,6);g.fill();g.fillStyle='#c79a1e';circ(x,y,3);g.fill();
  if(on){SK.line(g,x,y,x+12,y-10,'#1d1f23',4);SK.line(g,x,y,x+12,y-10,'#c79a1e',2);return}
  SK.line(g,x,y,x-9,y-7,'#1d1f23',4);SK.line(g,x,y,x-9,y-7,'#c79a1e',2);/* parked shroud in the manipulator fork, collar up */g.lineCap='round';SK.line(g,x-11,y-8,x-15,y+14,'#3a3e45',8);SK.line(g,x-11,y-8,x-15,y+14,'#cfc6b4',5);g.lineCap='butt';g.fillStyle='#6b7079';circ(x-11,y-8,4);g.fill();g.fillStyle='#2a2d31';circ(x-11,y-8,2);g.fill()}
-function drawCaster(){if(!B_('strang')||!inView(1540,830,320))return;const n=nStr(),flow=CAST.flow,cx=CUTX(),v=castV(),osc=RM?0:Math.sin(T*TAU*2.2);
+function drawCaster(){if(!B_('strang')||!inView(1540,830,320))return;const n=nStr(),flow=CAST.flow,cx=CUTX(),v=castV(),nOn=flow?min(n,CAST.nOn||n):n,osc=RM?0:Math.sin((CAST.pos||0)*TAU*2.2);/* strands move with the controlled casting speed (CAST.pos); closed strands stand still */
  /* floor: run-out table bed, spray chamber pit, cooling bed */
  g.fillStyle='#1d2025';g.fillRect(1488,TD.y0-6,52,TD.y1-TD.y0+12);
  g.fillStyle='#2a2d33';g.fillRect(1568,TD.y0+2,84,TD.y1-TD.y0-4);
@@ -228,33 +228,33 @@ function drawCaster(){if(!B_('strang')||!inView(1540,830,320))return;const n=nSt
  g.fillStyle='#2f5f8a';g.fillRect(TD.x1+1,TD.y0+4,3,TD.y1-TD.y0-8);
  /* the strand glow: one gradient from the mould exit to the cutter, shared by all strands */
  let sg=null;if(flow){sg=g.createLinearGradient(MCX+11,0,cx,0);sg.addColorStop(0,heat(.97));sg.addColorStop(.3,heat(.8));sg.addColorStop(.62,heat(.66));sg.addColorStop(1,heat(.56))}
- const off=RM?0:(T*v)%9;
- for(let i=0;i<8;i++){const y=SY(i),on=i<n;
+ const off=RM?0:((CAST.pos||0)*v)%9;
+ for(let i=0;i<8;i++){const y=SY(i),on=i<n,fl=flow&&i<nOn;
   if(!on){/* not bought yet: covered mould position, bare floor */SK.box(g,MCX-11,y-11,22,22,'#2a2d33','#15171a',3);g.strokeStyle='rgba(255,255,255,.08)';g.lineWidth=1;g.beginPath();g.moveTo(MCX-7,y-7);g.lineTo(MCX+7,y+7);g.moveTo(MCX+7,y-7);g.lineTo(MCX-7,y+7);g.stroke();
    SK.box(g,WSX,y-12,26,24,'#24272c',null,3);continue}
   /* run-out rollers */
   for(let rx=1572;rx<1650;rx+=10){g.fillStyle='#4f555e';g.fillRect(rx,y-8,4,16);g.fillStyle='rgba(255,255,255,.14)';g.fillRect(rx,y-8,1.4,16)}
   /* strand from the mould through the spray chamber to the cutter, with moving oscillation marks */
-  if(flow){g.fillStyle=sg;g.fillRect(MCX+10,y-4.5,cx-MCX-10,9);g.fillStyle='rgba(60,20,10,.1)';for(let xx=1540+off;xx<cx;xx+=9)g.fillRect(xx,y-4.5,1,9);g.fillStyle='rgba(255,255,255,.12)';g.fillRect(MCX+10,y-4.5,cx-MCX-10,2)}
+  if(fl){g.fillStyle=sg;g.fillRect(MCX+10,y-4.5,cx-MCX-10,9);g.fillStyle='rgba(60,20,10,.1)';for(let xx=1540+off;xx<cx;xx+=9)g.fillRect(xx,y-4.5,1,9);g.fillStyle='rgba(255,255,255,.12)';g.fillRect(MCX+10,y-4.5,cx-MCX-10,2)}
   /* copper mould tube in its water jacket on the oscillating table */
   const o=osc*.7;SK.box(g,MCX-11,y-11+o*.4,22,22,'#3d4756','#14171c',3);g.fillStyle='#b87333';g.fillRect(MCX-7-o*.3,y-7-o*.3,14+o*.6,14+o*.6);g.fillStyle='#e0a070';g.fillRect(MCX-7-o*.3,y-7-o*.3,14+o*.6,2);
-  g.fillStyle=flow?heat(.9+.08*(RM?.5:Math.sin(T*13+i))):'#2a1a14';g.fillRect(MCX-4.5,y-4.5,9,9);
+  g.fillStyle=fl?heat(.9+.08*(RM?.5:Math.sin(T*13+i))):'#2a1a14';g.fillRect(MCX-4.5,y-4.5,9,9);
   g.fillStyle='#6fa8e8';g.fillRect(MCX-11,y-3,2.5,6);
-  if(flow&&CAST.tlev>.02){/* open stream from the metering nozzle into the mould */g.strokeStyle='rgba(255,236,170,.95)';g.lineWidth=2;g.beginPath();g.moveTo(TD.x1-8,y);g.lineTo(MCX,y);g.stroke()}
+  if(fl&&CAST.tlev>.02){/* open stream from the metering nozzle into the mould */g.strokeStyle='rgba(255,236,170,.95)';g.lineWidth=2;g.beginPath();g.moveTo(TD.x1-8,y);g.lineTo(MCX,y);g.stroke()}
   /* withdrawal & straightening unit: two driven roll pairs, drive motor below */
   SK.box(g,WSX,y-13,26,5,'#3d4756','#14171c',2);SK.box(g,WSX,y+8,26,5,'#3d4756','#14171c',2);
-  for(const rx of[WSX+6,WSX+19]){g.fillStyle='#8b939e';g.fillRect(rx-3,y-8,6,16);g.fillStyle='rgba(0,0,0,.35)';const k=flow&&!RM?((T*v*.25)%4):0;g.fillRect(rx-3,y-8+k*4,6,1.5);g.fillRect(rx-3,y-8+((k*4+8)%16),6,1.5)}
+  for(const rx of[WSX+6,WSX+19]){g.fillStyle='#8b939e';g.fillRect(rx-3,y-8,6,16);g.fillStyle='rgba(0,0,0,.35)';const k=fl&&!RM?(((CAST.pos||0)*v*.25)%4):0;g.fillRect(rx-3,y-8+k*4,6,1.5);g.fillRect(rx-3,y-8+((k*4+8)%16),6,1.5)}
   SK.box(g,WSX+7,y+13,12,6,'#2f5f8a','#14171c',1.5)}
  /* spray chamber: header pipes across the strands with spray fans, steam rising from the cooling water */
  g.fillStyle='#3d434b';g.fillRect(1488,TD.y0-8,52,5);g.fillRect(1488,TD.y1+3,52,5);
  /* water manifolds at both ends, spray headers along each strand with nozzles aimed at it */
  g.fillStyle='#2f5f8a';g.fillRect(1488,TD.y0-4,3,TD.y1-TD.y0+8);g.fillRect(1537,TD.y0-4,3,TD.y1-TD.y0+8);
  for(let i=0;i<n;i++){const y=SY(i);g.fillStyle='#3a6f9e';g.fillRect(1490,y-10,48,2);g.fillRect(1490,y+8,48,2);
-  if(flow){g.fillStyle='rgba(190,225,255,.3)';g.beginPath();for(let hx=1496;hx<1536;hx+=12){g.moveTo(hx,y-8);g.lineTo(hx-3,y-4.5);g.lineTo(hx+3,y-4.5);g.closePath();g.moveTo(hx,y+8);g.lineTo(hx-3,y+4.5);g.lineTo(hx+3,y+4.5);g.closePath()}g.fill()}}
- if(flow){if(RM){g.fillStyle='rgba(235,240,245,.18)';for(let i=0;i<n;i++){SK.circ(g,1508,SY(i)-14,9);g.fill()}}
-  else SK.parts(10+n*2,.55,9,T,(f,a,b)=>{const y=SY(floor(b*n*.999));g.fillStyle=`rgba(235,240,245,${.3*(1-f)})`;SK.circ(g,1492+a*44+f*6,y-6-f*20,3+f*9);g.fill()})}
+  if(flow&&i<nOn){g.fillStyle='rgba(190,225,255,.3)';g.beginPath();for(let hx=1496;hx<1536;hx+=12){g.moveTo(hx,y-8);g.lineTo(hx-3,y-4.5);g.lineTo(hx+3,y-4.5);g.closePath();g.moveTo(hx,y+8);g.lineTo(hx-3,y+4.5);g.lineTo(hx+3,y+4.5);g.closePath()}g.fill()}}
+ if(flow){if(RM){g.fillStyle='rgba(235,240,245,.18)';for(let i=0;i<nOn;i++){SK.circ(g,1508,SY(i)-14,9);g.fill()}}
+  else SK.parts(10+nOn*2,.55,9,T,(f,a,b)=>{const y=SY(floor(b*nOn*.999));g.fillStyle=`rgba(235,240,245,${.3*(1-f)})`;SK.circ(g,1492+a*44+f*6,y-6-f*20,3+f*9);g.fill()})}
  /* billets: cut pieces on the run-out; when the strand has stopped, the uncut tails */
- for(const r of CAST.run){if(r.x>cx)SK.billetBar(g,r.x-40,SY(r.lane),40,9,.5);else if(!flow)SK.billetBar(g,max(MCX+12,r.x-40),SY(r.lane),min(40,r.x-MCX-12),9,.55)}
+ for(const r of CAST.run){if(r.x>cx)SK.billetBar(g,r.x-40,SY(r.lane),40,9,.5);else if(!(flow&&r.lane<nOn))SK.billetBar(g,max(MCX+12,r.x-40),SY(r.lane),min(40,r.x-MCX-12),9,.55)}
  /* cooling bed: billets walk across and cool from orange to grey */
  for(const b of CAST.bed){const k=b.it.hot?clamp(.62-(b.va||0)*.055,.07,.62):.07;SK.billetBar(g,1658,b.y,98,7,k)}
  /* cutters: hydraulic shear (old) or torch cutting machine (upgrade) */

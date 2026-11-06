@@ -24,7 +24,7 @@ const EN={
  'ØSEOVN':'LADLE FURNACE','BLOKKSTØPING':'INGOT CASTING','STRANGGJUTING':'CONTINUOUS CASTER','SALG':'SALE','SALG 2':'SALE 2','GJENNOMVARMING':'REHEATING',
  'VALSEVERK':'ROLLING MILL','BRÅKJØLING':'QUENCH LINE','VALSTRÅD':'WIRE ROD','NETTVERK':'MESH WELDING','KLIPP OG BØY':'CUT & BEND','UTLASTING':'SHIPPING',
  'STÅLVERK':'MELT SHOP','EL-OVN':'ELECTRIC','MASOVN':'BLAST FURNACE','NEDLAGT':'CLOSED','TOMT':'PLOT','SKRAPHAUG 2':'SCRAP PILE 2',
- 'BESSEMER':'BESSEMER','SM-OVN':'OPEN HEARTH','LD-KONVERTER':'LD CONVERTER','LYSBUEOVN':'ARC FURNACE','UHP-LYSBUEOVN':'UHP ARC FURNACE','CONSTEEL-OVN':'CONSTEEL',
+ 'BESSEMER':'BESSEMER','SM-OVN':'OPEN HEARTH','LD-KONVERTER':'LD CONVERTER','LYSBUEOVN':'ARC FURNACE','UHP-LYSBUEOVN':'UHP ARC FURNACE','BÅNDOVN':'CONVEYOR EAF',
  'EL-RÅJERNSOVN':'ELECTRIC SMELTER',
  /* --- products / kinds --- */
  'Masseljern':'Pig iron','Støpeblokk':'Ingot','Emne':'Billet','Armeringsstål':'Rebar','Bråkjølt armering':'Quenched rebar','Valstråd':'Wire rod','Armeringsnett':'Rebar mesh',
@@ -120,7 +120,7 @@ const EN={
  'Flaskehals: øsekranen':'Bottleneck: the ladle crane','Behandler':'Treating','Flaskehals: øseovn':'Bottleneck: ladle furnace','Venter på stål':'Waiting for steel',
  'Mangler kokiller!':'No moulds!','Flaskehals: blokkstøping':'Bottleneck: ingot casting','Stigstøper':'Bottom pouring','Støper':'Casting',
  'Bryteren står på Streng':'The switch is set to Caster','Auto: stålet går til strengen':'Auto: the steel goes to the caster','Flaskehals: strenger':'Bottleneck: strands',
- 'Støper · {0} strenger':'Casting · {0} strands','Bryteren står på Blokk':'The switch is set to Ingots','Flaskehals':'Bottleneck','Valseprogram: Armering':'Mill program: Rebar',
+ 'Støper · {0} strenger':'Casting · {0} strands','Støper · {0} strenger · {1} m/min':'Casting · {0} strands · {1} m/min','{0} av {1} strenger · {2} m/min':'{0} of {1} strands · {2} m/min','Støpefart {0} m/min ({1} % av maks)':'Casting speed {0} m/min ({1} % of max)','Venter på øsekranen':'Waiting for the ladle crane','Bryteren står på Blokk':'The switch is set to Ingots','Flaskehals':'Bottleneck','Valseprogram: Armering':'Mill program: Rebar',
  'Valseprogram: Valstråd':'Mill program: Wire rod','Emner går til salg (meny)':'Billets go to sale (menu)','Bær {0} hit':'Carry {0} here','Venter på {0}':'Waiting for {0}',
  /* goals */
  'skipet':'the skip','malmtoget':'the ore train','chargeringen':'the charging area','elektrodestativet':'the electrode rack','bunnplata':'the bottom plate',
@@ -172,7 +172,7 @@ const EN={
  'Pengeflyt':'Money flow','Lukk kartet':'Close the map','Lukk':'Close','Linja fra skrap til salg':'The line from scrap to sale','Tilpass kartet':'Fit the map',
  'Malmlager':'Ore yard','Råjernsovn':'Iron furnace','Kalk / dolo':'Lime / dolo','Oksygen':'Oxygen','Skrapplass':'Scrap yard','kart§Stranggjuting':'Caster',
  'Blokkstøping':'Ingot casting','Gjennomvarming':'Reheating',
- 'kart§BESSEMER':'BESSEMER','kart§SM':'OPEN HEARTH','kart§LD':'LD (BOF)','kart§EAF':'EAF','kart§UHP EAF':'UHP EAF','kart§CONSTEEL':'CONSTEEL','kart§MASOVN':'BLAST FURN.','kart§EL-RÅJERN':'EL. SMELTER',
+ 'kart§BESSEMER':'BESSEMER','kart§SM':'OPEN HEARTH','kart§LD':'LD (BOF)','kart§EAF':'EAF','kart§UHP EAF':'UHP EAF','kart§BÅNDOVN':'CONVEYOR EAF','kart§MASOVN':'BLAST FURN.','kart§EL-RÅJERN':'EL. SMELTER',
  'Malm':'Ore','Råjern (flytende)':'Hot metal (liquid)','Skrap':'Scrap','Flytende stål':'Liquid steel','Slagg':'Slag',
  'nedlagt':'closed','neste bygg':'next build','neste · {0}':'next · {0}','{0} drift':'{0} to run','ut {0} t/min':'out {0} t/min','flaskehals':'bottleneck',
  'bil · tog · kai':'truck · train · quay','bil · tog':'truck · train','per min':'per min','ikke bygget':'not built','FLASKEHALS':'BOTTLENECK','VENTER':'WAITING',
