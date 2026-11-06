@@ -104,15 +104,17 @@ const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektr
    type conv = converter (charge råjern + skrap, blow, tilt to tap), sm = open hearth, eaf = arc furnace.
    hm = [min, max] share of hot metal (råjern) in the charge; the rest is scrap. Time compressed. ---------- */
 const ERA=[
- {n:'Bessemer-konverter',k:'BESSEMER',type:'conv',cap:10,blow:9,ref:1,ch:'conv',req:[],fb:.7,elek:0,slag:0,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈20 min',hm:[.9,1]},
- {n:'Siemens-Martin-ovn',k:'SM-OVN',type:'sm',cap:16,P:34,E:1000,ref:4,ch:'box',req:['kalk'],fb:.7,elek:0,slag:0,heel:0,tap:'hole',pu:'MW gass',tt:'≈8 t',hm:[.35,.6]},
- {n:'LD-konverter',k:'LD-KONVERTER',type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
- {n:'Lysbueovn',k:'LYSBUEOVN',type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
- {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
- {n:'Consteel-ovn',k:'CONSTEEL-OVN',cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
+ {n:'Bessemer-konverter',k:'BESSEMER',yr:1880,type:'conv',cap:10,blow:9,ref:1,ch:'conv',req:[],fb:.7,elek:0,slag:0,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈20 min',hm:[.9,1]},
+ {n:'Siemens-Martin-ovn',k:'SM-OVN',yr:1910,type:'sm',cap:16,P:34,E:1000,ref:4,ch:'box',req:['kalk'],fb:.7,elek:0,slag:0,heel:0,tap:'hole',pu:'MW gass',tt:'≈8 t',hm:[.35,.6]},
+ {n:'LD-konverter',k:'LD-KONVERTER',yr:1960,type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
+ {n:'Lysbueovn',k:'LYSBUEOVN',yr:1975,type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
+ {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',yr:1985,cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
+ {n:'Consteel-ovn',k:'CONSTEEL-OVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
-const RJE=[{n:'Koksmasovn',k:'MASOVN',rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',rate:.75}];
+const RJE=[{n:'Koksmasovn',k:'MASOVN',yr:1880,rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',yr:1965,rate:.75}];
+/* the year the works are in: set by the steel furnace era (the electric smelter arrives in between) */
+const year=()=>max(E_().yr,rjEra()&&!rjClosed()?RJE[1].yr:0);
 const RJSUPC={koks:.2,cowper:.2};
 
 /* ---------- phases: one build at a time, always the next one in this list ---------- */

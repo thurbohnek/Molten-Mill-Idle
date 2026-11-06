@@ -18,7 +18,8 @@ function drawTitle(t){ctx.fillStyle=C.bg;ctx.fillRect(0,0,cssW,cssH);const cx=cs
  ctx.fillStyle=C.hazard;ctx.fillRect(cx-fs*1.3,cy+fs*1.05,fs*2.6,4);
  txt('IDLE · STEEL TYCOON',cx,cy+fs*1.05+22,13,C.uidim,800);ctx.globalAlpha=1}
 function endIntro(){if(G.mode!=='intro')return;G.mode='play';stage.classList.remove('intro');try{cv.focus({preventScroll:true})}catch(e){}
- if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(t_('Fase 1: Masovn og Bessemer-konverter'),true);
+ if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(ERA[0].yr+' · '+t_('Fase 1: Masovn og Bessemer-konverter'),true);
+ if(!S.introSeen&&!S.heats&&!S.ph&&!S.pres.n)showStart();
  /* once per player: everything in the plant can be tapped for an explanation */
  if(!S.infoHint){S.infoHint=1;toast(t_('Trykk på hva som helst for en forklaring'));save()}}
 
@@ -38,15 +39,20 @@ addEventListener('blur',()=>{for(const k in keys)keys[k]=0;J.on=false});
 function save(){S.t=Date.now();
  const piles={};for(const k of PRK)piles[k]=PILE[k].map(packIt);
  /* steel in transit is stored safely: ladle steel becomes ingots, the caster run-out and cooling bed become billets, items on roller tables join the next queue */
- for(const L of LADLES){if(L.state==='filling')continue;const n=floor(L.steel/IT());for(let i=0;i<n;i++)piles.ingot.push(packIt({k:'ingot',t:IT(),q:L.q||1}))}
+ /* a ladle under the tap holds the whole heat being tapped (the furnace keeps only its heel), a ladle at the pit what is not poured yet */
+ for(const L of LADLES){const st=L.state==='filling'?(F.state==='tapping'&&F.L===L?F.tapAmt:0):L.steel;const n=floor(st/IT());for(let i=0;i<n;i++)piles.ingot.push(packIt({k:'ingot',t:IT(),q:L.q||1}))}
  for(const r of CAST.run)piles.billet.push(packIt({k:'billet',t:r.t,q:r.q}));for(const b of CAST.bed)piles.billet.push(packIt(b.it));
  if(PIT.n&&(PIT.state==='solid'||PIT.state==='strip'))for(let i=0;i<PIT.n;i++)piles.ingot.push(packIt({k:'ingot',t:PIT.ingT,q:PIT.L?PIT.L.q:1}));
+ else if(PIT.n&&PIT.state==='pour'){const n=floor(PIT.pourTot*PIT.fill/(1+RUNNER)/IT());for(let i=0;i<n;i++)piles.ingot.push(packIt({k:'ingot',t:IT(),q:PIT.L?PIT.L.q:1}))}
+ /* what the helpers carry goes back where it came from (they start empty after a reload) */
+ const store=Object.assign({},ST),kok=Object.assign({},S.kok,{slots:S.kok.slots+PIT.n,cool:S.kok.cool.slice()});
+ for(const h of helpers)for(const it of h.stack){if(isProd(it.k))piles[it.k].push(packIt(it));else if(it.k==='kokk')kok.ready++;else if(it.k==='kokv')kok.cool.push(coolT());else if(store[it.k]!=null&&store[it.k]<storeMax())store[it.k]++}
  const nodes={};for(const id in NODE){const n=NODE[id];nodes[id]=(n.cur?[n.cur]:[]).concat(n.in).map(packIt)}for(const m of movers)nodes[m.to].push(packIt(m.it));
  const cash={};for(const z of TG)if(z.cash)cash[z.id]=z.cash;
  /* liquid råjern in torpedo cars goes back to the hearth; whatever does not fit is cast to pigs */
  let hearth=S.rj.hearth+RJ.pigAcc;for(const c of TORPS)hearth+=c.load;const hc=rjClosed()?0:hearthCap();while(hearth>hc+PIG_T*.5){hearth-=PIG_T;piles.pig.push(packIt({k:'pig',t:PIG_T,q:1}))}
  const fch=F.ch?(F.ch.hm!=null?F.ch.s+F.ch.hm:F.ch.done?0:F.ch.amt):0;
- const out=Object.assign({},S,{pp:{x:Math.round(P.x),y:Math.round(P.y),stack:P.stack.map(packS)},piles,nodes,store:Object.assign({},ST),cash,kok:Object.assign({},S.kok,{slots:S.kok.slots+PIT.n,cool:S.kok.cool.slice()}),F:{bath:F.state==='tapping'?0:F.bath+(F.hmCh?F.hmCh.amt:0),solid:F.solid+fch,scIn:F.scIn+(F.ch&&F.ch.hm!=null?F.ch.s:0),hmIn:F.hmIn+(F.ch&&F.ch.hm!=null?F.ch.hm:0)+(F.hmCh?F.hmCh.amt:0)},rj:{ore:S.rj.ore,hearth:max(0,hearth)},torp:[]});
+ const out=Object.assign({},S,{pp:{x:Math.round(P.x),y:Math.round(P.y),stack:P.stack.map(packS)},piles,nodes,store,cash,kok,F:{bath:(F.state==='tapping'?max(0,F.bath-F.tapAmt):F.bath)+(F.hmCh?F.hmCh.amt:0),solid:F.solid+fch,scIn:F.scIn+(F.ch&&F.ch.hm!=null?F.ch.s:0),hmIn:F.hmIn+(F.ch&&F.ch.hm!=null?F.ch.hm:0)+(F.hmCh?F.hmCh.amt:0)},rj:{ore:S.rj.ore,hearth:max(0,hearth)},torp:[]});
  try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 setInterval(save,4000);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});addEventListener('pagehide',save);
 function resize(){const r=stage.getBoundingClientRect();cssW=max(200,r.width);cssH=max(300,r.height);dpr=min(2,window.devicePixelRatio||1);
@@ -63,11 +69,11 @@ applyLangDom();resize();setUZ(UZ);addEventListener('resize',resize);try{new Resi
 syncMenu();
 let last=performance.now();
 function frame(now){const dt=min(.05,max(0,(now-last)/1000));last=now;
- try{if(G.mode==='intro'){G.introT+=dt;drawIntro();if(G.introT>=3.4)endIntro()}else{if(!G.dbgPause)update(dt);draw()}}catch(err){console.error(err)}
+ try{if(G.mode==='intro'){G.introT+=dt;drawIntro();if(G.introT>=3.4)endIntro()}else{if(!G.dbgPause&&dt>0)update(dt);draw()}}catch(err){console.error(err)}
  requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 /* test hook (harmless in production) */
-window.__smelt={get S(){return S},t_,setLang,get LANG(){return LANG},I18N_MISS,EN,IX,INFO,hitInfo,infoFor,showInfo,hideInfo,tapInfo,KNAME,MN,PNAME,TNAME,TOGN,CASTN,MIXN,RJE,fmt,kr,upSub,upName,padTitle,status_all:()=>ZONES.map(z=>status(z.id)),mapSel:id=>{MSEL=id},mapMode:m=>{MMODE=m},syncMenu,hud,padUnlock,chipLayout,GAUGE,RJ,TORPS,rjEra,rjClosed,hmNeed,hmCap,skipCap,torpCap,hearthCap,rjPow,rjSupCap,scrapMax,scrapMin,usesHM,ET,isEAF,WX0,pileOn,closeRJ,RJE,status_:null,route,addPile,P,F,LADLES,PIT,CAST,NODE,PILE,movers,helpers,SRC,SRCm,TG,TGm,PADS,PAD,SW,BUILDS,UP,UPm,HIRE,ZONES,ZN,CRANES,CRm,G,J,keys,ST,RT,update,draw,endIntro,navStep,cost,vis,buy,workAvail,count,accepts,freeFor,fcap,capCarry,hcap,presGain,doPrestige,doReset,save,syncHelpers,openPresModal,closeModal,carryTask,goal,demand,recommend,buyTarget,bestTarget,flipSw,val,curUp,padName,padSub,paidKey,status,bottlenecks,rate,flow,furnRate,Rpow,supCap,era,E_,ERA,chgCap,toggleCrane,craneHere,openMap,renderMap,
+window.__smelt={get S(){return S},t_,setLang,get LANG(){return LANG},I18N_MISS,EN,IX,INFO,hitInfo,infoFor,showInfo,hideInfo,tapInfo,KNAME,MN,PNAME,TNAME,TOGN,CASTN,MIXN,RJE,fmt,kr,upSub,upName,padTitle,status_all:()=>ZONES.map(z=>status(z.id)),mapSel:id=>{MSEL=id},mapMode:m=>{MMODE=m},syncMenu,hud,padUnlock,chipLayout,GAUGE,RJ,TORPS,rjEra,rjClosed,hmNeed,hmCap,skipCap,torpCap,hearthCap,rjPow,rjSupCap,scrapMax,scrapMin,usesHM,ET,isEAF,WX0,pileOn,closeRJ,RJE,status_:null,route,addPile,P,F,LADLES,PIT,CAST,NODE,PILE,movers,helpers,SRC,SRCm,TG,TGm,PADS,PAD,SW,BUILDS,UP,UPm,HIRE,ZONES,ZN,CRANES,CRm,G,J,keys,ST,RT,update,draw,endIntro:()=>{/* tests skip the start card unless they ask for it */if(!S.introSeen)S.introSeen=2;endIntro()},endIntro0:endIntro,showStart,navStep,cost,vis,buy,workAvail,count,accepts,freeFor,fcap,capCarry,hcap,presGain,doPrestige,doReset,save,syncHelpers,openPresModal,closeModal,carryTask,goal,demand,recommend,buyTarget,bestTarget,flipSw,val,curUp,padName,padSub,paidKey,status,bottlenecks,rate,flow,furnRate,Rpow,supCap,era,E_,ERA,chgCap,toggleCrane,craneHere,openMap,renderMap,
  build:id=>{const i=BUILDS.findIndex(b=>b.id===id);for(let k=S.ph;k<=i;k++){S.b[BUILDS[k].id]=1;S.ph=k+1;onBuild(BUILDS[k])}},
  hire:(st,n)=>{S.lv[HIRE[st].id]=n;syncHelpers()},setLv:(id,n)=>{S.lv[id]=n;syncHelpers();syncLadles();if(id==='yard2'||id==='magkran'||id==='varm')bakeFloor()},
  collide,SOLIDS:()=>SOLIDS,blockedPt,field,rebuildNav,rebuildSolids,bakeFloor,POS,WW,WH,QX,QY,START:POS.start,SUPN,PR,PRK,ROUTES,startTap,tapLadle,potMax,slotsMax,cam,setZoom:z=>{zoom=z},padLab,zonePlate,plateW,B_,lv,CY,cashAt,prodOn,ROLL,get zoom(){return zoom},ws,nextBuild,nodeRoom,yardT,PADPOS,inZone,SY,layoutPads,padShown,padMaks,padUrgent,upOpen,upAvail,routeWork,POSTS,inCab,postCrane,TAPDESK,UPROW,HIREPOS,padTitle,TUR,armPt,setUZ,CSB,CSG,CSN,TROB:()=>TROB,csSum,csLim,csCap,csX,csI,CSI1,csGasT,craneLift,beltRate,kwh,eraLayout,LAY5,TROBP,CS:()=>({chg:+S.chg.toFixed(1),cap:+chgCap().toFixed(1),v:+CSB.v.toFixed(1),vmax:+CSB.vmax.toFixed(1),feed:+CSB.feed.toFixed(2),pre:Math.round(CSB.pre),lim:csLim(),rob:TROB.n,crane:CRm.skrap.state}),pause:v=>{G.dbgPause=!!v},get RM(){return RM},setRM:v=>{RM=!!v}};

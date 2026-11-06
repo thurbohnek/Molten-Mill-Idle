@@ -162,6 +162,11 @@ const EN={
  'Du trenger mer inntekt i dette verket. Tjen <b>{0}</b> totalt for første ekspertisepoeng.':'You need more income in this mill. Earn <b>{0}</b> in total for your first expertise point.',
  'Start nytt verk?':'Start a New Mill?','Start nytt verk':'Start New Mill',
  'Du bygger et nytt stålverk fra bunnen. Du får <b>+{0} ekspertise</b> – all inntekt blir <b>×{1}</b> for alltid.<br>Penger, stasjoner og oppgraderinger nullstilles.':'You build a new steel mill from scratch. You get <b>+{0} expertise</b> – all income becomes <b>×{1}</b> for good.<br>Money, stations and upgrades are reset.',
+ /* start card + how to play */
+ 'Slik spiller du':'How to play','Vis':'Show','Start':'Start',
+ '{0}. Du overtar et lite jernverk: en koksmasovn og en Bessemer-konverter.':'{0}. You take over a small ironworks: a coke blast furnace and a Bessemer converter.',
+ 'Bær malm og skrap, stå på rutene for å kjøpe oppgraderinger og ansette hjelpere.':'Carry ore and scrap, stand on the pads to buy upgrades and hire helpers.',
+ 'Bygg verket ut gjennom over hundre år med stålproduksjon – helt fram til moderne lysbueovn og valseverk.':'Grow the works through more than a century of steelmaking – all the way to a modern arc furnace and rolling mill.',
  /* map */
  'KART':'MAP','Kart':'Map','Kart over linja':'Map of the line','Kart over produksjonslinja':'Map of the production line','Kartvisning':'Map view','Produktflyt':'Product flow',
  'Pengeflyt':'Money flow','Lukk kartet':'Close the map','Lukk':'Close','Linja fra skrap til salg':'The line from scrap to sale','Tilpass kartet':'Fit the map',

@@ -17,6 +17,8 @@ function drawWorker(a,vest,helmet,cap){const x=a.x,y=a.y,bob=a.moving?Math.abs(M
  for(let i=0;i<n;i++){const it=a.stack[i];if(it.age<0)continue;const s=1+max(0,.18-it.age)*3,ix=x+sway*i*(sp/7),iy=y-40-bob-i*sp;
   ctx.save();ctx.translate(ix,iy);ctx.scale(s,s);drawItem(it,0,0,1);ctx.restore()}
  if(cap&&n>=cap)txt(t_('MAKS'),x,y-48-n*sp-bob,10,C.hazard,800,'center',3)}
+/* a static text label on the floor: drawn in the label pass, so it is never drawn under the HUD or across another label */
+function labFix(k,t,x,y,fs,col,wt){wt=wt||800;ctx.font=`${wt} ${fs}px ${FONT}`;const w=ctx.measureText(t).width+8,h=fs*1.2+4;LBL.push({k,x:x-w/2,y:y-h/2,w,h,pr:1,ax:null,fix:1,f:(lx,ly)=>txt(t,lx+w/2,ly+h/2,fs,col,wt,'center',3)})}
 /* floor rings (drop / sale / station inputs) */
 function padRing(x,y,r,label,glow,fill,col){if(!inView(x,y,r+10))return;ctx.fillStyle='rgba(0,0,0,.3)';circ(x+2,y+4,r);ctx.fill();ctx.fillStyle=col||HZ;circ(x,y,r);ctx.fill();ctx.fillStyle=glow?mix('#20242c',C.molten,glow):'#20242c';circ(x,y,r-7);ctx.fill();
  if(fill!=null){ctx.save();circ(x,y,r-7);ctx.clip();ctx.fillStyle=rgba(fill>=1?C.good:fill<.25?C.danger:C.hazard,.35);const h=(r-7)*2*clamp(fill,0,1);ctx.fillRect(x-r,y+r-7-h,2*r,h);ctx.restore()}
@@ -89,7 +91,7 @@ function drawSupply(){if(!inView(800,170,360))return;const u=s=>supCap(s)>0?clam
  /* oxygen: LOX tank + vaporisers → pipe → valve skid → hoses/lances */
  if(lv('o2')){const vr=min(8,2+floor(lv('o2')/3));SK.loxTank(g,820,98,30);for(let i=0;i<vr;i++)SK.vaporiser(g,858+(i%4)*19,66+floor(i/4)*19,15,T,i);
   SK.pipe(g,[[848,150],[880,150],[880,218]],6,'#6fa8e8',T,{flow:u('o2')>.01?'#f4fbff':null,speed:sp('o2')});SK.valveSkid(g,858,218,44,34);
-  const ip=injPt(-1.0);SK.hose(g,880,252,920,300,ip.x,ip.y,4,'#6fa8e8',T,u('o2')>.01?'#f4fbff':null);
+  const ip=ET()==='conv'?lanceTop():injPt(-1.0);SK.hose(g,880,252,920,300,ip.x,ip.y,4,'#6fa8e8',T,u('o2')>.01?'#f4fbff':null);
   if(lv('lans')===1){/* door lance manipulator */SK.box(g,ip.x+6,ip.y-26,22,18,'#4a5058','#111',2);SK.line(g,ip.x+16,ip.y-10,ip.x-14,ip.y+14,'#c9ced6',3)}
   if(lim==='o2')limTag(786,56,150,104)}
  /* carbon: silo → blow tank → pneumatic pipe to the injector in the wall */
@@ -97,6 +99,8 @@ function drawSupply(){if(!inView(800,170,360))return;const u=s=>supCap(s)>0?clam
   const ip=injPt(-2.05);SK.pipe(g,[[748,164],[748,260],[ip.x-10,ip.y-24],[ip.x,ip.y]],6,'#2b2b2e',T,{flow:u('kull')>.01?'#0a0a0b':null,dash:[2,4],speed:sp('kull')*1.4});
   if(lim==='kull')limTag(666,60,98,108)}}
 const e5=()=>({x:POS.F.x+Math.cos(-.9)*92*.55,y:POS.F.y+Math.sin(-.9)*92*.55});
+/* the LD lance carriage: where the oxygen hose ends in the converter eras */
+const lanceTop=()=>{const R=convR(),[mx,my]=SK2.convPt(F.x,F.y,R,0,1.05);return{x:mx+R*.3,y:my-R*2.5-R*.12}};
 const injPt=a=>({x:POS.F.x+Math.cos(a)*92*.9,y:POS.F.y+Math.sin(a)*92*.9});
 /* the limiting plant gets a pulsing red outline (the zone chip already names it, so no extra text) */
 function limTag(x,y,w,h){const a=RM?1:.55+.45*Math.sin(T*5);g.save();g.globalAlpha=a;g.strokeStyle='#ff6b5a';g.lineWidth=3;g.setLineDash([8,5]);g.lineDashOffset=RM?0:-T*24;SK.rr(g,x-6,y-6,w+12,h+12,10);g.stroke();g.setLineDash([]);g.restore()}
@@ -115,7 +119,7 @@ function drawOvnSide(){if(!inView(780,900,320))return;
 function drawStore(s){if(!s.open()||!inView(s.x,s.y,100))return;const x=s.x,y=s.y;
  const W2=s.store==='elek'?116:96;SK.box(g,x-W2/2,y-30,W2,58,'#5a4a36','#2a2016',5);g.fillStyle='rgba(0,0,0,.25)';for(let i=0;i<4;i++)g.fillRect(x-W2/2+4+i*(W2-8)/4,y-26,(W2-8)/4-4,50);
  const n=ST[s.store]|0;for(let i=0;i<min(n,16);i++){const lay=floor(i/8),c=i%8,cx=x-W2/2+16+(c%4)*((W2-32)/3),cy=y-14+floor(c/4)*22-lay*5;drawItem({k:s.kind,kk:i%2},cx,cy,1.05)}
- txt(t_(({elek:'ELEKTRODER',kanal:'KANALSTEIN',hette:'HETTEPULVER'})[s.store])+' · '+n,x,y-40,9.5,C.ui,800,'center',3);LOBS.push({x:x-W2/2,y:y-47,w:W2,h:14})}
+ labFix('st'+s.id,t_(({elek:'ELEKTRODER',kanal:'KANALSTEIN',hette:'HETTEPULVER'})[s.store])+' · '+n,x,y-40,9.5,C.ui)}
 /* ---- ladles on the ladle car / under the crane ---- */
 function drawLadle(L){if(!inView(L.x,L.y,60))return;const f=L.sm>0?clamp(L.steel/L.sm,0,1):0,car=L.state==='park'||L.state==='filling'||(L.state==='await'&&hyp(L.x-POS.tap.x,L.y-POS.tap.y)<30);
  if(car)SK.car(g,L.x,L.y,66,52);
@@ -154,8 +158,8 @@ function drawPit(){const p=POS.pit;if(!inView(p.x,p.y,200))return;const PW_=240,
 function drawKok(){const p=POS.koklag;if(inView(p.x,p.y,90)){SK.box(g,p.x-60,p.y-30,120,64,'#3a3e45','#16181c',5);const nr=min(S.kok.ready,12),cool=S.kok.cool,nc=min(cool.length,6);
   for(let i=0;i<nr;i++)SK.mould(g,p.x-46+(i%6)*18.4,p.y-16+floor(i/6)*18,7.5,0,0,{top:false});
   for(let i=0;i<nc;i++)SK.mould(g,p.x-46+(i%6)*18.4,p.y+20,7.5,.8,clamp(cool[i]/coolT(),0,1)*.7,{top:false});
-  txt(t_('KOKILLER · {0} klare',S.kok.ready)+(cool.length?' · '+t_('{0} kjøles',cool.length):''),p.x,p.y-42,9.5,C.ui,800,'center',3);LOBS.push({x:p.x-80,y:p.y-49,w:160,h:14})}
- const k=POS.kokv;if(inView(k.x,k.y,70)&&S.kok.hot){const n=min(S.kok.hot,12);for(let i=0;i<n;i++)SK.mould(g,k.x-30+(i%4)*20,k.y-12+floor(i/4)*16,7.5,.8,.75,{top:false});txt(t_('{0} varme',S.kok.hot),k.x,k.y+40,10,C.molten,800,'center',3);LOBS.push({x:k.x-30,y:k.y+33,w:60,h:14})}}
+  labFix('koklag',t_('KOKILLER · {0} klare',S.kok.ready)+(cool.length?' · '+t_('{0} kjøles',cool.length):''),p.x,p.y-42,9.5,C.ui)}
+ const k=POS.kokv;if(inView(k.x,k.y,70)&&S.kok.hot){const n=min(S.kok.hot,12);for(let i=0;i<n;i++)SK.mould(g,k.x-30+(i%4)*20,k.y-12+floor(i/4)*16,7.5,.8,.75,{top:false});labFix('kokv',t_('{0} varme',S.kok.hot),k.x,k.y+40,10,C.molten)}}
 /* ---- stranggjuting, top-down: ladle turret → tundish on its car → copper moulds → spray chamber → withdrawal/straightener → torch/shear → run-out → cooling bed ---- */
 const TD={x0:1420,x1:1460,y0:670,y1:986},MCX=1474,PBX=1436,WSX=1542;/* tundish shell, mould centre x, shroud impact x, withdrawal units */
 const castV=()=>110*(1+.1*lv('caster'));
@@ -340,16 +344,16 @@ function drawOreTrain(){const y=POS.oreTrainY,cl=rjClosed(),full=yardT(SRCm.ore)
   if(tip>.2&&i<3){const sx=x,sy=y-20;SK.parts(10,2,i*5,T,(ff,a)=>{g.fillStyle=a>.5?'#6b3d33':'#4a3a36';SK.circ(g,sx+(a-.5)*50,lerp(sy,POS.ore.y+120,ff),3);g.fill()})}}
  SK.box(g,-230,y-17,74,34,'#c0392b','#7d241b',5);g.fillStyle='#1d2026';g.fillRect(-194,y-13,30,26);g.fillStyle='#9fd0ff';g.fillRect(-190,y-9,22,7)}
 function drawCoke(){const n=lv('koks')?min(3,1+floor(lv('koks')/6)):0,u=rjSupCap('koks')>0?clamp(rate('s:koks')/(rjSupCap('koks')*60),0,1):0;
- if(!n){for(let i=0;i<26;i++){g.fillStyle=i%2?'#1e1e22':'#2b2b2e';SK.circ(g,-660+hsh(i)*90,170+hsh(i*3)*44,3+hsh(i*5)*3);g.fill()}txt(t_('KOKS KJØPES INN'),-616,232,8.5,C.uidim,800,'center',3)}
+ if(!n){for(let i=0;i<26;i++){g.fillStyle=i%2?'#1e1e22':'#2b2b2e';SK.circ(g,-660+hsh(i)*90,170+hsh(i*3)*44,3+hsh(i*5)*3);g.fill()}if(!rjClosed())labFix('koks',t_('KOKS KJØPES INN'),-616,232,8.5,C.uidim)}
  for(let i=0;i<3;i++){if(i>=n)continue;const x=-690+i*52;SK2.cyl(g,x,214,22,0,80,'#3a3c42','#6a6e76',26);SK2.cap(g,x,214-80*OK,22,'#4a4e55')}
  const items=(g2,L,w2,tt)=>{if(!n||u<.01)return;const nn=max(6,floor(L/16));for(let i=0;i<nn;i++){const p=((RM?i/nn:tt*.08*(.4+u)*140/L+i/nn)%1)*L;g2.fillStyle=i%2?'#1e1e22':'#3a3a40';SK.circ(g2,p,(hsh(i)-.5)*w2*.5,2.2);g2.fill()}};
  SK.belt(g,-540,224,-540,640,10,T,{trestle:true,speed:16+50*u,items});SK.belt(g,-540,640,-500,664,10,T,{speed:16+50*u,items})}
 function drawCowpers(){if(rjEra()){/* electric furnace: three single-phase transformers instead of hot-blast stoves */
   for(let i=0;i<3;i++){const x=-450+i*80,y=236;SK.box(g,x-28,y-46,56,44,'#8a8a84','rgba(0,0,0,.45)',4);for(let k=0;k<6;k++){g.fillStyle=k%2?'#5c5c56':'#a3a39c';g.fillRect(x-30+k*11,y-4,6,9)}
    g.save();g.translate(x,y-28);g.fillStyle='#f5c518';g.beginPath();g.moveTo(0,-7);g.lineTo(6,5);g.lineTo(-6,5);g.closePath();g.fill();g.fillStyle='#111';g.fillRect(-.8,-3,1.6,5);g.restore()}
-  txt(Math.round(rjPow()*400)+' MVA',-370,178,9,C.ui,800,'center',3);return}
+  if(!rjClosed())labFix('mva',Math.round(rjPow()*400)+' MVA',-370,178,9,C.ui);return}
  const lvC=lv('cowper'),n=lvC?min(4,1+floor(lvC/5)):0,on=rjRun()>0,act=n?floor((RM?0:T)/5)%n:-1;
- if(!n){SK.box(g,-300,200,64,40,'#4a4f56','#1b1e22',4);SK.fan(g,-268,220,12,T,on?10:0);txt(t_('KALDBLÅST'),-268,254,8.5,C.uidim,800,'center',3)}
+ if(!n){SK.box(g,-300,200,64,40,'#4a4f56','#1b1e22',4);SK.fan(g,-268,220,12,T,on?10:0);if(!rjClosed())labFix('kaldbl',t_('KALDBLÅST'),-268,254,8.5,C.uidim)}
  /* hot-blast main to the bustle pipe, gas main from the dust catcher to the burners */
  SK.pipe(g,[[-150,330],[-150,176],[-480,176]],5,'#55595f',T);
  if(n)SK.pipe(g,[[-490,226],[-214,226],[-214,470],[-262,486]],9,'#7a5a4a',T,{flow:on?'#ffb070':null,speed:30});
@@ -492,7 +496,10 @@ function drawSwitches(){for(const s of SW){if(!s.on()||!inView(s.x,s.y,60))conti
 function chipLayout(z,txt0){const p=zonePlate(z),pw=plateW(p),x=p.x+pw+6,y=p.y;
  let R=z.x1-8;if(z.id==='ovn'&&y+20>GAUGE.y-22&&y<GAUGE.y+26)R=min(R,GAUGE.x-66);if(z.id==='skrap'&&era()===5)R=min(R,CSG.dx-CSG.dw/2-8);/* Consteel off-gas duct */let t=txt0,fs=10.5;ctx.font=`800 ${fs}px ${FONT}`;
  while(ctx.measureText(t).width+24>R-x&&fs>9){fs-=.5;ctx.font=`800 ${fs}px ${FONT}`}
- if(ctx.measureText(t).width+24>R-x){t=t.replace(/ \(.*\)$/,'');while(t.length>6&&ctx.measureText(t+'…').width+24>R-x)t=t.slice(0,-1);if(t!==txt0&&!txt0.startsWith(t+' ('))t+='…'}
+ if(ctx.measureText(t).width+24>R-x){const uy=p.y+p.h+4,ux=p.x;let uR=z.x1-8;if(z.id==='ovn'&&uy+20>GAUGE.y-22&&uy<GAUGE.y+26)uR=min(uR,GAUGE.x-66);if(z.id==='skrap'&&era()===5)uR=min(uR,CSG.dx-CSG.dw/2-8);
+  const row=(UPROW[z.id]||{s:[]}).s,hp=HIREPOS[z.id],clear=!row.some(q=>q[1]-70<uy+20&&q[1]+26>uy&&q[0]+40>ux&&q[0]-40<uR)&&!(hp&&hp.y-70<uy+20&&hp.y+26>uy);
+  if(clear){let f2=10.5;ctx.font=`800 ${f2}px ${FONT}`;while(ctx.measureText(t).width+24>uR-ux&&f2>9){f2-=.5;ctx.font=`800 ${f2}px ${FONT}`}if(ctx.measureText(t).width+24<=uR-ux)return{x:ux,y:uy,w:ctx.measureText(t).width+24,h:20,t,fs:f2};ctx.font=`800 ${fs}px ${FONT}`}
+  t=t.replace(/ \(.*\)$/,'');while(t.length>6&&ctx.measureText(t+'…').width+24>R-x)t=t.slice(0,-1);if(t!==txt0&&!txt0.startsWith(t+' ('))t+='…'}
  return{x,y,w:ctx.measureText(t).width+24,h:20,t,fs}}
 function drawStatus(){for(const z of ZONES){if(!zoneBuilt(z)||!inView(z.x0+120,z.y0+20,160))continue;const p=zonePlate(z),pw=plateW(p);LOBS.push({x:p.x,y:p.y,w:pw,h:p.h});
   const s=status(z.id);if(!s||!s.lv||!s.t)continue;const col=s.lv===2?C.danger:C.hazard,L=chipLayout(z,s.t),x=L.x,y=L.y,w=L.w,t=L.t,fs=L.fs;

@@ -3,6 +3,8 @@
 let SOLIDS=[];
 const FURN_SOL=()=>ET()==='sm'?[{x:688,y:416,w:226,h:370}]:ET()==='conv'?[{x:POS.F.x,y:POS.F.y+6,r:90},{x:POS.F.x-50,y:POS.F.y-136,w:100,h:70}]:[{x:POS.F.x,y:POS.F.y,r:98}];
 function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
+ /* the ladle car track (tap position + the two parking spots) and the hot-metal transfer ladle are not walked across */
+ SOLIDS.push({x:POS.tap.x-28,y:POS.tap.y-32,w:56,h:POS.park[1].y+30-(POS.tap.y-32)});if(usesHM())SOLIDS.push({x:POS.hmL.x,y:POS.hmL.y,r:30});
  /* råjernsverk: furnace, cowpers / transformers, coke plant, dust catcher (they stay standing after the Omlegging) */
  /* tall equipment is drawn rising up the screen, so its solid covers the whole drawn body (no walking "behind" it) */
  SOLIDS.push({x:POS.rjF.x,y:POS.rjF.y,r:86},rjEra()?{x:POS.rjF.x-44,y:POS.rjF.y-158,w:88,h:90}:{x:POS.rjF.x-62,y:POS.rjF.y-196,w:124,h:130},{x:-150,y:426,r:28},{x:-174,y:330,w:48,h:100});
@@ -314,7 +316,7 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
  if(slagOn())S.st.slagT+=dt;
  /* ----- melting / blowing: limited by power (or the blower/lance) AND by every supply plant the era needs ----- */
  const r=furnRate();const paused=(F.ch&&(E.ch==='bucket'||typ==='conv'));F.rate=0;
- if(F.solid>0&&!F.stop&&!paused&&F.state!=='tapping'){const m=min(F.solid,r*dt);F.solid-=m;F.bath+=m;F.rate=m/dt;S.st.scrap+=m;rec('melt',m);
+ if(F.solid>0&&!F.stop&&!paused&&F.state!=='tapping'){const m=min(F.solid,r*dt);F.solid-=m;F.bath+=m;F.rate=dt>0?m/dt:0;S.st.scrap+=m;rec('melt',m);
   for(const s of E.req)if(lv(s)>0)rec('s:'+s,m);
   if(isEAF()){S.elek=max(0,S.elek-m/E.elek)}
   if(slagOn()){F.slagAcc+=m/E.slag;while(F.slagAcc>=1){F.slagAcc-=1;if(S.pot<potMax())S.pot++}}
@@ -376,7 +378,7 @@ function updRJ(dt){if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.he
  const oy=SRCm.ore;S.yard.ore=min(oreYardCap(),yardT(oy)+oreYardRate()*dt);RJ.trainT+=dt;
  /* smelting: limited by the furnace size (or MVA) and by coke / hot blast */
  const r=rjRate(),oreK=1/feY(),room=max(0,hearthCap()-S.rj.hearth);
- const m=max(0,min(r*dt,S.rj.ore/oreK,room));S.rj.ore-=m*oreK;S.rj.hearth+=m;RJ.rate=m/dt;rec('rjmelt',m);rec('o:rj',m);S.st.hm+=m;
+ const m=max(0,min(r*dt,S.rj.ore/oreK,room));S.rj.ore-=m*oreK;S.rj.hearth+=m;RJ.rate=dt>0?m/dt:0;rec('rjmelt',m);rec('o:rj',m);S.st.hm+=m;
  for(const s of rjReq())if(lv(s)>0)rec('s:'+s,m);
  if(m>0)RJ.skipT+=dt*(.6+r);
  RJ.starve=S.rj.ore<oreK*.5&&room>.5?RJ.starve+dt:0;RJ.stopT=room<=.01?RJ.stopT+dt:0;
@@ -384,7 +386,7 @@ function updRJ(dt){if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.he
  /* tapping: into the torpedo car at the cast house, or to the pig-casting machine (sale switch, or no car there) */
  const tc=castTorp(),toSteel=S.tg.rj&&usesHM();RJ.tapping=false;RJ.overflow=0;
  if(tc&&toSteel&&S.rj.hearth>.05){const a=min(S.rj.hearth,tapRate()*dt,torpCap()-tc.load);if(a>0){tc.load+=a;S.rj.hearth-=a;RJ.tapping=true}}
- else if(S.rj.hearth>0&&(!toSteel||S.rj.hearth>=hearthCap()*.85)){const a=min(S.rj.hearth,max(toSteel?1.2:3,rjPow()*1.3)*dt);S.rj.hearth-=a;RJ.pigAcc+=a;RJ.overflow=a/dt;RJ.tapping=true;
+ else if(S.rj.hearth>0&&(!toSteel||S.rj.hearth>=hearthCap()*.85)){const a=min(S.rj.hearth,max(toSteel?1.2:3,rjPow()*1.3)*dt);S.rj.hearth-=a;RJ.pigAcc+=a;RJ.overflow=dt>0?a/dt:0;RJ.tapping=true;
   while(RJ.pigAcc>=PIG_T){RJ.pigAcc-=PIG_T;addPile({k:'pig',t:PIG_T,q:1});S.st.prod.pig=(S.st.prod.pig||0)+1;rec('o2:rj',PIG_T)}}
  RJ.tapT=RJ.tapping?RJ.tapT+dt:0;
  updTorps(dt)}
@@ -646,10 +648,10 @@ function onBuild(b){S.st.eraT[b.id]=S.st.play;rebuildSolids();bakeFloor();layout
   if(F.ch){const c=F.ch;if(c.hm!=null){F.solid+=c.s+c.hm;F.scIn+=c.s;F.hmIn+=c.hm}else if(!c.done)addSolid(c.amt)}if(F.hmCh){F.bath+=F.hmCh.amt;F.hmIn+=F.hmCh.amt;F.hmCh=null}
   F.ch=null;F.roof=0;F.smDoor=-1;F.tilt=0;F.lance=0;F.bath=min(F.bath,fcap());F.solid=min(F.solid,max(0,fcap()-F.bath));
   if(b.id==='eaf1')closeRJ();
-  toast(t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
+  toast(E.yr+' · '+t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
   if(usesHM())toast(t_('Chargen: {0}–{1} % råjern, resten skrap',Math.round(E.hm[0]*100),Math.round(E.hm[1]*100)));
   if(b.id==='eaf1'){ST.elek=max(ST.elek,12);S.elek=12}if(b.id==='consteel'){csInit(S.chg);if(G.crane==='skrap'){CRm.skrap.man=false;G.crane=null}const c=CRm.skrap;c.state='idle';c.job=null;c.load=0;toast(t_('Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.'))}G.chFx=2;sfx('mile');buzz([30,40,30,40,60])}
- else if(b.rjEra){toast(t_('Ny råjernsovn: {0}!',t_(RJE[rjEra()].n)),true);toast(t_(b.d));G.chFx=2;sfx('mile')}
+ else if(b.rjEra){toast(year()+' · '+t_('Ny råjernsovn: {0}!',t_(RJE[rjEra()].n)),true);toast(t_(b.d));G.chFx=2;sfx('mile')}
  else{toast(t_('{0} er bygget!',t_(b.n)),true);if(b.d)toast(t_(b.d))}
  G.chGuide=T+30;
  collide(P);for(const h of helpers)collide(h);hudT=0}
@@ -718,7 +720,7 @@ const steelIn=l=>l.steel>.01;
 function bottlenecks(){const o=[];for(const z of ZONES){const s=status(z.id);if(s&&s.lv===2)o.push([z.id,s.t])}return o}
 
 /* ---------- prestige / reset ---------- */
-function doPrestige(){const g=presGain();if(g<1)return;const keep={mute:S.mute,vib:S.vib,moved:true,infoHint:S.infoHint,life:S.life,st:S.st,pres:{pts:S.pres.pts+g,n:S.pres.n+1}};
+function doPrestige(){const g=presGain();if(g<1)return;const keep={mute:S.mute,vib:S.vib,moved:true,infoHint:S.infoHint,introSeen:S.introSeen,life:S.life,st:S.st,pres:{pts:S.pres.pts+g,n:S.pres.n+1}};
  S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt verk! Inntekt ×{0}',L1(gm())),true);confetti(P.x,P.y-30,70);sfx('mile')}
 function doReset(){const keep={mute:S.mute,vib:S.vib,infoHint:S.infoHint};S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt spill startet'))}
 

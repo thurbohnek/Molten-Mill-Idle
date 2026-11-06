@@ -13,7 +13,7 @@ cat src/0_head.html src/1_core.js src/1i_i18n.js src/2_gfx.js src/3_sim.js src/4
     '<style>/* standalone: full-bleed on phones (no 16px side gutter) */@media (max-width:559px),(max-height:599px){html body #app{padding-left:env(safe-area-inset-left,0px)!important;padding-right:env(safe-area-inset-right,0px)!important;padding-top:0!important;padding-bottom:0!important}html body #stage{border-radius:0!important;box-shadow:none!important;max-height:none!important}}</style>'
   cat game.html
 } > index.html
-rm game.html
+# game.html is kept for the browser tests (gitignored)
 sed -n '/^<script>$/,/^<\/script>$/p' index.html | sed '1d;$d' > /tmp/molten_check.js
 node --check /tmp/molten_check.js && echo "SYNTAX_OK"
 wc -c index.html

@@ -293,8 +293,8 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
    robot:()=>(TROB.n?t_('Siste måling: {0} °C',TROB.val)+' · '+t_('{0} målinger',TROB.n):t_('Venter på første måling'))}[h.id]();
   return{t:ti,d:tx,n}}
  case'helper':{const r=h.h.r,hi=HIRE[r];return{t:hName(hi),d:ixs(IX.hire[r])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}}
- case'furnace':{const E=E_();return{t:t_(E.n),d:ixs(IX.era[era()]),n:furnNums()}}
- case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:t_(RJE[rjEra()].n),d:tx,n:t_('NEDLAGT')}}const st=status('rj');return{t:t_(RJE[rjEra()].n),d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
+ case'furnace':{const E=E_();return{t:t_(E.n)+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
+ case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:t_(RJE[rjEra()].n),d:tx,n:t_('NEDLAGT')}}const st=status('rj');return{t:t_(RJE[rjEra()].n)+' · '+RJE[rjEra()].yr,d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
  case'up':{const u=h.u;return infoFor({type:'pad',d:PAD['u_'+u.id]})}
  case'cast':{const[ti,tx]=ix4(IX.cast[h.id]);const n={turret:()=>upNums(UPm.turret),shroud:()=>t_(CAST.pour?'Skjermrør på':'Skjermrør parkert'),tundish:()=>t_('Stålnivå {0} %',Math.round(CAST.tlev*100)),
    mould:()=>t_('{0} av {1} strenger i bruk',nStr(),8)+' · '+upNums(UPm.strands),spray:()=>upNums(UPm.caster),wsu:()=>upNums(UPm.caster),cutter:()=>upNums(UPm.torch),bed:()=>t_('{0} emner på kjølesenga',CAST.bed.length)}[h.id]();

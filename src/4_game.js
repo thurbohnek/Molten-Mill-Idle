@@ -51,7 +51,7 @@ function update(dt){
  cam.x=vw>=WW-WX0?(WW+WX0)/2:clamp(cam.x,WX0+vw/2-40,WW-vw/2+40);cam.y=vh>=WH+pt+pb?WH/2+(pb-pt)/2:clamp(cam.y,vh/2-pt,WH-vh/2+pb);
  shake=max(0,shake-dt*10);shx=shake?rnd(-shake,shake):0;shy=shake?rnd(-shake,shake):0;
  setLoops();
- if(tOn>0){tOn-=dt;if(tOn<=0)$('toast').classList.remove('on')}else if(qT.length&&tOn<=0){const e=$('toast'),[m,b]=qT.shift();e.textContent=m;e.classList.toggle('big',b);e.classList.add('on');tOn=b?2.6:2.2}
+ if(tOn>0){tOn-=dt;if(tOn<=0)$('toast').classList.remove('on')}else if(qT.length&&tOn<=0&&!G.modal){const e=$('toast'),[m,b]=qT.shift();e.textContent=m;e.classList.toggle('big',b);e.classList.add('on');tOn=b?2.6:2.2}
  hud();if(G.mapOn){G.mapT=(G.mapT||0)+dt;if(G.mapT>1){G.mapT=0;renderMap()}}
  if(INFO.on){INFO.t+=dt;if(INFO.t>1){INFO.t=0;refreshInfo()}}
 }
@@ -128,6 +128,8 @@ let gCache={},lastHud={},hudT=0;
 function setT(id,v,html){if(lastHud[id]===v)return;lastHud[id]=v;if(html)$(id).innerHTML=v;else $(id).textContent=v}
 const focusName=()=>{const k=S.ph?BUILDS[S.ph-1].sn:'Masovn og Bessemer';return t_(EN['fase§'+k]!=null?'fase§'+k:k)};/* the phase chip may use a shorter English name */
 function hud(){const mvT=NO_()?fmt(S.money):'$'+fmt(S.money);setT('mv',mvT);{const lg=NO_()?mvT.length>4:mvT.length>=4;if(lastHud.mlong!==lg){lastHud.mlong=lg;$('money').classList.toggle('long',lg)}}setT('cv',t_('Fase {0} · Nivå {1}',S.ph+1,S.lvl+1));setT('pv',focusName());
+ /* a long money figure must not squeeze the phase chip into "…": shrink the money chip instead */
+ if(hudT<=1){const cvE=$('cv');try{if(cvE.scrollWidth>cvE.clientWidth+1&&!lastHud.tight){lastHud.tight=mvT.length;$('money').classList.add('tight')}else if(lastHud.tight&&mvT.length<lastHud.tight){lastHud.tight=0;$('money').classList.remove('tight')}}catch(e){}}
  const a=S.lvl?LVL_T(S.lvl-1):0,b=LVL_T(S.lvl),pr=clamp((S.earned-a)/(b-a),0,1);const w=Math.round(pr*100)+'%';if(lastHud.lw!==w){lastHud.lw=w;$('lvb').style.width=w}
  hudT-=1;if(hudT>0&&gCache.m!=null)return;hudT=6;
  gCache=goal();setT('gm',gCache.m,1);setT('gs',gCache.sub||'');const gp=gCache.p==null?'':Math.round(gCache.p*100)+'%';if(lastHud.gp!==gp){lastHud.gp=gp;$('gbar').hidden=gp==='';$('gbi').style.width=gp||'0%'}
@@ -158,7 +160,7 @@ function syncMenu(){syncDest();$('mSound').setAttribute('aria-pressed',S.mute?'f
  const bm=BASEP()*gm();const kt=v=>NO_()?L1(v)+' kr/t':'$'+L1(v)+'/t';
  $('prices').innerHTML=PRK.map(k=>{const on=prodOn(k);return'<span'+(on?'':' class="lk"')+'>'+t_(PR[k].n)+(k==='ingot'&&B_('strang')?' ('+t_('spesialstål')+')':'')+'</span><b'+(on?'':' class="lk"')+'>'+(on?kt(val(refItem(k))*bm):t_('låst'))+'</b>'}).join('')+(slagOn()?'<span>'+t_(PR.slag.n)+'</span><b>'+kt(PR.slag.p*(1+.15*lv('slagcap'))*bm)+'</b>':'');
  const st=S.st,m=floor(st.play/60),pd=st.prod||{},K=(k,v)=>t_(k)+': <b>'+v+'</b>',pc=v=>t_('{0} %',v);
- $('stats').innerHTML=K('Spilletid',m>=60?t_('{0} t {1} min',floor(m/60),m%60):m+' min')+'<br>'+K('Ovn',t_(E_().n))+(kwh()?' · '+kwh()+' kWh/t':'')+(rjClosed()?'':'<br>'+K('Råjern',t_(RJE[rjEra()].n))+' · '+t_('{0} t laget',fmt(S.st.hm||0)))+'<br>'+K('Charger tappet',fmt(S.heats))+' · '+K('Skrap smeltet',fmt(st.scrap)+' t')+'<br>'+K('Støpeblokker',fmt(pd.ingot||0))+' · '+K('Emner',fmt(pd.billet||0))+'<br>'+K('Armering',fmt((pd.rebar||0)+(pd.tcore||0)))+' · '+K('Valstråd',fmt(pd.coil||0))+'<br>'+K('Utbytte blokk',pc(Math.round((1-crop(lv('hette')))/(1+RUNNER)*100)))+' · '+K('streng',pc(lv('torch')?99:98))+'<br>'+K('Solgt',fmt(st.sold))+' '+t_('stk')+' · '+K('Inntekt',kr(S.rate*60,'/min'))+'<br>'+K('Tjent totalt',kr(S.life))+'<br>'+K('Nytt verk',S.pres.n)+' · '+K('Ekspertise',S.pres.pts)+' (×'+L1(1+.5*S.pres.pts)+')'}
+ $('stats').innerHTML=K('Spilletid',m>=60?t_('{0} t {1} min',floor(m/60),m%60):m+' min')+'<br>'+K('Ovn',year()+' · '+t_(E_().n))+(kwh()?' · '+kwh()+' kWh/t':'')+(rjClosed()?'':'<br>'+K('Råjern',t_(RJE[rjEra()].n))+' · '+t_('{0} t laget',fmt(S.st.hm||0)))+'<br>'+K('Charger tappet',fmt(S.heats))+' · '+K('Skrap smeltet',fmt(st.scrap)+' t')+'<br>'+K('Støpeblokker',fmt(pd.ingot||0))+' · '+K('Emner',fmt(pd.billet||0))+'<br>'+K('Armering',fmt((pd.rebar||0)+(pd.tcore||0)))+' · '+K('Valstråd',fmt(pd.coil||0))+'<br>'+K('Utbytte blokk',pc(Math.round((1-crop(lv('hette')))/(1+RUNNER)*100)))+' · '+K('streng',pc(lv('torch')?99:98))+'<br>'+K('Solgt',fmt(st.sold))+' '+t_('stk')+' · '+K('Inntekt',kr(S.rate*60,'/min'))+'<br>'+K('Tjent totalt',kr(S.life))+'<br>'+K('Nytt verk',S.pres.n)+' · '+K('Ekspertise',S.pres.pts)+' (×'+L1(1+.5*S.pres.pts)+')'}
 function openMenu(on){if(on)hideInfo();menu.classList.toggle('on',on);mBtn.setAttribute('aria-expanded',on?'true':'false');$('resetRow').hidden=false;$('resetConf').hidden=true;if(on){openMap(false);syncMenu()}}
 mBtn.addEventListener('click',e=>{initAudio();openMenu(!menu.classList.contains('on'));e.stopPropagation()});
 $('mSound').addEventListener('click',()=>{toggleMute()});$('mZo').addEventListener('click',()=>setUZ(UZ/1.15));$('mZi').addEventListener('click',()=>setUZ(UZ*1.15));
@@ -176,7 +178,12 @@ $('mReset').addEventListener('click',()=>{$('resetRow').hidden=true;$('resetConf
 $('mResetNo').addEventListener('click',()=>{$('resetRow').hidden=false;$('resetConf').hidden=true});
 $('mResetYes').addEventListener('click',()=>{doReset();openMenu(false)});
 function toggleMute(){S.mute=!S.mute;if(AU.m)AU.m.gain.value=S.mute?0:.7;syncMenu();save()}
-function showModal(title,html,yes,onYes){hideInfo();G.modal=onYes||(()=>{});$('mdT').textContent=title;$('mdP').innerHTML=html;$('mdYes').textContent=yes;$('modal').classList.add('on');J.on=false;try{$('mdYes').focus()}catch(e){}}
+function showModal(title,html,yes,onYes,start){hideInfo();G.modal=onYes||(()=>{});$('mdT').textContent=title;$('mdP').innerHTML=html;$('mdYes').textContent=yes;$('mdNo').hidden=!!start;$('modal').classList.toggle('start',!!start);$('modal').classList.add('on');J.on=false;try{$('mdYes').focus()}catch(e){}}
+/* the start card: what the game is and the year it starts in; shown once on a new game, and again from the menu */
+function showStart(){const y=ERA[0].yr;showModal(t_('Slik spiller du'),'<b>'+t_('{0}. Du overtar et lite jernverk: en koksmasovn og en Bessemer-konverter.',y)+'</b><br>'+t_('Bær malm og skrap, stå på rutene for å kjøpe oppgraderinger og ansette hjelpere.')+'<br>'+t_('Bygg verket ut gjennom over hundre år med stålproduksjon – helt fram til moderne lysbueovn og valseverk.'),t_('Start'),()=>{},true);if(!S.introSeen){S.introSeen=1;save()}}
+$('mHow').addEventListener('click',()=>{openMenu(false);showStart()});
+/* a press outside the box dismisses the card / cancels the question */
+$('modal').addEventListener('pointerdown',e=>{if(e.target===$('modal'))closeModal()});
 function closeModal(){G.modal=null;$('modal').classList.remove('on');try{cv.focus({preventScroll:true})}catch(e){}}
 $('mdYes').addEventListener('click',()=>{const f=G.modal;closeModal();if(f)f()});
 $('mdNo').addEventListener('click',closeModal);
@@ -242,7 +249,7 @@ function renderMap(){if(!G.mapOn)return;const money=MMODE==='money',FN='font-fam
   h+='</g>'}
  h+=`<text x="16" y="494" fill="#7d8590" font-size="11" ${FN}>${t_('målt · glidende snitt · per spillminutt')}</text>`;
  $('mapSvg').innerHTML=h;
- const bn=bottlenecks();$('mapSum').innerHTML=t_('Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>',kr(income,'/min'),tf(rate('melt')))+(bn.length?' · '+t_('Flaskehals')+': <b class="bad">'+[...new Set(bn.map(b=>b[0]==='rjsup'?t_(MN[RJ.lim||'koks'].n):b[0]==='rj'?t_('Råjernsovn'):b[0]==='sup'||b[0]==='ovn'&&F.lim?t_(MN[F.lim||'kalk'].n):MN[b[0]]?t_(MN[b[0]].n):t_(ZN[b[0]].n).toLowerCase()))].join(', ')+'</b>':' · '+t_('ingen flaskehals'));
+ const bn=bottlenecks();$('mapSum').innerHTML=t_('Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>',kr(income,'/min'),tf(rate('melt')))+(bn.length?' · '+t_('Flaskehals')+': <b class="bad">'+[...new Set(bn.map(b=>b[0]==='rjsup'?t_(MN[RJ.lim||'koks'].n):b[0]==='rj'?(RJ.lim&&b[1]===t_('Flaskehals: {0}',t_(SUPN[RJ.lim]))?t_(MN[RJ.lim].n):t_('Råjernsovn')):b[0]==='sup'||b[0]==='ovn'&&F.lim?t_(MN[F.lim||'kalk'].n):MN[b[0]]?t_(MN[b[0]].n):t_(ZN[b[0]].n).toLowerCase()))].join(', ')+'</b>':' · '+t_('ingen flaskehals'));
  renderPanel()}
 const li=(col,t)=>'<li><i style="background:'+col+'"></i><span>'+t+'</span></li>';
 const MZ={kalk:'sup',o2:'sup',kull:'sup',salg:'salg1',koks:'rjsup',cowper:'rjsup',malm:'rj'};
@@ -259,7 +266,7 @@ function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel
    +row(t_('Drift'),t_('{0} · kjøpes én gang',kr(0,'/min')));
   h+='<p class="pnote">'+(isLim?t_('Mens ovnen smelter/blåser, trenger den mer enn anlegget klarer, så den går saktere. Snittet er lavere fordi ovnen også lader og tapper. Oppgrader anlegget til minst {0} t/min.',tf(need)):t_('Anlegget holder følge med ovnen. Snittet er lavere enn kapasiteten fordi ovnen også lader og tapper.'))+'</p>'}
  else if(o.sale){const ins=MEDG.filter(e=>e[1]==='salg'&&mBuilt(e[0])&&edgeV(e)>.005);h+='<div class="prow"><div class="k">'+t_('Selges')+'</div><ul>'+(ins.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' = <b>'+kr(rate('v:'+e[0]),'/min')+'</b>')).join('')||'<li>'+t_('ingenting ennå')+'</li>')+'</ul></div>'+row(t_('Sum'),kr(rate('v:salg'),'/min'),' style="color:var(--coin);font-weight:800"')}
- else{const ins=MEDG.filter(e=>e[1]===id&&mBuilt(e[0])),outs=MEDG.filter(e=>e[0]===id&&mBuilt(e[1]));const v=nodeVA(id);
+ else{const ins=MEDG.filter(e=>e[1]===id&&mBuilt(e[0])),outs=MEDG.filter(e=>e[0]===id&&mBuilt(e[1])&&!(e[2]==='slag'&&!slagOn()));const v=nodeVA(id);
   let inL=ins.map(e=>li(PCOL[e[2]],t_('{0} · {1} fra {2}',t_(PNAME[e[2]]),tm(edgeV(e)),t_(MN[e[0]].n)))).join('');const supL=s=>li('#7d8590',t_(MN[s].n)+(lv(s)?' · '+tm(rate('s:'+s)):' · '+t_('mangler')));if(id==='rj')inL+=rjReq().map(supL).join('');if(id==='ovn')inL+=E_().req.map(supL).join('');
   h+='<div class="prow"><div class="k">'+t_('Inn')+'</div><ul>'+(inL||'<li>—</li>')+'</ul></div><div class="prow"><div class="k">'+t_('Ut')+'</div><ul>'+(outs.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' → '+t_(MN[e[1]].n))).join('')||'<li>—</li>')+'</ul></div>';
   h+=row(CUR()+'/min',t_('Verdi inn {0} → ut {1}',kr(v.vin),kr(v.vout))+' · <b style="color:'+(v.va>=0?'var(--good)':'var(--danger)')+'">'+(v.va>=0?'+':'')+kr(v.va,'/min')+'</b>');

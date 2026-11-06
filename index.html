@@ -36,7 +36,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 .hud{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;display:flex;gap:8px;align-items:center;pointer-events:none;transition:opacity .4s}
 .chip{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:7px 12px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:nowrap}
-#money{font-size:19px;font-weight:800}#money.long{font-size:16px;padding-left:10px;padding-right:10px;gap:5px}
+#money{font-size:19px;font-weight:800}#money.long{font-size:15px;padding-left:10px;padding-right:10px;gap:5px}#money.tight{font-size:13px;padding-left:8px;padding-right:8px;gap:4px}#money.tight .coin{width:15px;height:15px}
 #money.bump{animation:bump .18s ease-out}
 @keyframes bump{50%{transform:scale(1.12)}}
 .coin{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,var(--coin) 55%,#c98a00);box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
@@ -55,7 +55,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 #toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 #toast.big{border-color:var(--good);font-size:20px}
 #stage.intro .hud,#stage.intro #goal,#stage.intro #stat{opacity:0}
-#menu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);right:12px;width:min(290px,calc(100% - 24px));box-sizing:border-box;background:var(--panel2);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:6px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:none;z-index:5;font-size:14px}
+#menu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);right:12px;width:min(290px,calc(100% - 24px));box-sizing:border-box;background:#10131a;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:6px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,.5);display:none;z-index:5;font-size:14px}
 #menu.on{display:block}
 #menu h2{font-size:15px;margin:8px 0 4px;font-weight:800}
 .mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);min-height:44px}
@@ -78,14 +78,15 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 #stats b{color:var(--ui);font-weight:700}
 #modal{position:absolute;inset:0;background:rgba(5,7,10,.6);display:none;align-items:center;justify-content:center;z-index:6;padding:16px;box-sizing:border-box}
 #modal.on{display:flex}
-#modal .box{background:var(--panel2);border:2px solid var(--hazard);border-radius:18px;padding:16px;max-width:320px;text-align:center}
+#modal .box{background:#10131a;border:2px solid var(--hazard);border-radius:18px;padding:16px;max-width:320px;text-align:center;max-height:100%;overflow-y:auto;box-sizing:border-box}
+#modal.start .box{max-width:360px;text-align:left}#modal.start p{color:var(--ui);font-size:14.5px;line-height:1.5}#modal.start p b{color:var(--hazard)}#modal.start h2{color:var(--hazard)}#modal.start .btns{justify-content:flex-end}#modal .btns button[hidden]{display:none}
 #modal h2{margin:0 0 6px;font-size:18px}#modal p{margin:0 0 14px;color:var(--uidim);font-size:14px;line-height:1.45}#modal p b{color:var(--ui)}
 #modal .btns{display:flex;gap:10px;justify-content:center}
 
 .heat{flex-direction:column;align-items:flex-start;gap:0;padding:5px 12px 8px;line-height:1.15;min-width:0;flex:0 1 auto;overflow:hidden}
-.heat span#cv{font-size:10px;color:var(--uidim);font-weight:700}.heat b{font-size:12.5px;max-width:132px;overflow:hidden;text-overflow:ellipsis}
+.heat span#cv{font-size:9.5px;color:var(--uidim);font-weight:700}.heat b{font-size:11.5px;max-width:136px;overflow:hidden;text-overflow:ellipsis}
 .heat{align-items:stretch;padding-left:9px;padding-right:9px}.heat span#cv,.heat b{display:block;overflow:hidden;text-overflow:ellipsis}
-#st{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#st{min-width:0;white-space:normal;line-height:1.25}
 #mapBtn{pointer-events:auto;margin-left:auto;position:relative;width:52px;height:44px;border-radius:22px;border:0;background:var(--hazard);color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;cursor:pointer;padding:0;font:inherit;font-size:8.5px;font-weight:800;flex:none}
 #mapBtn svg{width:19px;height:19px}#mapBtn i{position:absolute;right:2px;top:1px;width:10px;height:10px;border-radius:50%;background:var(--danger);display:none;box-shadow:0 0 0 2px var(--frame)}#mapBtn.bad i{display:block}
 #mapBtn:focus-visible,#craneBtn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
@@ -96,7 +97,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
 #craneBtn{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 64px);min-height:48px;border-radius:16px;border:2px solid var(--hazard);background:var(--panel2);color:var(--hazard);font:inherit;font-weight:800;font-size:14px;padding:0 16px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 #craneBtn.on{background:var(--hazard);color:#111}#craneBtn[hidden]{display:none}
 #stage.intro #craneBtn,#stage.intro #mapBtn{opacity:0}
-#mapov{position:absolute;inset:0;background:rgba(9,11,15,.97);z-index:7;display:none;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 10px);box-sizing:border-box;gap:8px}
+#mapov{position:absolute;inset:0;background:#090b0f;z-index:7;display:none;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px calc(env(safe-area-inset-bottom,0px) + 10px);box-sizing:border-box;gap:8px}
 #mapov.on{display:flex}
 .mtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mtop h2{margin:0;font-size:18px;font-weight:800;margin-right:auto}
 .seg{display:flex;gap:6px}.seg .mbtn{min-width:0;font-size:12.5px;padding:0 10px}
@@ -143,6 +144,7 @@ canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--focus)}
   <div id="menu" role="dialog" aria-label="Meny" data-ia="Meny">
     <div class="mrow"><span lang="en">Language / Språk</span><div class="seg" role="group" aria-label="Language / Språk"><button class="mbtn" id="mLangEn" type="button" aria-pressed="true" lang="en" aria-label="English">EN</button><button class="mbtn" id="mLangNo" type="button" aria-pressed="false" lang="nb" aria-label="Norsk">NO</button></div></div>
     <div class="mrow"><span>Zoom</span><div class="seg"><button class="mbtn" id="mZo" type="button" aria-label="Zoom ut" data-ia="Zoom ut">−</button><button class="mbtn" id="mZi" type="button" aria-label="Zoom inn" data-ia="Zoom inn">+</button></div></div>
+    <div class="mrow"><span data-i="Slik spiller du">Slik spiller du</span><button class="mbtn" id="mHow" type="button" data-i="Vis">Vis</button></div>
     <div class="mrow"><span data-i="Lyd">Lyd</span><button class="mbtn" id="mSound" type="button" aria-pressed="true">På</button></div>
     <div class="mrow"><span data-i="Vibrasjon">Vibrasjon</span><button class="mbtn" id="mVib" type="button" aria-pressed="true">På</button></div>
     <div id="mCastW" hidden><h2 data-i="Støping">Støping</h2>
@@ -290,15 +292,17 @@ const KNAME={scrap:'skrap',ore:'malm',pig:'masseljern',slag:'slagg',elek:'elektr
    type conv = converter (charge råjern + skrap, blow, tilt to tap), sm = open hearth, eaf = arc furnace.
    hm = [min, max] share of hot metal (råjern) in the charge; the rest is scrap. Time compressed. ---------- */
 const ERA=[
- {n:'Bessemer-konverter',k:'BESSEMER',type:'conv',cap:10,blow:9,ref:1,ch:'conv',req:[],fb:.7,elek:0,slag:0,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈20 min',hm:[.9,1]},
- {n:'Siemens-Martin-ovn',k:'SM-OVN',type:'sm',cap:16,P:34,E:1000,ref:4,ch:'box',req:['kalk'],fb:.7,elek:0,slag:0,heel:0,tap:'hole',pu:'MW gass',tt:'≈8 t',hm:[.35,.6]},
- {n:'LD-konverter',k:'LD-KONVERTER',type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
- {n:'Lysbueovn',k:'LYSBUEOVN',type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
- {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
- {n:'Consteel-ovn',k:'CONSTEEL-OVN',cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
+ {n:'Bessemer-konverter',k:'BESSEMER',yr:1880,type:'conv',cap:10,blow:9,ref:1,ch:'conv',req:[],fb:.7,elek:0,slag:0,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈20 min',hm:[.9,1]},
+ {n:'Siemens-Martin-ovn',k:'SM-OVN',yr:1910,type:'sm',cap:16,P:34,E:1000,ref:4,ch:'box',req:['kalk'],fb:.7,elek:0,slag:0,heel:0,tap:'hole',pu:'MW gass',tt:'≈8 t',hm:[.35,.6]},
+ {n:'LD-konverter',k:'LD-KONVERTER',yr:1960,type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
+ {n:'Lysbueovn',k:'LYSBUEOVN',yr:1975,type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
+ {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',yr:1985,cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
+ {n:'Consteel-ovn',k:'CONSTEEL-OVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
-const RJE=[{n:'Koksmasovn',k:'MASOVN',rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',rate:.75}];
+const RJE=[{n:'Koksmasovn',k:'MASOVN',yr:1880,rate:.24},{n:'Elektrisk råjernsovn',k:'EL-RÅJERNSOVN',yr:1965,rate:.75}];
+/* the year the works are in: set by the steel furnace era (the electric smelter arrives in between) */
+const year=()=>max(E_().yr,rjEra()&&!rjClosed()?RJE[1].yr:0);
 const RJSUPC={koks:.2,cowper:.2};
 
 /* ---------- phases: one build at a time, always the next one in this list ---------- */
@@ -757,6 +761,11 @@ const EN={
  'Du trenger mer inntekt i dette verket. Tjen <b>{0}</b> totalt for første ekspertisepoeng.':'You need more income in this mill. Earn <b>{0}</b> in total for your first expertise point.',
  'Start nytt verk?':'Start a New Mill?','Start nytt verk':'Start New Mill',
  'Du bygger et nytt stålverk fra bunnen. Du får <b>+{0} ekspertise</b> – all inntekt blir <b>×{1}</b> for alltid.<br>Penger, stasjoner og oppgraderinger nullstilles.':'You build a new steel mill from scratch. You get <b>+{0} expertise</b> – all income becomes <b>×{1}</b> for good.<br>Money, stations and upgrades are reset.',
+ /* start card + how to play */
+ 'Slik spiller du':'How to play','Vis':'Show','Start':'Start',
+ '{0}. Du overtar et lite jernverk: en koksmasovn og en Bessemer-konverter.':'{0}. You take over a small ironworks: a coke blast furnace and a Bessemer converter.',
+ 'Bær malm og skrap, stå på rutene for å kjøpe oppgraderinger og ansette hjelpere.':'Carry ore and scrap, stand on the pads to buy upgrades and hire helpers.',
+ 'Bygg verket ut gjennom over hundre år med stålproduksjon – helt fram til moderne lysbueovn og valseverk.':'Grow the works through more than a century of steelmaking – all the way to a modern arc furnace and rolling mill.',
  /* map */
  'KART':'MAP','Kart':'Map','Kart over linja':'Map of the line','Kart over produksjonslinja':'Map of the production line','Kartvisning':'Map view','Produktflyt':'Product flow',
  'Pengeflyt':'Money flow','Lukk kartet':'Close the map','Lukk':'Close','Linja fra skrap til salg':'The line from scrap to sale','Tilpass kartet':'Fit the map',
@@ -1245,6 +1254,8 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
 let SOLIDS=[];
 const FURN_SOL=()=>ET()==='sm'?[{x:688,y:416,w:226,h:370}]:ET()==='conv'?[{x:POS.F.x,y:POS.F.y+6,r:90},{x:POS.F.x-50,y:POS.F.y-136,w:100,h:70}]:[{x:POS.F.x,y:POS.F.y,r:98}];
 function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
+ /* the ladle car track (tap position + the two parking spots) and the hot-metal transfer ladle are not walked across */
+ SOLIDS.push({x:POS.tap.x-28,y:POS.tap.y-32,w:56,h:POS.park[1].y+30-(POS.tap.y-32)});if(usesHM())SOLIDS.push({x:POS.hmL.x,y:POS.hmL.y,r:30});
  /* råjernsverk: furnace, cowpers / transformers, coke plant, dust catcher (they stay standing after the Omlegging) */
  /* tall equipment is drawn rising up the screen, so its solid covers the whole drawn body (no walking "behind" it) */
  SOLIDS.push({x:POS.rjF.x,y:POS.rjF.y,r:86},rjEra()?{x:POS.rjF.x-44,y:POS.rjF.y-158,w:88,h:90}:{x:POS.rjF.x-62,y:POS.rjF.y-196,w:124,h:130},{x:-150,y:426,r:28},{x:-174,y:330,w:48,h:100});
@@ -1556,7 +1567,7 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
  if(slagOn())S.st.slagT+=dt;
  /* ----- melting / blowing: limited by power (or the blower/lance) AND by every supply plant the era needs ----- */
  const r=furnRate();const paused=(F.ch&&(E.ch==='bucket'||typ==='conv'));F.rate=0;
- if(F.solid>0&&!F.stop&&!paused&&F.state!=='tapping'){const m=min(F.solid,r*dt);F.solid-=m;F.bath+=m;F.rate=m/dt;S.st.scrap+=m;rec('melt',m);
+ if(F.solid>0&&!F.stop&&!paused&&F.state!=='tapping'){const m=min(F.solid,r*dt);F.solid-=m;F.bath+=m;F.rate=dt>0?m/dt:0;S.st.scrap+=m;rec('melt',m);
   for(const s of E.req)if(lv(s)>0)rec('s:'+s,m);
   if(isEAF()){S.elek=max(0,S.elek-m/E.elek)}
   if(slagOn()){F.slagAcc+=m/E.slag;while(F.slagAcc>=1){F.slagAcc-=1;if(S.pot<potMax())S.pot++}}
@@ -1618,7 +1629,7 @@ function updRJ(dt){if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.he
  const oy=SRCm.ore;S.yard.ore=min(oreYardCap(),yardT(oy)+oreYardRate()*dt);RJ.trainT+=dt;
  /* smelting: limited by the furnace size (or MVA) and by coke / hot blast */
  const r=rjRate(),oreK=1/feY(),room=max(0,hearthCap()-S.rj.hearth);
- const m=max(0,min(r*dt,S.rj.ore/oreK,room));S.rj.ore-=m*oreK;S.rj.hearth+=m;RJ.rate=m/dt;rec('rjmelt',m);rec('o:rj',m);S.st.hm+=m;
+ const m=max(0,min(r*dt,S.rj.ore/oreK,room));S.rj.ore-=m*oreK;S.rj.hearth+=m;RJ.rate=dt>0?m/dt:0;rec('rjmelt',m);rec('o:rj',m);S.st.hm+=m;
  for(const s of rjReq())if(lv(s)>0)rec('s:'+s,m);
  if(m>0)RJ.skipT+=dt*(.6+r);
  RJ.starve=S.rj.ore<oreK*.5&&room>.5?RJ.starve+dt:0;RJ.stopT=room<=.01?RJ.stopT+dt:0;
@@ -1626,7 +1637,7 @@ function updRJ(dt){if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.he
  /* tapping: into the torpedo car at the cast house, or to the pig-casting machine (sale switch, or no car there) */
  const tc=castTorp(),toSteel=S.tg.rj&&usesHM();RJ.tapping=false;RJ.overflow=0;
  if(tc&&toSteel&&S.rj.hearth>.05){const a=min(S.rj.hearth,tapRate()*dt,torpCap()-tc.load);if(a>0){tc.load+=a;S.rj.hearth-=a;RJ.tapping=true}}
- else if(S.rj.hearth>0&&(!toSteel||S.rj.hearth>=hearthCap()*.85)){const a=min(S.rj.hearth,max(toSteel?1.2:3,rjPow()*1.3)*dt);S.rj.hearth-=a;RJ.pigAcc+=a;RJ.overflow=a/dt;RJ.tapping=true;
+ else if(S.rj.hearth>0&&(!toSteel||S.rj.hearth>=hearthCap()*.85)){const a=min(S.rj.hearth,max(toSteel?1.2:3,rjPow()*1.3)*dt);S.rj.hearth-=a;RJ.pigAcc+=a;RJ.overflow=dt>0?a/dt:0;RJ.tapping=true;
   while(RJ.pigAcc>=PIG_T){RJ.pigAcc-=PIG_T;addPile({k:'pig',t:PIG_T,q:1});S.st.prod.pig=(S.st.prod.pig||0)+1;rec('o2:rj',PIG_T)}}
  RJ.tapT=RJ.tapping?RJ.tapT+dt:0;
  updTorps(dt)}
@@ -1888,10 +1899,10 @@ function onBuild(b){S.st.eraT[b.id]=S.st.play;rebuildSolids();bakeFloor();layout
   if(F.ch){const c=F.ch;if(c.hm!=null){F.solid+=c.s+c.hm;F.scIn+=c.s;F.hmIn+=c.hm}else if(!c.done)addSolid(c.amt)}if(F.hmCh){F.bath+=F.hmCh.amt;F.hmIn+=F.hmCh.amt;F.hmCh=null}
   F.ch=null;F.roof=0;F.smDoor=-1;F.tilt=0;F.lance=0;F.bath=min(F.bath,fcap());F.solid=min(F.solid,max(0,fcap()-F.bath));
   if(b.id==='eaf1')closeRJ();
-  toast(t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
+  toast(E.yr+' · '+t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
   if(usesHM())toast(t_('Chargen: {0}–{1} % råjern, resten skrap',Math.round(E.hm[0]*100),Math.round(E.hm[1]*100)));
   if(b.id==='eaf1'){ST.elek=max(ST.elek,12);S.elek=12}if(b.id==='consteel'){csInit(S.chg);if(G.crane==='skrap'){CRm.skrap.man=false;G.crane=null}const c=CRm.skrap;c.state='idle';c.job=null;c.load=0;toast(t_('Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.'))}G.chFx=2;sfx('mile');buzz([30,40,30,40,60])}
- else if(b.rjEra){toast(t_('Ny råjernsovn: {0}!',t_(RJE[rjEra()].n)),true);toast(t_(b.d));G.chFx=2;sfx('mile')}
+ else if(b.rjEra){toast(year()+' · '+t_('Ny råjernsovn: {0}!',t_(RJE[rjEra()].n)),true);toast(t_(b.d));G.chFx=2;sfx('mile')}
  else{toast(t_('{0} er bygget!',t_(b.n)),true);if(b.d)toast(t_(b.d))}
  G.chGuide=T+30;
  collide(P);for(const h of helpers)collide(h);hudT=0}
@@ -1960,7 +1971,7 @@ const steelIn=l=>l.steel>.01;
 function bottlenecks(){const o=[];for(const z of ZONES){const s=status(z.id);if(s&&s.lv===2)o.push([z.id,s.t])}return o}
 
 /* ---------- prestige / reset ---------- */
-function doPrestige(){const g=presGain();if(g<1)return;const keep={mute:S.mute,vib:S.vib,moved:true,infoHint:S.infoHint,life:S.life,st:S.st,pres:{pts:S.pres.pts+g,n:S.pres.n+1}};
+function doPrestige(){const g=presGain();if(g<1)return;const keep={mute:S.mute,vib:S.vib,moved:true,infoHint:S.infoHint,introSeen:S.introSeen,life:S.life,st:S.st,pres:{pts:S.pres.pts+g,n:S.pres.n+1}};
  S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt verk! Inntekt ×{0}',L1(gm())),true);confetti(P.x,P.y-30,70);sfx('mile')}
 function doReset(){const keep={mute:S.mute,vib:S.vib,infoHint:S.infoHint};S=Object.assign(freshS(),keep);initRun();save();toast(t_('Nytt spill startet'))}
 
@@ -2063,7 +2074,7 @@ function update(dt){
  cam.x=vw>=WW-WX0?(WW+WX0)/2:clamp(cam.x,WX0+vw/2-40,WW-vw/2+40);cam.y=vh>=WH+pt+pb?WH/2+(pb-pt)/2:clamp(cam.y,vh/2-pt,WH-vh/2+pb);
  shake=max(0,shake-dt*10);shx=shake?rnd(-shake,shake):0;shy=shake?rnd(-shake,shake):0;
  setLoops();
- if(tOn>0){tOn-=dt;if(tOn<=0)$('toast').classList.remove('on')}else if(qT.length&&tOn<=0){const e=$('toast'),[m,b]=qT.shift();e.textContent=m;e.classList.toggle('big',b);e.classList.add('on');tOn=b?2.6:2.2}
+ if(tOn>0){tOn-=dt;if(tOn<=0)$('toast').classList.remove('on')}else if(qT.length&&tOn<=0&&!G.modal){const e=$('toast'),[m,b]=qT.shift();e.textContent=m;e.classList.toggle('big',b);e.classList.add('on');tOn=b?2.6:2.2}
  hud();if(G.mapOn){G.mapT=(G.mapT||0)+dt;if(G.mapT>1){G.mapT=0;renderMap()}}
  if(INFO.on){INFO.t+=dt;if(INFO.t>1){INFO.t=0;refreshInfo()}}
 }
@@ -2140,6 +2151,8 @@ let gCache={},lastHud={},hudT=0;
 function setT(id,v,html){if(lastHud[id]===v)return;lastHud[id]=v;if(html)$(id).innerHTML=v;else $(id).textContent=v}
 const focusName=()=>{const k=S.ph?BUILDS[S.ph-1].sn:'Masovn og Bessemer';return t_(EN['fase§'+k]!=null?'fase§'+k:k)};/* the phase chip may use a shorter English name */
 function hud(){const mvT=NO_()?fmt(S.money):'$'+fmt(S.money);setT('mv',mvT);{const lg=NO_()?mvT.length>4:mvT.length>=4;if(lastHud.mlong!==lg){lastHud.mlong=lg;$('money').classList.toggle('long',lg)}}setT('cv',t_('Fase {0} · Nivå {1}',S.ph+1,S.lvl+1));setT('pv',focusName());
+ /* a long money figure must not squeeze the phase chip into "…": shrink the money chip instead */
+ if(hudT<=1){const cvE=$('cv');try{if(cvE.scrollWidth>cvE.clientWidth+1&&!lastHud.tight){lastHud.tight=mvT.length;$('money').classList.add('tight')}else if(lastHud.tight&&mvT.length<lastHud.tight){lastHud.tight=0;$('money').classList.remove('tight')}}catch(e){}}
  const a=S.lvl?LVL_T(S.lvl-1):0,b=LVL_T(S.lvl),pr=clamp((S.earned-a)/(b-a),0,1);const w=Math.round(pr*100)+'%';if(lastHud.lw!==w){lastHud.lw=w;$('lvb').style.width=w}
  hudT-=1;if(hudT>0&&gCache.m!=null)return;hudT=6;
  gCache=goal();setT('gm',gCache.m,1);setT('gs',gCache.sub||'');const gp=gCache.p==null?'':Math.round(gCache.p*100)+'%';if(lastHud.gp!==gp){lastHud.gp=gp;$('gbar').hidden=gp==='';$('gbi').style.width=gp||'0%'}
@@ -2170,7 +2183,7 @@ function syncMenu(){syncDest();$('mSound').setAttribute('aria-pressed',S.mute?'f
  const bm=BASEP()*gm();const kt=v=>NO_()?L1(v)+' kr/t':'$'+L1(v)+'/t';
  $('prices').innerHTML=PRK.map(k=>{const on=prodOn(k);return'<span'+(on?'':' class="lk"')+'>'+t_(PR[k].n)+(k==='ingot'&&B_('strang')?' ('+t_('spesialstål')+')':'')+'</span><b'+(on?'':' class="lk"')+'>'+(on?kt(val(refItem(k))*bm):t_('låst'))+'</b>'}).join('')+(slagOn()?'<span>'+t_(PR.slag.n)+'</span><b>'+kt(PR.slag.p*(1+.15*lv('slagcap'))*bm)+'</b>':'');
  const st=S.st,m=floor(st.play/60),pd=st.prod||{},K=(k,v)=>t_(k)+': <b>'+v+'</b>',pc=v=>t_('{0} %',v);
- $('stats').innerHTML=K('Spilletid',m>=60?t_('{0} t {1} min',floor(m/60),m%60):m+' min')+'<br>'+K('Ovn',t_(E_().n))+(kwh()?' · '+kwh()+' kWh/t':'')+(rjClosed()?'':'<br>'+K('Råjern',t_(RJE[rjEra()].n))+' · '+t_('{0} t laget',fmt(S.st.hm||0)))+'<br>'+K('Charger tappet',fmt(S.heats))+' · '+K('Skrap smeltet',fmt(st.scrap)+' t')+'<br>'+K('Støpeblokker',fmt(pd.ingot||0))+' · '+K('Emner',fmt(pd.billet||0))+'<br>'+K('Armering',fmt((pd.rebar||0)+(pd.tcore||0)))+' · '+K('Valstråd',fmt(pd.coil||0))+'<br>'+K('Utbytte blokk',pc(Math.round((1-crop(lv('hette')))/(1+RUNNER)*100)))+' · '+K('streng',pc(lv('torch')?99:98))+'<br>'+K('Solgt',fmt(st.sold))+' '+t_('stk')+' · '+K('Inntekt',kr(S.rate*60,'/min'))+'<br>'+K('Tjent totalt',kr(S.life))+'<br>'+K('Nytt verk',S.pres.n)+' · '+K('Ekspertise',S.pres.pts)+' (×'+L1(1+.5*S.pres.pts)+')'}
+ $('stats').innerHTML=K('Spilletid',m>=60?t_('{0} t {1} min',floor(m/60),m%60):m+' min')+'<br>'+K('Ovn',year()+' · '+t_(E_().n))+(kwh()?' · '+kwh()+' kWh/t':'')+(rjClosed()?'':'<br>'+K('Råjern',t_(RJE[rjEra()].n))+' · '+t_('{0} t laget',fmt(S.st.hm||0)))+'<br>'+K('Charger tappet',fmt(S.heats))+' · '+K('Skrap smeltet',fmt(st.scrap)+' t')+'<br>'+K('Støpeblokker',fmt(pd.ingot||0))+' · '+K('Emner',fmt(pd.billet||0))+'<br>'+K('Armering',fmt((pd.rebar||0)+(pd.tcore||0)))+' · '+K('Valstråd',fmt(pd.coil||0))+'<br>'+K('Utbytte blokk',pc(Math.round((1-crop(lv('hette')))/(1+RUNNER)*100)))+' · '+K('streng',pc(lv('torch')?99:98))+'<br>'+K('Solgt',fmt(st.sold))+' '+t_('stk')+' · '+K('Inntekt',kr(S.rate*60,'/min'))+'<br>'+K('Tjent totalt',kr(S.life))+'<br>'+K('Nytt verk',S.pres.n)+' · '+K('Ekspertise',S.pres.pts)+' (×'+L1(1+.5*S.pres.pts)+')'}
 function openMenu(on){if(on)hideInfo();menu.classList.toggle('on',on);mBtn.setAttribute('aria-expanded',on?'true':'false');$('resetRow').hidden=false;$('resetConf').hidden=true;if(on){openMap(false);syncMenu()}}
 mBtn.addEventListener('click',e=>{initAudio();openMenu(!menu.classList.contains('on'));e.stopPropagation()});
 $('mSound').addEventListener('click',()=>{toggleMute()});$('mZo').addEventListener('click',()=>setUZ(UZ/1.15));$('mZi').addEventListener('click',()=>setUZ(UZ*1.15));
@@ -2188,7 +2201,12 @@ $('mReset').addEventListener('click',()=>{$('resetRow').hidden=true;$('resetConf
 $('mResetNo').addEventListener('click',()=>{$('resetRow').hidden=false;$('resetConf').hidden=true});
 $('mResetYes').addEventListener('click',()=>{doReset();openMenu(false)});
 function toggleMute(){S.mute=!S.mute;if(AU.m)AU.m.gain.value=S.mute?0:.7;syncMenu();save()}
-function showModal(title,html,yes,onYes){hideInfo();G.modal=onYes||(()=>{});$('mdT').textContent=title;$('mdP').innerHTML=html;$('mdYes').textContent=yes;$('modal').classList.add('on');J.on=false;try{$('mdYes').focus()}catch(e){}}
+function showModal(title,html,yes,onYes,start){hideInfo();G.modal=onYes||(()=>{});$('mdT').textContent=title;$('mdP').innerHTML=html;$('mdYes').textContent=yes;$('mdNo').hidden=!!start;$('modal').classList.toggle('start',!!start);$('modal').classList.add('on');J.on=false;try{$('mdYes').focus()}catch(e){}}
+/* the start card: what the game is and the year it starts in; shown once on a new game, and again from the menu */
+function showStart(){const y=ERA[0].yr;showModal(t_('Slik spiller du'),'<b>'+t_('{0}. Du overtar et lite jernverk: en koksmasovn og en Bessemer-konverter.',y)+'</b><br>'+t_('Bær malm og skrap, stå på rutene for å kjøpe oppgraderinger og ansette hjelpere.')+'<br>'+t_('Bygg verket ut gjennom over hundre år med stålproduksjon – helt fram til moderne lysbueovn og valseverk.'),t_('Start'),()=>{},true);if(!S.introSeen){S.introSeen=1;save()}}
+$('mHow').addEventListener('click',()=>{openMenu(false);showStart()});
+/* a press outside the box dismisses the card / cancels the question */
+$('modal').addEventListener('pointerdown',e=>{if(e.target===$('modal'))closeModal()});
 function closeModal(){G.modal=null;$('modal').classList.remove('on');try{cv.focus({preventScroll:true})}catch(e){}}
 $('mdYes').addEventListener('click',()=>{const f=G.modal;closeModal();if(f)f()});
 $('mdNo').addEventListener('click',closeModal);
@@ -2254,7 +2272,7 @@ function renderMap(){if(!G.mapOn)return;const money=MMODE==='money',FN='font-fam
   h+='</g>'}
  h+=`<text x="16" y="494" fill="#7d8590" font-size="11" ${FN}>${t_('målt · glidende snitt · per spillminutt')}</text>`;
  $('mapSvg').innerHTML=h;
- const bn=bottlenecks();$('mapSum').innerHTML=t_('Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>',kr(income,'/min'),tf(rate('melt')))+(bn.length?' · '+t_('Flaskehals')+': <b class="bad">'+[...new Set(bn.map(b=>b[0]==='rjsup'?t_(MN[RJ.lim||'koks'].n):b[0]==='rj'?t_('Råjernsovn'):b[0]==='sup'||b[0]==='ovn'&&F.lim?t_(MN[F.lim||'kalk'].n):MN[b[0]]?t_(MN[b[0]].n):t_(ZN[b[0]].n).toLowerCase()))].join(', ')+'</b>':' · '+t_('ingen flaskehals'));
+ const bn=bottlenecks();$('mapSum').innerHTML=t_('Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>',kr(income,'/min'),tf(rate('melt')))+(bn.length?' · '+t_('Flaskehals')+': <b class="bad">'+[...new Set(bn.map(b=>b[0]==='rjsup'?t_(MN[RJ.lim||'koks'].n):b[0]==='rj'?(RJ.lim&&b[1]===t_('Flaskehals: {0}',t_(SUPN[RJ.lim]))?t_(MN[RJ.lim].n):t_('Råjernsovn')):b[0]==='sup'||b[0]==='ovn'&&F.lim?t_(MN[F.lim||'kalk'].n):MN[b[0]]?t_(MN[b[0]].n):t_(ZN[b[0]].n).toLowerCase()))].join(', ')+'</b>':' · '+t_('ingen flaskehals'));
  renderPanel()}
 const li=(col,t)=>'<li><i style="background:'+col+'"></i><span>'+t+'</span></li>';
 const MZ={kalk:'sup',o2:'sup',kull:'sup',salg:'salg1',koks:'rjsup',cowper:'rjsup',malm:'rj'};
@@ -2271,7 +2289,7 @@ function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel
    +row(t_('Drift'),t_('{0} · kjøpes én gang',kr(0,'/min')));
   h+='<p class="pnote">'+(isLim?t_('Mens ovnen smelter/blåser, trenger den mer enn anlegget klarer, så den går saktere. Snittet er lavere fordi ovnen også lader og tapper. Oppgrader anlegget til minst {0} t/min.',tf(need)):t_('Anlegget holder følge med ovnen. Snittet er lavere enn kapasiteten fordi ovnen også lader og tapper.'))+'</p>'}
  else if(o.sale){const ins=MEDG.filter(e=>e[1]==='salg'&&mBuilt(e[0])&&edgeV(e)>.005);h+='<div class="prow"><div class="k">'+t_('Selges')+'</div><ul>'+(ins.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' = <b>'+kr(rate('v:'+e[0]),'/min')+'</b>')).join('')||'<li>'+t_('ingenting ennå')+'</li>')+'</ul></div>'+row(t_('Sum'),kr(rate('v:salg'),'/min'),' style="color:var(--coin);font-weight:800"')}
- else{const ins=MEDG.filter(e=>e[1]===id&&mBuilt(e[0])),outs=MEDG.filter(e=>e[0]===id&&mBuilt(e[1]));const v=nodeVA(id);
+ else{const ins=MEDG.filter(e=>e[1]===id&&mBuilt(e[0])),outs=MEDG.filter(e=>e[0]===id&&mBuilt(e[1])&&!(e[2]==='slag'&&!slagOn()));const v=nodeVA(id);
   let inL=ins.map(e=>li(PCOL[e[2]],t_('{0} · {1} fra {2}',t_(PNAME[e[2]]),tm(edgeV(e)),t_(MN[e[0]].n)))).join('');const supL=s=>li('#7d8590',t_(MN[s].n)+(lv(s)?' · '+tm(rate('s:'+s)):' · '+t_('mangler')));if(id==='rj')inL+=rjReq().map(supL).join('');if(id==='ovn')inL+=E_().req.map(supL).join('');
   h+='<div class="prow"><div class="k">'+t_('Inn')+'</div><ul>'+(inL||'<li>—</li>')+'</ul></div><div class="prow"><div class="k">'+t_('Ut')+'</div><ul>'+(outs.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' → '+t_(MN[e[1]].n))).join('')||'<li>—</li>')+'</ul></div>';
   h+=row(CUR()+'/min',t_('Verdi inn {0} → ut {1}',kr(v.vin),kr(v.vout))+' · <b style="color:'+(v.va>=0?'var(--good)':'var(--danger)')+'">'+(v.va>=0?'+':'')+kr(v.va,'/min')+'</b>');
@@ -2326,6 +2344,8 @@ function drawWorker(a,vest,helmet,cap){const x=a.x,y=a.y,bob=a.moving?Math.abs(M
  for(let i=0;i<n;i++){const it=a.stack[i];if(it.age<0)continue;const s=1+max(0,.18-it.age)*3,ix=x+sway*i*(sp/7),iy=y-40-bob-i*sp;
   ctx.save();ctx.translate(ix,iy);ctx.scale(s,s);drawItem(it,0,0,1);ctx.restore()}
  if(cap&&n>=cap)txt(t_('MAKS'),x,y-48-n*sp-bob,10,C.hazard,800,'center',3)}
+/* a static text label on the floor: drawn in the label pass, so it is never drawn under the HUD or across another label */
+function labFix(k,t,x,y,fs,col,wt){wt=wt||800;ctx.font=`${wt} ${fs}px ${FONT}`;const w=ctx.measureText(t).width+8,h=fs*1.2+4;LBL.push({k,x:x-w/2,y:y-h/2,w,h,pr:1,ax:null,fix:1,f:(lx,ly)=>txt(t,lx+w/2,ly+h/2,fs,col,wt,'center',3)})}
 /* floor rings (drop / sale / station inputs) */
 function padRing(x,y,r,label,glow,fill,col){if(!inView(x,y,r+10))return;ctx.fillStyle='rgba(0,0,0,.3)';circ(x+2,y+4,r);ctx.fill();ctx.fillStyle=col||HZ;circ(x,y,r);ctx.fill();ctx.fillStyle=glow?mix('#20242c',C.molten,glow):'#20242c';circ(x,y,r-7);ctx.fill();
  if(fill!=null){ctx.save();circ(x,y,r-7);ctx.clip();ctx.fillStyle=rgba(fill>=1?C.good:fill<.25?C.danger:C.hazard,.35);const h=(r-7)*2*clamp(fill,0,1);ctx.fillRect(x-r,y+r-7-h,2*r,h);ctx.restore()}
@@ -2398,7 +2418,7 @@ function drawSupply(){if(!inView(800,170,360))return;const u=s=>supCap(s)>0?clam
  /* oxygen: LOX tank + vaporisers → pipe → valve skid → hoses/lances */
  if(lv('o2')){const vr=min(8,2+floor(lv('o2')/3));SK.loxTank(g,820,98,30);for(let i=0;i<vr;i++)SK.vaporiser(g,858+(i%4)*19,66+floor(i/4)*19,15,T,i);
   SK.pipe(g,[[848,150],[880,150],[880,218]],6,'#6fa8e8',T,{flow:u('o2')>.01?'#f4fbff':null,speed:sp('o2')});SK.valveSkid(g,858,218,44,34);
-  const ip=injPt(-1.0);SK.hose(g,880,252,920,300,ip.x,ip.y,4,'#6fa8e8',T,u('o2')>.01?'#f4fbff':null);
+  const ip=ET()==='conv'?lanceTop():injPt(-1.0);SK.hose(g,880,252,920,300,ip.x,ip.y,4,'#6fa8e8',T,u('o2')>.01?'#f4fbff':null);
   if(lv('lans')===1){/* door lance manipulator */SK.box(g,ip.x+6,ip.y-26,22,18,'#4a5058','#111',2);SK.line(g,ip.x+16,ip.y-10,ip.x-14,ip.y+14,'#c9ced6',3)}
   if(lim==='o2')limTag(786,56,150,104)}
  /* carbon: silo → blow tank → pneumatic pipe to the injector in the wall */
@@ -2406,6 +2426,8 @@ function drawSupply(){if(!inView(800,170,360))return;const u=s=>supCap(s)>0?clam
   const ip=injPt(-2.05);SK.pipe(g,[[748,164],[748,260],[ip.x-10,ip.y-24],[ip.x,ip.y]],6,'#2b2b2e',T,{flow:u('kull')>.01?'#0a0a0b':null,dash:[2,4],speed:sp('kull')*1.4});
   if(lim==='kull')limTag(666,60,98,108)}}
 const e5=()=>({x:POS.F.x+Math.cos(-.9)*92*.55,y:POS.F.y+Math.sin(-.9)*92*.55});
+/* the LD lance carriage: where the oxygen hose ends in the converter eras */
+const lanceTop=()=>{const R=convR(),[mx,my]=SK2.convPt(F.x,F.y,R,0,1.05);return{x:mx+R*.3,y:my-R*2.5-R*.12}};
 const injPt=a=>({x:POS.F.x+Math.cos(a)*92*.9,y:POS.F.y+Math.sin(a)*92*.9});
 /* the limiting plant gets a pulsing red outline (the zone chip already names it, so no extra text) */
 function limTag(x,y,w,h){const a=RM?1:.55+.45*Math.sin(T*5);g.save();g.globalAlpha=a;g.strokeStyle='#ff6b5a';g.lineWidth=3;g.setLineDash([8,5]);g.lineDashOffset=RM?0:-T*24;SK.rr(g,x-6,y-6,w+12,h+12,10);g.stroke();g.setLineDash([]);g.restore()}
@@ -2424,7 +2446,7 @@ function drawOvnSide(){if(!inView(780,900,320))return;
 function drawStore(s){if(!s.open()||!inView(s.x,s.y,100))return;const x=s.x,y=s.y;
  const W2=s.store==='elek'?116:96;SK.box(g,x-W2/2,y-30,W2,58,'#5a4a36','#2a2016',5);g.fillStyle='rgba(0,0,0,.25)';for(let i=0;i<4;i++)g.fillRect(x-W2/2+4+i*(W2-8)/4,y-26,(W2-8)/4-4,50);
  const n=ST[s.store]|0;for(let i=0;i<min(n,16);i++){const lay=floor(i/8),c=i%8,cx=x-W2/2+16+(c%4)*((W2-32)/3),cy=y-14+floor(c/4)*22-lay*5;drawItem({k:s.kind,kk:i%2},cx,cy,1.05)}
- txt(t_(({elek:'ELEKTRODER',kanal:'KANALSTEIN',hette:'HETTEPULVER'})[s.store])+' · '+n,x,y-40,9.5,C.ui,800,'center',3);LOBS.push({x:x-W2/2,y:y-47,w:W2,h:14})}
+ labFix('st'+s.id,t_(({elek:'ELEKTRODER',kanal:'KANALSTEIN',hette:'HETTEPULVER'})[s.store])+' · '+n,x,y-40,9.5,C.ui)}
 /* ---- ladles on the ladle car / under the crane ---- */
 function drawLadle(L){if(!inView(L.x,L.y,60))return;const f=L.sm>0?clamp(L.steel/L.sm,0,1):0,car=L.state==='park'||L.state==='filling'||(L.state==='await'&&hyp(L.x-POS.tap.x,L.y-POS.tap.y)<30);
  if(car)SK.car(g,L.x,L.y,66,52);
@@ -2463,8 +2485,8 @@ function drawPit(){const p=POS.pit;if(!inView(p.x,p.y,200))return;const PW_=240,
 function drawKok(){const p=POS.koklag;if(inView(p.x,p.y,90)){SK.box(g,p.x-60,p.y-30,120,64,'#3a3e45','#16181c',5);const nr=min(S.kok.ready,12),cool=S.kok.cool,nc=min(cool.length,6);
   for(let i=0;i<nr;i++)SK.mould(g,p.x-46+(i%6)*18.4,p.y-16+floor(i/6)*18,7.5,0,0,{top:false});
   for(let i=0;i<nc;i++)SK.mould(g,p.x-46+(i%6)*18.4,p.y+20,7.5,.8,clamp(cool[i]/coolT(),0,1)*.7,{top:false});
-  txt(t_('KOKILLER · {0} klare',S.kok.ready)+(cool.length?' · '+t_('{0} kjøles',cool.length):''),p.x,p.y-42,9.5,C.ui,800,'center',3);LOBS.push({x:p.x-80,y:p.y-49,w:160,h:14})}
- const k=POS.kokv;if(inView(k.x,k.y,70)&&S.kok.hot){const n=min(S.kok.hot,12);for(let i=0;i<n;i++)SK.mould(g,k.x-30+(i%4)*20,k.y-12+floor(i/4)*16,7.5,.8,.75,{top:false});txt(t_('{0} varme',S.kok.hot),k.x,k.y+40,10,C.molten,800,'center',3);LOBS.push({x:k.x-30,y:k.y+33,w:60,h:14})}}
+  labFix('koklag',t_('KOKILLER · {0} klare',S.kok.ready)+(cool.length?' · '+t_('{0} kjøles',cool.length):''),p.x,p.y-42,9.5,C.ui)}
+ const k=POS.kokv;if(inView(k.x,k.y,70)&&S.kok.hot){const n=min(S.kok.hot,12);for(let i=0;i<n;i++)SK.mould(g,k.x-30+(i%4)*20,k.y-12+floor(i/4)*16,7.5,.8,.75,{top:false});labFix('kokv',t_('{0} varme',S.kok.hot),k.x,k.y+40,10,C.molten)}}
 /* ---- stranggjuting, top-down: ladle turret → tundish on its car → copper moulds → spray chamber → withdrawal/straightener → torch/shear → run-out → cooling bed ---- */
 const TD={x0:1420,x1:1460,y0:670,y1:986},MCX=1474,PBX=1436,WSX=1542;/* tundish shell, mould centre x, shroud impact x, withdrawal units */
 const castV=()=>110*(1+.1*lv('caster'));
@@ -2649,16 +2671,16 @@ function drawOreTrain(){const y=POS.oreTrainY,cl=rjClosed(),full=yardT(SRCm.ore)
   if(tip>.2&&i<3){const sx=x,sy=y-20;SK.parts(10,2,i*5,T,(ff,a)=>{g.fillStyle=a>.5?'#6b3d33':'#4a3a36';SK.circ(g,sx+(a-.5)*50,lerp(sy,POS.ore.y+120,ff),3);g.fill()})}}
  SK.box(g,-230,y-17,74,34,'#c0392b','#7d241b',5);g.fillStyle='#1d2026';g.fillRect(-194,y-13,30,26);g.fillStyle='#9fd0ff';g.fillRect(-190,y-9,22,7)}
 function drawCoke(){const n=lv('koks')?min(3,1+floor(lv('koks')/6)):0,u=rjSupCap('koks')>0?clamp(rate('s:koks')/(rjSupCap('koks')*60),0,1):0;
- if(!n){for(let i=0;i<26;i++){g.fillStyle=i%2?'#1e1e22':'#2b2b2e';SK.circ(g,-660+hsh(i)*90,170+hsh(i*3)*44,3+hsh(i*5)*3);g.fill()}txt(t_('KOKS KJØPES INN'),-616,232,8.5,C.uidim,800,'center',3)}
+ if(!n){for(let i=0;i<26;i++){g.fillStyle=i%2?'#1e1e22':'#2b2b2e';SK.circ(g,-660+hsh(i)*90,170+hsh(i*3)*44,3+hsh(i*5)*3);g.fill()}if(!rjClosed())labFix('koks',t_('KOKS KJØPES INN'),-616,232,8.5,C.uidim)}
  for(let i=0;i<3;i++){if(i>=n)continue;const x=-690+i*52;SK2.cyl(g,x,214,22,0,80,'#3a3c42','#6a6e76',26);SK2.cap(g,x,214-80*OK,22,'#4a4e55')}
  const items=(g2,L,w2,tt)=>{if(!n||u<.01)return;const nn=max(6,floor(L/16));for(let i=0;i<nn;i++){const p=((RM?i/nn:tt*.08*(.4+u)*140/L+i/nn)%1)*L;g2.fillStyle=i%2?'#1e1e22':'#3a3a40';SK.circ(g2,p,(hsh(i)-.5)*w2*.5,2.2);g2.fill()}};
  SK.belt(g,-540,224,-540,640,10,T,{trestle:true,speed:16+50*u,items});SK.belt(g,-540,640,-500,664,10,T,{speed:16+50*u,items})}
 function drawCowpers(){if(rjEra()){/* electric furnace: three single-phase transformers instead of hot-blast stoves */
   for(let i=0;i<3;i++){const x=-450+i*80,y=236;SK.box(g,x-28,y-46,56,44,'#8a8a84','rgba(0,0,0,.45)',4);for(let k=0;k<6;k++){g.fillStyle=k%2?'#5c5c56':'#a3a39c';g.fillRect(x-30+k*11,y-4,6,9)}
    g.save();g.translate(x,y-28);g.fillStyle='#f5c518';g.beginPath();g.moveTo(0,-7);g.lineTo(6,5);g.lineTo(-6,5);g.closePath();g.fill();g.fillStyle='#111';g.fillRect(-.8,-3,1.6,5);g.restore()}
-  txt(Math.round(rjPow()*400)+' MVA',-370,178,9,C.ui,800,'center',3);return}
+  if(!rjClosed())labFix('mva',Math.round(rjPow()*400)+' MVA',-370,178,9,C.ui);return}
  const lvC=lv('cowper'),n=lvC?min(4,1+floor(lvC/5)):0,on=rjRun()>0,act=n?floor((RM?0:T)/5)%n:-1;
- if(!n){SK.box(g,-300,200,64,40,'#4a4f56','#1b1e22',4);SK.fan(g,-268,220,12,T,on?10:0);txt(t_('KALDBLÅST'),-268,254,8.5,C.uidim,800,'center',3)}
+ if(!n){SK.box(g,-300,200,64,40,'#4a4f56','#1b1e22',4);SK.fan(g,-268,220,12,T,on?10:0);if(!rjClosed())labFix('kaldbl',t_('KALDBLÅST'),-268,254,8.5,C.uidim)}
  /* hot-blast main to the bustle pipe, gas main from the dust catcher to the burners */
  SK.pipe(g,[[-150,330],[-150,176],[-480,176]],5,'#55595f',T);
  if(n)SK.pipe(g,[[-490,226],[-214,226],[-214,470],[-262,486]],9,'#7a5a4a',T,{flow:on?'#ffb070':null,speed:30});
@@ -2801,7 +2823,10 @@ function drawSwitches(){for(const s of SW){if(!s.on()||!inView(s.x,s.y,60))conti
 function chipLayout(z,txt0){const p=zonePlate(z),pw=plateW(p),x=p.x+pw+6,y=p.y;
  let R=z.x1-8;if(z.id==='ovn'&&y+20>GAUGE.y-22&&y<GAUGE.y+26)R=min(R,GAUGE.x-66);if(z.id==='skrap'&&era()===5)R=min(R,CSG.dx-CSG.dw/2-8);/* Consteel off-gas duct */let t=txt0,fs=10.5;ctx.font=`800 ${fs}px ${FONT}`;
  while(ctx.measureText(t).width+24>R-x&&fs>9){fs-=.5;ctx.font=`800 ${fs}px ${FONT}`}
- if(ctx.measureText(t).width+24>R-x){t=t.replace(/ \(.*\)$/,'');while(t.length>6&&ctx.measureText(t+'…').width+24>R-x)t=t.slice(0,-1);if(t!==txt0&&!txt0.startsWith(t+' ('))t+='…'}
+ if(ctx.measureText(t).width+24>R-x){const uy=p.y+p.h+4,ux=p.x;let uR=z.x1-8;if(z.id==='ovn'&&uy+20>GAUGE.y-22&&uy<GAUGE.y+26)uR=min(uR,GAUGE.x-66);if(z.id==='skrap'&&era()===5)uR=min(uR,CSG.dx-CSG.dw/2-8);
+  const row=(UPROW[z.id]||{s:[]}).s,hp=HIREPOS[z.id],clear=!row.some(q=>q[1]-70<uy+20&&q[1]+26>uy&&q[0]+40>ux&&q[0]-40<uR)&&!(hp&&hp.y-70<uy+20&&hp.y+26>uy);
+  if(clear){let f2=10.5;ctx.font=`800 ${f2}px ${FONT}`;while(ctx.measureText(t).width+24>uR-ux&&f2>9){f2-=.5;ctx.font=`800 ${f2}px ${FONT}`}if(ctx.measureText(t).width+24<=uR-ux)return{x:ux,y:uy,w:ctx.measureText(t).width+24,h:20,t,fs:f2};ctx.font=`800 ${fs}px ${FONT}`}
+  t=t.replace(/ \(.*\)$/,'');while(t.length>6&&ctx.measureText(t+'…').width+24>R-x)t=t.slice(0,-1);if(t!==txt0&&!txt0.startsWith(t+' ('))t+='…'}
  return{x,y,w:ctx.measureText(t).width+24,h:20,t,fs}}
 function drawStatus(){for(const z of ZONES){if(!zoneBuilt(z)||!inView(z.x0+120,z.y0+20,160))continue;const p=zonePlate(z),pw=plateW(p);LOBS.push({x:p.x,y:p.y,w:pw,h:p.h});
   const s=status(z.id);if(!s||!s.lv||!s.t)continue;const col=s.lv===2?C.danger:C.hazard,L=chipLayout(z,s.t),x=L.x,y=L.y,w=L.w,t=L.t,fs=L.fs;
@@ -3361,8 +3386,8 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
    robot:()=>(TROB.n?t_('Siste måling: {0} °C',TROB.val)+' · '+t_('{0} målinger',TROB.n):t_('Venter på første måling'))}[h.id]();
   return{t:ti,d:tx,n}}
  case'helper':{const r=h.h.r,hi=HIRE[r];return{t:hName(hi),d:ixs(IX.hire[r])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}}
- case'furnace':{const E=E_();return{t:t_(E.n),d:ixs(IX.era[era()]),n:furnNums()}}
- case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:t_(RJE[rjEra()].n),d:tx,n:t_('NEDLAGT')}}const st=status('rj');return{t:t_(RJE[rjEra()].n),d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
+ case'furnace':{const E=E_();return{t:t_(E.n)+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
+ case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed);return{t:t_(RJE[rjEra()].n),d:tx,n:t_('NEDLAGT')}}const st=status('rj');return{t:t_(RJE[rjEra()].n)+' · '+RJE[rjEra()].yr,d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
  case'up':{const u=h.u;return infoFor({type:'pad',d:PAD['u_'+u.id]})}
  case'cast':{const[ti,tx]=ix4(IX.cast[h.id]);const n={turret:()=>upNums(UPm.turret),shroud:()=>t_(CAST.pour?'Skjermrør på':'Skjermrør parkert'),tundish:()=>t_('Stålnivå {0} %',Math.round(CAST.tlev*100)),
    mould:()=>t_('{0} av {1} strenger i bruk',nStr(),8)+' · '+upNums(UPm.strands),spray:()=>upNums(UPm.caster),wsu:()=>upNums(UPm.caster),cutter:()=>upNums(UPm.torch),bed:()=>t_('{0} emner på kjølesenga',CAST.bed.length)}[h.id]();
@@ -3419,7 +3444,8 @@ function drawTitle(t){ctx.fillStyle=C.bg;ctx.fillRect(0,0,cssW,cssH);const cx=cs
  ctx.fillStyle=C.hazard;ctx.fillRect(cx-fs*1.3,cy+fs*1.05,fs*2.6,4);
  txt('IDLE · STEEL TYCOON',cx,cy+fs*1.05+22,13,C.uidim,800);ctx.globalAlpha=1}
 function endIntro(){if(G.mode!=='intro')return;G.mode='play';stage.classList.remove('intro');try{cv.focus({preventScroll:true})}catch(e){}
- if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(t_('Fase 1: Masovn og Bessemer-konverter'),true);
+ if(G.offline>0)toast(t_('Mens du var borte: +{0}',kr(G.offline)));else if(S.bonusGiven&&!S.heats){toast(t_('Nytt verk! Nå starter du helt fra malmen: masovn, torpedovogner og Bessemer-konverter.'));toast(t_('Startbonus fra forrige verk: +{0}',kr(S.bonusGiven)),true);S.bonusGiven=false;save()}else if(!S.heats&&!S.ph)toast(ERA[0].yr+' · '+t_('Fase 1: Masovn og Bessemer-konverter'),true);
+ if(!S.introSeen&&!S.heats&&!S.ph&&!S.pres.n)showStart();
  /* once per player: everything in the plant can be tapped for an explanation */
  if(!S.infoHint){S.infoHint=1;toast(t_('Trykk på hva som helst for en forklaring'));save()}}
 
@@ -3439,15 +3465,20 @@ addEventListener('blur',()=>{for(const k in keys)keys[k]=0;J.on=false});
 function save(){S.t=Date.now();
  const piles={};for(const k of PRK)piles[k]=PILE[k].map(packIt);
  /* steel in transit is stored safely: ladle steel becomes ingots, the caster run-out and cooling bed become billets, items on roller tables join the next queue */
- for(const L of LADLES){if(L.state==='filling')continue;const n=floor(L.steel/IT());for(let i=0;i<n;i++)piles.ingot.push(packIt({k:'ingot',t:IT(),q:L.q||1}))}
+ /* a ladle under the tap holds the whole heat being tapped (the furnace keeps only its heel), a ladle at the pit what is not poured yet */
+ for(const L of LADLES){const st=L.state==='filling'?(F.state==='tapping'&&F.L===L?F.tapAmt:0):L.steel;const n=floor(st/IT());for(let i=0;i<n;i++)piles.ingot.push(packIt({k:'ingot',t:IT(),q:L.q||1}))}
  for(const r of CAST.run)piles.billet.push(packIt({k:'billet',t:r.t,q:r.q}));for(const b of CAST.bed)piles.billet.push(packIt(b.it));
  if(PIT.n&&(PIT.state==='solid'||PIT.state==='strip'))for(let i=0;i<PIT.n;i++)piles.ingot.push(packIt({k:'ingot',t:PIT.ingT,q:PIT.L?PIT.L.q:1}));
+ else if(PIT.n&&PIT.state==='pour'){const n=floor(PIT.pourTot*PIT.fill/(1+RUNNER)/IT());for(let i=0;i<n;i++)piles.ingot.push(packIt({k:'ingot',t:IT(),q:PIT.L?PIT.L.q:1}))}
+ /* what the helpers carry goes back where it came from (they start empty after a reload) */
+ const store=Object.assign({},ST),kok=Object.assign({},S.kok,{slots:S.kok.slots+PIT.n,cool:S.kok.cool.slice()});
+ for(const h of helpers)for(const it of h.stack){if(isProd(it.k))piles[it.k].push(packIt(it));else if(it.k==='kokk')kok.ready++;else if(it.k==='kokv')kok.cool.push(coolT());else if(store[it.k]!=null&&store[it.k]<storeMax())store[it.k]++}
  const nodes={};for(const id in NODE){const n=NODE[id];nodes[id]=(n.cur?[n.cur]:[]).concat(n.in).map(packIt)}for(const m of movers)nodes[m.to].push(packIt(m.it));
  const cash={};for(const z of TG)if(z.cash)cash[z.id]=z.cash;
  /* liquid råjern in torpedo cars goes back to the hearth; whatever does not fit is cast to pigs */
  let hearth=S.rj.hearth+RJ.pigAcc;for(const c of TORPS)hearth+=c.load;const hc=rjClosed()?0:hearthCap();while(hearth>hc+PIG_T*.5){hearth-=PIG_T;piles.pig.push(packIt({k:'pig',t:PIG_T,q:1}))}
  const fch=F.ch?(F.ch.hm!=null?F.ch.s+F.ch.hm:F.ch.done?0:F.ch.amt):0;
- const out=Object.assign({},S,{pp:{x:Math.round(P.x),y:Math.round(P.y),stack:P.stack.map(packS)},piles,nodes,store:Object.assign({},ST),cash,kok:Object.assign({},S.kok,{slots:S.kok.slots+PIT.n,cool:S.kok.cool.slice()}),F:{bath:F.state==='tapping'?0:F.bath+(F.hmCh?F.hmCh.amt:0),solid:F.solid+fch,scIn:F.scIn+(F.ch&&F.ch.hm!=null?F.ch.s:0),hmIn:F.hmIn+(F.ch&&F.ch.hm!=null?F.ch.hm:0)+(F.hmCh?F.hmCh.amt:0)},rj:{ore:S.rj.ore,hearth:max(0,hearth)},torp:[]});
+ const out=Object.assign({},S,{pp:{x:Math.round(P.x),y:Math.round(P.y),stack:P.stack.map(packS)},piles,nodes,store,cash,kok,F:{bath:(F.state==='tapping'?max(0,F.bath-F.tapAmt):F.bath)+(F.hmCh?F.hmCh.amt:0),solid:F.solid+fch,scIn:F.scIn+(F.ch&&F.ch.hm!=null?F.ch.s:0),hmIn:F.hmIn+(F.ch&&F.ch.hm!=null?F.ch.hm:0)+(F.hmCh?F.hmCh.amt:0)},rj:{ore:S.rj.ore,hearth:max(0,hearth)},torp:[]});
  try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 setInterval(save,4000);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});addEventListener('pagehide',save);
 function resize(){const r=stage.getBoundingClientRect();cssW=max(200,r.width);cssH=max(300,r.height);dpr=min(2,window.devicePixelRatio||1);
@@ -3464,11 +3495,11 @@ applyLangDom();resize();setUZ(UZ);addEventListener('resize',resize);try{new Resi
 syncMenu();
 let last=performance.now();
 function frame(now){const dt=min(.05,max(0,(now-last)/1000));last=now;
- try{if(G.mode==='intro'){G.introT+=dt;drawIntro();if(G.introT>=3.4)endIntro()}else{if(!G.dbgPause)update(dt);draw()}}catch(err){console.error(err)}
+ try{if(G.mode==='intro'){G.introT+=dt;drawIntro();if(G.introT>=3.4)endIntro()}else{if(!G.dbgPause&&dt>0)update(dt);draw()}}catch(err){console.error(err)}
  requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 /* test hook (harmless in production) */
-window.__smelt={get S(){return S},t_,setLang,get LANG(){return LANG},I18N_MISS,EN,IX,INFO,hitInfo,infoFor,showInfo,hideInfo,tapInfo,KNAME,MN,PNAME,TNAME,TOGN,CASTN,MIXN,RJE,fmt,kr,upSub,upName,padTitle,status_all:()=>ZONES.map(z=>status(z.id)),mapSel:id=>{MSEL=id},mapMode:m=>{MMODE=m},syncMenu,hud,padUnlock,chipLayout,GAUGE,RJ,TORPS,rjEra,rjClosed,hmNeed,hmCap,skipCap,torpCap,hearthCap,rjPow,rjSupCap,scrapMax,scrapMin,usesHM,ET,isEAF,WX0,pileOn,closeRJ,RJE,status_:null,route,addPile,P,F,LADLES,PIT,CAST,NODE,PILE,movers,helpers,SRC,SRCm,TG,TGm,PADS,PAD,SW,BUILDS,UP,UPm,HIRE,ZONES,ZN,CRANES,CRm,G,J,keys,ST,RT,update,draw,endIntro,navStep,cost,vis,buy,workAvail,count,accepts,freeFor,fcap,capCarry,hcap,presGain,doPrestige,doReset,save,syncHelpers,openPresModal,closeModal,carryTask,goal,demand,recommend,buyTarget,bestTarget,flipSw,val,curUp,padName,padSub,paidKey,status,bottlenecks,rate,flow,furnRate,Rpow,supCap,era,E_,ERA,chgCap,toggleCrane,craneHere,openMap,renderMap,
+window.__smelt={get S(){return S},t_,setLang,get LANG(){return LANG},I18N_MISS,EN,IX,INFO,hitInfo,infoFor,showInfo,hideInfo,tapInfo,KNAME,MN,PNAME,TNAME,TOGN,CASTN,MIXN,RJE,fmt,kr,upSub,upName,padTitle,status_all:()=>ZONES.map(z=>status(z.id)),mapSel:id=>{MSEL=id},mapMode:m=>{MMODE=m},syncMenu,hud,padUnlock,chipLayout,GAUGE,RJ,TORPS,rjEra,rjClosed,hmNeed,hmCap,skipCap,torpCap,hearthCap,rjPow,rjSupCap,scrapMax,scrapMin,usesHM,ET,isEAF,WX0,pileOn,closeRJ,RJE,status_:null,route,addPile,P,F,LADLES,PIT,CAST,NODE,PILE,movers,helpers,SRC,SRCm,TG,TGm,PADS,PAD,SW,BUILDS,UP,UPm,HIRE,ZONES,ZN,CRANES,CRm,G,J,keys,ST,RT,update,draw,endIntro:()=>{/* tests skip the start card unless they ask for it */if(!S.introSeen)S.introSeen=2;endIntro()},endIntro0:endIntro,showStart,navStep,cost,vis,buy,workAvail,count,accepts,freeFor,fcap,capCarry,hcap,presGain,doPrestige,doReset,save,syncHelpers,openPresModal,closeModal,carryTask,goal,demand,recommend,buyTarget,bestTarget,flipSw,val,curUp,padName,padSub,paidKey,status,bottlenecks,rate,flow,furnRate,Rpow,supCap,era,E_,ERA,chgCap,toggleCrane,craneHere,openMap,renderMap,
  build:id=>{const i=BUILDS.findIndex(b=>b.id===id);for(let k=S.ph;k<=i;k++){S.b[BUILDS[k].id]=1;S.ph=k+1;onBuild(BUILDS[k])}},
  hire:(st,n)=>{S.lv[HIRE[st].id]=n;syncHelpers()},setLv:(id,n)=>{S.lv[id]=n;syncHelpers();syncLadles();if(id==='yard2'||id==='magkran'||id==='varm')bakeFloor()},
  collide,SOLIDS:()=>SOLIDS,blockedPt,field,rebuildNav,rebuildSolids,bakeFloor,POS,WW,WH,QX,QY,START:POS.start,SUPN,PR,PRK,ROUTES,startTap,tapLadle,potMax,slotsMax,cam,setZoom:z=>{zoom=z},padLab,zonePlate,plateW,B_,lv,CY,cashAt,prodOn,ROLL,get zoom(){return zoom},ws,nextBuild,nodeRoom,yardT,PADPOS,inZone,SY,layoutPads,padShown,padMaks,padUrgent,upOpen,upAvail,routeWork,POSTS,inCab,postCrane,TAPDESK,UPROW,HIREPOS,padTitle,TUR,armPt,setUZ,CSB,CSG,CSN,TROB:()=>TROB,csSum,csLim,csCap,csX,csI,CSI1,csGasT,craneLift,beltRate,kwh,eraLayout,LAY5,TROBP,CS:()=>({chg:+S.chg.toFixed(1),cap:+chgCap().toFixed(1),v:+CSB.v.toFixed(1),vmax:+CSB.vmax.toFixed(1),feed:+CSB.feed.toFixed(2),pre:Math.round(CSB.pre),lim:csLim(),rob:TROB.n,crane:CRm.skrap.state}),pause:v=>{G.dbgPause=!!v},get RM(){return RM},setRM:v=>{RM=!!v}};
