@@ -33,7 +33,7 @@ function drawYard(s){if(!s.open()||!inView(s.x,s.y,170))return;const n=min(170,M
  g.drawImage(c.cv,s.x-110,s.y-130,220,260);
  txt(tf(yardT(s))+' t',s.x,s.y+112,10,C.ui,800,'center',3);LOBS.push({x:s.x-26,y:s.y+105,w:52,h:14})}
 /* ---- charging: chargeringskasser (SM), skrapkurv (EAF/UHP), Consteel trough with preheat tunnel ---- */
-function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&era()===5){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
+function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&CS()){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
  if(E.ch==='conv'){/* converter: one scrap charging box on a rail car between the yard and the vessel */
   SK.rail(g,cx+40,640,cy,26);const fl=F.ch&&F.ch.s>0&&F.ch.t/F.ch.dur>.1&&F.ch.t/F.ch.dur<.5;SK.car(g,cx+84,cy,70,40);
   if(!fl){SK.box(g,cx+56,cy-14,56,28,'#4a5058','#1b1e22',3);const n=Math.round(fillK*8);for(let q=0;q<n;q++)SK.chunk(g,cx+64+(q%4)*13,cy-6+floor(q/4)*11,4,hsh(q),SK.SCRAPC[q%5])}}
@@ -48,7 +48,7 @@ function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&
    for(let k=0;k<Math.round(f*16);k++){const a=hsh(k*3+i)*TAU,r=17*Math.sqrt(hsh(k*7+i));SK.chunk(g,bx+Math.cos(a)*r,by+Math.sin(a)*r,3+hsh(k)*2.5,hsh(k*2),SK.SCRAPC[k%5])}
    g.fillStyle='#55595f';g.fillRect(bx-34,by-5,8,10);g.fillRect(bx+26,by-5,8,10)}
   txt(t_('KURV'),cx,cy+1,10.5,C.ui,800,'center',3)}
- else if(era()===5)drawBeltLine();
+ else if(CS())drawBeltLine();
  else{/* Consteel: open charging section → dynamic seal → preheating tunnel → connecting car */
   const x0=262,x1=POS.F.x-86,y=cy,w=30,T0=494;/* scrap lies from the furnace end back as far as the belt is filled */
   g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x0+2,y-w/2+3,x1-x0,w);g.fillStyle='#575c64';g.fillRect(x0,y-w/2-3,x1-x0,w+6);g.fillStyle='#1d1f23';g.fillRect(x0,y-w/2,x1-x0,w);
@@ -64,17 +64,17 @@ function drawBucketFlight(){if(!F.ch||E_().ch!=='bucket')return;const c=F.ch,k=c
  SK.line(g,bx-6,by-40,bx-6,by-26,'#15161a',1.5);SK.line(g,bx+6,by-40,bx+6,by-26,'#15161a',1.5);SK.shadow(g,bx+16,by+24,34,30,.35);
  if(op<.9)for(let q=0;q<12;q++)SK.chunk(g,bx+(hsh(q)-.5)*36,by+(hsh(q*3)-.5)*36+op*16,3.6,hsh(q*2),SK.SCRAPC[q%5]);
  g.fillStyle='#3a3f46';g.beginPath();g.arc(bx-op*14,by,30,PI/2,PI*1.5);g.fill();g.beginPath();g.arc(bx+op*14,by,30,-PI/2,PI/2);g.fill();g.strokeStyle='#e0b020';g.lineWidth=2.5;SK.circ(g,bx,by,32);g.stroke();g.fillStyle='#55595f';g.fillRect(bx-36,by-5,8,10);g.fillRect(bx+28,by-5,8,10)}
-const dropRing=()=>padRing(POS.drop.x,POS.drop.y,40,E_().ch==='box'?t_('KASSER'):E_().ch==='bucket'?'':E_().ch==='conv'?t_('SKRAP'):era()===5?t_('SJAKT'):t_('BÅND'),0,S.chg/chgCap(),'#8a5a32');
+const dropRing=()=>padRing(POS.drop.x,POS.drop.y,40,E_().ch==='box'?t_('KASSER'):E_().ch==='bucket'?'':E_().ch==='conv'?t_('SKRAP'):CS()?t_('SJAKT'):t_('BÅND'),0,S.chg/chgCap(),'#8a5a32');
 /* ---- the furnace, per era ---- */
 const ROT=PI/2;/* local −x (transformer side) faces up toward the supply zone, tap faces right */
 function furnOpts(){const e=era(),A={tap:-PI/2,door:0,car:PI/2,h4:-2.4-ROT,h5:-.9-ROT},melt=F.solid>0&&!F.stop&&!(F.ch&&E_().ch==='bucket');
  const o={a:A,trafo:e>=4?2:1,arc:F.arc*(F.state==='tapping'?0:1),tapping:F.state==='tapping'&&F.tapT>.6,slag:slagOn()&&melt,ductAng:-2.4-ROT,duct:92*1.05,smoke:true};
  if(e===3){o.refr=1;o.spout=1;o.h5=false;o.inj=lv('lans')?[]:[];o.roofOff=F.roof;o.bath=clamp(F.bath/fcap(),.15,1);o.scrapIn=clamp(F.solid/fcap(),0,1)}
  if(e>=4){o.inj=lv('lans')>=2?[-2.0-ROT,-2.7-ROT,2.6-ROT,-1.0-ROT]:[-1.0-ROT];o.kullInj=lv('kull')?0:-1;if(lv('kull'))o.inj=[-2.05-ROT].concat(o.inj);o.roofOff=F.roof;o.foam=lv('kull')>0;o.bath=clamp(F.bath/fcap(),.2,1)}
- if(e===5){o.car=true;o.roofOff=0;o.h4=false}
+ if(e===5||e===6){o.car=true;o.roofOff=0;o.h4=false}
  return o}
 function drawFurnace(){const x=F.x,y=F.y;if(!inView(x,y,260))return;const e=era(),tl=F.tilt;
- if(ET()==='conv'){const E=E_();SK2.converter(g,x,y,convR(),T,{tilt:tl,ld:e===2,blow:F.state==='melt'&&F.solid>0&&!F.stop&&!F.ch?1:0,lance:F.lance,hot:F.bath>0||F.solid>0?clamp(.35+.65*(F.bath+F.solid)/fcap(),0,1):0,tapping:F.state==='tapping'&&F.tapT>.6});drawConvCharge();return}
+ if(ET()==='conv'){const E=E_();SK2.converter(g,x,y,convR(),T,{tilt:tl,ld:e===2||e===7,blow:F.state==='melt'&&F.solid>0&&!F.stop&&!F.ch?1:0,lance:F.lance,hot:F.bath>0||F.solid>0?clamp(.35+.65*(F.bath+F.solid)/fcap(),0,1):0,tapping:F.state==='tapping'&&F.tapT>.6});drawConvCharge();return}
  if(ET()==='sm'){SK.smFurnace(g,x,y,T,{heat:clamp(.25+.75*F.bath/fcap(),0,1),door:F.ch?F.smDoor:-1,tapping:F.state==='tapping'&&F.tapT>.6,fire:F.state!=='tapping'});return}
  g.save();g.translate(x,y);g.rotate(tl*.25);SK.eaf(g,0,0,92,T,ROT,furnOpts());g.restore()}
 /* supply plants (blue zone) and the pipes / belt that feed the furnace; flow animates with real use */
@@ -106,7 +106,7 @@ const injPt=a=>({x:POS.F.x+Math.cos(a)*92*.9,y:POS.F.y+Math.sin(a)*92*.9});
 function limTag(x,y,w,h){const a=RM?1:.55+.45*Math.sin(T*5);g.save();g.globalAlpha=a;g.strokeStyle='#ff6b5a';g.lineWidth=3;g.setLineDash([8,5]);g.lineDashOffset=RM?0:-T*24;SK.rr(g,x-6,y-6,w+12,h+12,10);g.stroke();g.setLineDash([]);g.restore()}
 /* slag pot + slag truck, electrode rack, electrode store */
 function drawOvnSide(){if(!inView(780,900,320))return;
- if(slagOn()&&era()===5){const x=POS.pot.x,y=POS.pot.y,f=S.pot/potMax();drawCsSlag();txt(t_('SLAGG')+' '+S.pot+'/'+potMax(),x,y+46,10,f>=1?C.danger:f>.6?C.hazard:C.ui,800,'center',3);LOBS.push({x:x-38,y:y+39,w:76,h:14});const sy=POS.slagp;for(let i=0;i<9;i++){const a=i/9*TAU;drawSlag(sy.x+Math.cos(a)*56,sy.y+Math.sin(a)*36,10,i)}}
+ if(slagOn()&&CS()){const x=POS.pot.x,y=POS.pot.y,f=S.pot/potMax();drawCsSlag();txt(t_('SLAGG')+' '+S.pot+'/'+potMax(),x,y+46,10,f>=1?C.danger:f>.6?C.hazard:C.ui,800,'center',3);LOBS.push({x:x-38,y:y+39,w:76,h:14});const sy=POS.slagp;for(let i=0;i<9;i++){const a=i/9*TAU;drawSlag(sy.x+Math.cos(a)*56,sy.y+Math.sin(a)*36,10,i)}}
  else if(slagOn()){const x=POS.pot.x,y=POS.pot.y,f=S.pot/potMax();SK.shadow(g,x+4,y+8,34,28,.35);g.fillStyle='#3a3c40';circ(x,y,30);g.fill();g.strokeStyle='#1b1d20';g.lineWidth=3;circ(x,y,30);g.stroke();
   const gr=g.createRadialGradient(x-6,y-6,2,x,y,24);gr.addColorStop(0,mix('#3a3430','#ffb030',f));gr.addColorStop(1,mix('#2a2420','#c2410c',f));g.fillStyle=gr;circ(x,y,24*(.4+.6*f));g.fill();
   if(f>=1){g.strokeStyle=rgba(C.danger,.6+.4*Math.sin(T*8));g.lineWidth=4;circ(x,y,36);g.stroke()}
@@ -321,7 +321,7 @@ function drawPileK(k){const p=PR[k].pile,a=PILE[k];if(!pileOn(k)||!inView(p.x,p.
  ctx.font=`800 9.5px ${FONT}`;let PW=ctx.measureText(pn).width;ctx.font=`700 9px ${FONT}`;PW=Math.ceil(max(88,PW+14,ctx.measureText(n1+' · '+n2).width+14));const hw=PW/2;
  LBL.push({k:'p'+k,x:p.x-hw,y:p.y+38,w:PW,h:30,pr:1,ax:p.x,f:(lx,ly)=>{g.fillStyle='rgba(16,19,26,.9)';SK.rr(g,lx,ly,PW,30,8);g.fill();g.strokeStyle='rgba(245,197,24,.6)';g.lineWidth=1;SK.rr(g,lx+.5,ly+.5,PW-1,29,8);g.stroke();txt(pn,lx+hw,ly+9,9.5,C.ui,800);txt(n1+' · '+n2,lx+hw,ly+21,9,C.coin,700)}})}
 /* ---- converters: charging animation (scrap box, then the råjern ladle) and the råjern station at the steel plant ---- */
-const convR=()=>era()===2?72:58;
+const convR=()=>era()===2||era()===7?72:58;
 const convMouth=()=>SK2.convPt(F.x,F.y,convR(),F.tilt,1.05);
 function hmLadlePos(){const c=F.ch,hp=POS.hmL;
  if(ET()==='conv'&&c&&c.hm>0){const k=c.t/c.dur;if(k>.36&&k<.95){const[mx,my]=convMouth(),kk=(k-.36)/.59,go=ease(min(1,kk*3)),back=kk>.8?ease((kk-.8)/.2):0,f=go-back;return{x:lerp(hp.x,mx-40,f),y:lerp(hp.y,my-46,f),lift:f,pour:kk>.3&&kk<.8?1:0,to:[mx,my]}}}
@@ -390,13 +390,13 @@ function drawRJ(){if(rjGone()||!inView(-368,570,560))return;const cl=rjClosed(),
  if(cl){/* closed: desaturate and darken the whole råjernsverk (cheap blend modes, no canvas filter) */g.save();const z0=ZN.rjsup,z1=ZN.rj;g.globalCompositeOperation='saturation';g.fillStyle='#808080';g.fillRect(z0.x0,z0.y0,z0.x1-z0.x0,z1.y1-z0.y0);g.globalCompositeOperation='source-over';g.fillStyle='rgba(18,20,24,.42)';g.fillRect(z0.x0,z0.y0,z0.x1-z0.x0,z1.y1-z0.y0);g.restore();const a=.85;g.globalAlpha=a;SK.box(g,RJX-60,RJY-40,120,28,'rgba(16,19,26,.9)','rgba(255,255,255,.2)',8);txt(t_('NEDLAGT'),RJX,RJY-26,14,C.uidim,800);g.globalAlpha=1}
  /* malm buffer at the top */
  if(!cl){const t=t_('SKIP')+' '+tf(S.rj.ore)+'/'+skipCap()+' t';ctx.font=`800 10px ${FONT}`;const w=ctx.measureText(t).width+10;LBL.push({k:'skip',x:POS.skip.x-w/2,y:POS.skip.y+44,w,h:15,pr:1,ax:POS.skip.x,f:(lx,ly)=>txt(t,lx+w/2,ly+7,10,RJ.starve>1.5?C.danger:C.ui,800,'center',3)})}}
-function drawTorps(){if(rjClosed()||!inView(220,700,700))return;const cl=false;
+function drawTorps(){const e7=era()===7;if(rjClosed()&&!e7||!inView(e7?-200:220,700,e7?900:700))return;const cl=false;
  for(const t of TORPS){if(cl&&t.i>0)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;if(!inView(t.x,y,90))continue;
   const k=t.load/max(1,torpCap()),pour=t.st==='pour'&&t.pouring;SK2.torpedo(g,t.x,y,130,k,T,{tilt:pour?.9:0});
   if(pour){const mx=t.x,my=y-16*OK+10;stream(mx,my,POS.hmL.x-6,POS.hmL.y-6,.6)}
   if(t.load>.5){const s=tf(t.load)+' t';ctx.font=`800 10px ${FONT}`;const w=ctx.measureText(s).width+8;LBL.push({k:'tp'+t.i,x:t.x-w/2,y:y-48,w,h:15,pr:0,ax:t.x,f:(lx,ly)=>txt(s,lx+w/2,ly+7,10,C.moltenhi,800,'center',3)})}}
  /* tap stream into the car at the cast house */
- const tc=castTorp();if(tc&&RJ.tapping&&!RJ.overflow&&!cl)stream(-112,664,tc.x,POS.torpA-16*OK-4,.6)}
+ const tc=castTorp();if(tc&&RJ.tapping&&!RJ.overflow&&!cl){if(e7)stream(ESFG.x1+8,ESFG.cy-26,tc.x,POS.torpA-16*OK-4,.6);else stream(-112,664,tc.x,POS.torpA-16*OK-4,.6)}}
 /* ---- mothballed plants on the reserve plots: drawn once, cold, into a sprite that is darkened and greyed ---- */
 function mbSprite(u){const G2=mbGeo(u),M=MBU[u],z=G2.z,W2=z.x1-z.x0,H2=z.y1-z.y0,K=2,c=document.createElement('canvas');c.id='ov';c.width=W2*K;c.height=H2*K;const q=c.getContext('2d');
  q.scale(K,K);q.translate(-z.x0,-z.y0);const{cx,cy}=G2;
@@ -435,7 +435,7 @@ function drawAGV(h){const x=h.x,y=h.y,a=hyp(h.vx,h.vy)>8?Math.atan2(h.vy,h.vx):(
 /* ---- cranes ---- */
 function drawCraneBridge(c){if(!c.built())return;const d=c.d,x=c.x,y=c.y;if(!inView(x,(d.y0+d.y1)/2,(d.y1-d.y0)/2+40))return;const man=G.crane===c.id;
  g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x-4,d.y0,18,d.y1-d.y0);
- const big=c.id==='skrap'&&era()===5,hl=1-c.h,my=y+6+10*hl,mr=c.id==='ose'?10:big?13+3*c.h:9+2.5*c.h;
+ const big=c.id==='skrap'&&CS(),hl=1-c.h,my=y+6+10*hl,mr=c.id==='ose'?10:big?13+3*c.h:9+2.5*c.h;
  if(c.id!=='ose'){SK.shadow(g,x+3+5*c.h,my+4+6*c.h,mr*1.1,mr*.75,.35);SK.line(g,x-3,y,x-3,my,'#15161a',1.3);SK.line(g,x+3,y,x+3,my,'#15161a',1.3);
   if(c.load>0||(c.pay&&c.pay.length)){for(let i=0;i<10;i++){const a=i/10*TAU,rr2=mr*(.8+.35*hsh(i));if(c.id==='mag')SK.billetBar(g,x-14,my-6+i%3*6,28,4,.1);else if(c.id==='malm'){g.fillStyle=i%2?'#6b3d33':'#4a3a36';SK.circ(g,x+Math.cos(a)*rr2,my+Math.sin(a)*rr2,3);g.fill()}else SK.chunk(g,x+Math.cos(a)*rr2,my+Math.sin(a)*rr2,2.5+hsh(i*2)*2.5,hsh(i),SK.SCRAPC[i%4])}}
   g.fillStyle='#2a2c31';SK.circ(g,x,my,mr);g.fill();g.strokeStyle='#e0b020';g.lineWidth=2.2;SK.circ(g,x,my,mr);g.stroke();g.fillStyle='#3f434a';SK.circ(g,x,my,mr*.45);g.fill();
@@ -541,15 +541,15 @@ function drawDesks(){const au=AUTO();
   if(!(au&&CRPOST[r]))desk(p.x,p.y,t_(au?(r==='skrap'?'KRANPULT':'PULT'):postCrane(r)&&helpers.some(h=>h.r===r&&inCab(h))?'KRANFØRER':'OPERATØR'),at.length>0||(au&&r==='skrap'&&G.crane==='skrap'),au&&r==='skrap'&&G.crane==='skrap'?1:null,seatsAt(r));
   }
  if(lv('operator')&&stOn('ovn')){const k=F.state==='tapping'?1:F.state==='ready'&&tapLadle()?clamp((F.opT||0)/.8,0,1):0;desk(TAPDESK.x,TAPDESK.y,t_('TAPPER'),F.state==='ready'||F.state==='tapping',k)}}
-function drawSwitches(){for(const s of SW){if(!s.on()||!inView(s.x,s.y,60))continue;LOBS.push({x:s.x-38,y:s.y-24,w:76,h:44});const t=t_(s.id==='cast'?CASTN[S.cast]:s.id==='rjsw'?(S.tg.rj?'Stålverk':'Salg'):MIXN[S.mix]);
+function drawSwitches(){for(const s of SW){if(!s.on()||!inView(s.x,s.y,60))continue;LOBS.push({x:s.x-38,y:s.y-24,w:76,h:44});const t=s.id==='drimix'?Math.round(S.drimix*100)+' %':t_(s.id==='pgrade'?(S.pgrade==='bf'?'sw§Masovn':'sw§DR-grad'):s.id==='cast'?CASTN[S.cast]:s.id==='rjsw'?(S.tg.rj?'Stålverk':'Salg'):MIXN[S.mix]);
  ctx.fillStyle='rgba(0,0,0,.35)';rr(s.x-36,s.y-20,74,44,10);ctx.fill();ctx.fillStyle='#173826';rr(s.x-38,s.y-24,76,44,10);ctx.fill();ctx.strokeStyle=C.good;ctx.lineWidth=2.5;rr(s.x-38,s.y-24,76,44,10);ctx.stroke();
  txt(t_(s.lab).toUpperCase(),s.x,s.y-12,8,C.uidim,800);txt(t,s.x,s.y+5,12,C.good,800)}}
 /* status chips beside every zone name plate: what the station waits for, or FLASKEHALS */
 /* status chip beside a zone plate: never runs past the zone edge or under the furnace gauge — shrink to 9px, drop " (…)", then cut with "…" */
 function chipLayout(z,txt0){const p=zonePlate(z),pw=plateW(p),x=p.x+pw+6,y=p.y;
- let R=z.x1-8;if(z.id==='ovn'&&y+20>GAUGE.y-22&&y<GAUGE.y+26)R=min(R,GAUGE.x-66);if(z.id==='skrap'&&era()===5)R=min(R,CSG.dx-CSG.dw/2-8);/* Consteel off-gas duct */let t=txt0,fs=10.5;ctx.font=`800 ${fs}px ${FONT}`;
+ let R=z.x1-8;if(z.id==='ovn'&&y+20>GAUGE.y-22&&y<GAUGE.y+26)R=min(R,GAUGE.x-66);if(z.id==='skrap'&&CS())R=min(R,CSG.dx-CSG.dw/2-8);/* Consteel off-gas duct */let t=txt0,fs=10.5;ctx.font=`800 ${fs}px ${FONT}`;
  while(ctx.measureText(t).width+24>R-x&&fs>9){fs-=.5;ctx.font=`800 ${fs}px ${FONT}`}
- if(ctx.measureText(t).width+24>R-x){const uy=p.y+p.h+4,ux=p.x;let uR=z.x1-8;if(z.id==='ovn'&&uy+20>GAUGE.y-22&&uy<GAUGE.y+26)uR=min(uR,GAUGE.x-66);if(z.id==='skrap'&&era()===5)uR=min(uR,CSG.dx-CSG.dw/2-8);
+ if(ctx.measureText(t).width+24>R-x){const uy=p.y+p.h+4,ux=p.x;let uR=z.x1-8;if(z.id==='ovn'&&uy+20>GAUGE.y-22&&uy<GAUGE.y+26)uR=min(uR,GAUGE.x-66);if(z.id==='skrap'&&CS())uR=min(uR,CSG.dx-CSG.dw/2-8);
   const row=(UPROW[z.id]||{s:[]}).s,hp=HIREPOS[z.id],clear=!row.some(q=>q[1]-70<uy+20&&q[1]+26>uy&&q[0]+40>ux&&q[0]-40<uR)&&!(hp&&hp.y-70<uy+20&&hp.y+26>uy);
   if(clear){let f2=10.5;ctx.font=`800 ${f2}px ${FONT}`;while(ctx.measureText(t).width+24>uR-ux&&f2>9){f2-=.5;ctx.font=`800 ${f2}px ${FONT}`}if(ctx.measureText(t).width+24<=uR-ux)return{x:ux,y:uy,w:ctx.measureText(t).width+24,h:20,t,fs:f2};ctx.font=`800 ${fs}px ${FONT}`}
   t=t.replace(/ \(.*\)$/,'');while(t.length>6&&ctx.measureText(t+'…').width+24>R-x)t=t.slice(0,-1);if(t!==txt0&&!txt0.startsWith(t+' ('))t+='…'}
@@ -773,7 +773,7 @@ function draw(){
  if(B_('kob'))padRing(POS.kobIn.x,POS.kobIn.y,36,t_('STENGER'),0,1-nodeRoom('kob')/NODE.kob.cap,'#3a6ea8');
  drawMovers();
  for(const s of SRC){if(s.yard)drawYard(s);else if(s.store)drawStore(s)}
- drawRJ();drawTorps();drawMB();drawCR();drawTwin();
+ drawRJ();drawDRI();drawESF();drawTorps();drawMB();drawCR();drawTwin();
  drawKok();for(const k of PRK)drawPileK(k);
  for(const z of TG)drawCash(z);
  drawSupply();if(E_().ch!=='belt')dropRing();drawCharge();if(E_().ch==='belt')dropRing();drawPit();drawCaster();drawEndless();drawGjv();drawVV();drawTC();drawStel();drawNett();drawKob();drawQA();drawByp();drawRob();drawSort();drawOvnSide();
@@ -801,7 +801,7 @@ function draw(){
  if(inView(POS.pit.x,POS.pit.y,200)){const st=PIT.state;if(st==='pour'){const L=PIT.L;if(L){const w=PIT.fill<.08?PIT.fill/.08:PIT.fill>.94?(1-PIT.fill)/.06:1;stream(L.x,L.y+12,POS.pit.x,POS.pit.y-4,w)}glowC(POS.pit.x,POS.pit.y,160,C.molten,.35)}else if(st==='solid'||st==='strip'){glowC(POS.pit.x,POS.pit.y,140,C.molten,.2)}}
  if(B_('strang')&&inView(1500,830,260)){const k=CAST.tlev;if(k>.02)glowC(1450,830,150,C.molten,.14*k);if(CAST.pour)glowC(PBX,TUR.y,46,C.molten,.32);if(CAST.flow)glowC(1520,830,110,C.molten,.08)}
  if(LADLES.some(l=>l.state==='lf')&&inView(POS.lf.x,POS.lf.y,120)){const x=POS.lf.x,y=POS.lf.y;glowC(x,y,70,C.arc,.14);if(!RM){ctx.strokeStyle=rgba(C.arc,.9);ctx.lineWidth=2;for(let i=0;i<3;i++){const a=-PI/2+i*TAU/3;if(Math.random()<.6)bolt(x+Math.cos(a)*8,y+Math.sin(a)*8,rnd(6,14))}}}
- if(NODE.gjv.cur)glowC(POS.gjv.x,POS.gjv.y,130,C.molten,.16);if(NODE.vv.cur)glowC(2470,600,110,C.molten,.14);
+ glowP4();if(NODE.gjv.cur)glowC(POS.gjv.x,POS.gjv.y,130,C.molten,.16);if(NODE.vv.cur)glowC(2470,600,110,C.molten,.14);
  for(const p of parts){if(!inView(p.x,p.y,10))continue;const a=clamp(p.l/p.m,0,1);if(p.sq){ctx.globalCompositeOperation='source-over';ctx.fillStyle=p.c;ctx.globalAlpha=a;ctx.fillRect(p.x-3,p.y-3,6,6);ctx.globalAlpha=1;ctx.globalCompositeOperation='lighter'}else{ctx.strokeStyle=rgba(p.c.startsWith('#')?p.c:C.moltenhi,a);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*.04,p.y-p.vy*.04);ctx.stroke()}}
  ctx.globalCompositeOperation='source-over';
  drawStatus();drawSwitches();drawUpPads();drawGauge();drawLabels();
@@ -852,7 +852,9 @@ const csHeatC=tc=>tc<280?null:heat(clamp(.2+(tc-280)/600*.65,0,.7));
 /* the scrap layer between xa and xb, from the tonnes in each conveyor cell; every chunk travels with the conveyor */
 function csScrap(xa,xb,yc,w,lanes,dim){const sp=4.6,cap=csCap(),pos=CSB.pos,o=((pos%sp)+sp)%sp,k0=floor(pos/sp),n=Math.ceil((xb-xa)/sp)+2;
  for(let i=-1;i<n;i++){const x=xa+i*sp+o;if(x<xa-1||x>xb+1)continue;const ci=csI(x),d=clamp(CSB.m[ci]/cap,0,1);if(d<.015)continue;const key=i-k0,hc=csHeatC(CSB.tc[ci]);
+  const dq=CSB.m[ci]>1e-6?CSB.d[ci]/CSB.m[ci]:0;
   for(let l=0;l<lanes;l++){const h=hsh(key*3.17+l*11.31);if(h>d*1.12)continue;const a=hsh(key*5.13+l*2.37),b=hsh(key*1.7+l*7.9),yy=yc+((l+.5)/lanes-.5)*w*.88+(b-.5)*w*.16;
+   /* DRI pellets in the layer (era 6) */if(dq>.01&&hsh(key*7.7+l*3.1)<dq){let col=DRIC[floor(a*3.99)];if(dim)col=mix(col,'#101114',dim);if(hc&&b<.7)col=hc;g.fillStyle=col;SK.circ(g,x+(a-.5)*3,yy,1.8+a*1.2);g.fill();continue}
    const s=2+a*2.6+(d>.6?.8:0);let col=SK.SCRAPC[floor(a*4.99)%5];if(dim)col=mix(col,'#101114',dim);if(hc&&b<clamp((CSB.tc[ci]-280)/160,0,1)*.9+.1)col=heat(clamp(.2+(CSB.tc[ci]-280)/600*.65,0,.7)*(.8+.3*a));SK.chunk(g,x+(a-.5)*2,yy,s,a*2,col)}
   if(d>.55&&hsh(key*9.7)<d-.4){const a=hsh(key*2.9);let col=a>.5?'#8b8f96':'#9a6a45';if(hc)col=hc;SK.chunk(g,x,yc+(a-.5)*w*.5,3.2+a*2,a*1.6,col)}}}
 function drawBeltLine(){const C=CSG,y=C.y,w=C.w,hw=C.hw,osc=csOsc();
@@ -983,7 +985,7 @@ const TRK={park:[[850,698],-2.2],fetch:[[896,702],-.4],mount:[[896,702],-.4],go:
 function tRobPose(){const st=TROB.st,nx=TROBN[st],a=TRK[st],b=st==='park'?TRK.park:TRK[nx],d=TROBD[st]||1,k=st==='park'||st==='mount'?0:ease(clamp(TROB.t/d,0,1));
  const from=st==='in'?TRK.go:a,to=st==='in'?TRK.in:b,kk=st==='in'?(TROB.t<d*.25?ease(TROB.t/(d*.25)):TROB.t>d*.8?1-ease((TROB.t-d*.8)/(d*.2)):1):k;
  const A=st==='in'?from:a,B=st==='in'?to:b;return{x:lerp(A[0][0],B[0][0],kk),y:lerp(A[0][1],B[0][1],kk),a:lerp(A[1],B[1],kk),ext:st==='in'?kk:0,probe:st==='mount'?TROB.t/TROBD.mount:['go','in','out','eject'].indexOf(st)>=0?1:0,burnt:st==='out'||st==='eject'}}
-function drawTRob(){if(era()!==5)return;const b=TROBP;if(!inView(b.x,b.y,90))return;const p=tRobPose();
+function drawTRob(){if(!CS())return;const b=TROBP;if(!inView(b.x,b.y,90))return;const p=tRobPose();
  /* probe magazine (cardboard tubes) and bin */
  SK.box(g,884,688,26,22,'#3b4048','#15171a',3);for(let i=0;i<4;i++){g.fillStyle='#c9a36a';g.fillRect(887+i*5.6,692,4,14);g.fillStyle='#6b4a2a';g.fillRect(887+i*5.6,692,4,2)}
  SK.box(g,886,740,24,20,'#4a4440','#15171a',3);g.fillStyle='#211e1b';g.fillRect(889,743,18,14);for(let i=0;i<3;i++)SK.chunk(g,893+i*5,750,2.4,i*.4,'#3a2a20');
@@ -998,3 +1000,76 @@ function drawTRob(){if(era()!==5)return;const b=TROBP;if(!inView(b.x,b.y,90))ret
  if(TROB.st==='in'&&TROB.t>TROBD.in*.2&&TROB.t<TROBD.in*.8){g.fillStyle=rgba('#ffb030',.5);SK.circ(g,POS.F.x+4,POS.F.y+92,7);g.fill()}
  /* the reading over the robot while it is fresh */
  if(TROB.show>0&&TROB.n>0){const s=TROB.val+' °C',a=clamp(TROB.show/.6,0,1);ctx.font=`800 11px ${FONT}`;const w=ctx.measureText(s).width+12;LBL.push({k:'trob',x:b.x+18,y:b.y-56,w,h:17,pr:0,ax:b.x,f:(lx,ly)=>{ctx.globalAlpha=a;ctx.fillStyle='rgba(14,17,23,.92)';rr(lx,ly,w,17,8);ctx.fill();ctx.strokeStyle=rgba(C.moltenhi,.8);ctx.lineWidth=1.2;rr(lx+.5,ly+.5,w-1,16,8);ctx.stroke();txt(s,lx+w/2,ly+9,11,C.moltenhi,800);ctx.globalAlpha=1}})}}
+/* ---------- Phase 4: the hydrogen DRI plant (era 6 on) and the electric smelting furnace (era 7) ---------- */
+const DRIC=['#5f646c','#6d727a','#555a61','#787d84'];
+/* DRI pellets riding a belt (local frame of SK.belt): k = how busy the belt is */
+const driItems=(k,hot)=>(g2,L,w2,tt)=>{if(k<.02)return;const nn=max(5,floor(L/11));for(let i=0;i<nn;i++){if(hsh(i*3.7)>k+.15)continue;const p=((RM?i/nn:tt*.12*(.5+k)*140/L+i/nn)%1)*L;g2.fillStyle=hot&&i%3===0?'#a5552c':DRIC[i%4];SK.circ(g2,p,(hsh(i)-.5)*w2*.55,2.3);g2.fill()}};
+function belts(path,w,k,hot,o){for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];SK.belt(g,a[0],a[1],b[0],b[1],w,T,Object.assign({speed:12+40*k,items:driItems(k,hot)},o||{}))}}
+function drawDRI(){if(!B_('h2'))return;const P_=P4G,D=S.dri,on=DRI.rate>.01,run=DRI.heat,hr=DRI.h2run;
+ /* pellet yard: the train on the siding tips its wagons, the pile grows with the stock */
+ if(inView(-1430,400,240)){const y=P_.rail,cyc=DRI.trainT%10,full=D.pel>=pelCap()-1,w=full?-1:floor(cyc/2.2),tipK=full?0:Math.sin(PI*clamp((cyc%2.2)/1.8,0,1));
+  for(let i=0;i<4;i++){const x=-1560+i*84,tip=i===w?tipK:0,empty=i<w&&!full;g.save();g.translate(x,y-tip*12);SK.box(g,-36,-14,72,28,'#5a4a42','#241a16',3);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-32,-10,64,20);
+   if(!empty&&tip<.9)for(let q=0;q<10;q++){g.fillStyle=q%3?'#8a4a3a':'#6b3d33';SK.circ(g,-27+(q%5)*13,-5+floor(q/5)*10-tip*4,4);g.fill()}g.restore();
+   if(tip>.2){SK.parts(8,2,i*5,T,(ff,a)=>{g.fillStyle=a>.5?'#8a4a3a':'#6b3d33';SK.circ(g,x+(a-.5)*40,lerp(y+16,P_.pile.y-20,ff),3);g.fill()})}}
+  SK.box(g,-1290,y-16,60,32,'#2f7a68','#173d34',5);g.fillStyle='#1d2026';g.fillRect(-1262,y-12,26,24);g.fillStyle='#9fd0ff';g.fillRect(-1258,y-8,18,7);
+  /* the pellet pile: a mound that grows with the stock, pellets on its surface */
+  {const k=clamp(D.pel/pelCap(),0,1),p=P_.pile,rx=26+110*Math.sqrt(k),ry=rx*.62;if(k>.01){SK.shadow(g,p.x+5,p.y+7,rx,ry,.3);const gr=g.createRadialGradient(p.x-rx*.3,p.y-ry*.4,2,p.x,p.y,rx);gr.addColorStop(0,'#9a5644');gr.addColorStop(.7,'#743f32');gr.addColorStop(1,'#4e2b23');g.fillStyle=gr;SK.ell(g,p.x,p.y,rx,ry);g.fill();
+   const n=floor(40+120*k);for(let i=0;i<n;i++){const a=hsh(i*1.3)*TAU,r=Math.sqrt(hsh(i*2.7))*.92;g.fillStyle=i%3?'#a05a46':'#5e342a';SK.circ(g,p.x+Math.cos(a)*r*rx,p.y+Math.sin(a)*r*ry,2.6);g.fill()}}}
+  /* hopper + inclined belt to the shaft top */
+  SK.box(g,-1306,388,34,34,'#3b4048','#15171a',4);const bk=clamp(DRI.rate/max(.01,shaftCap()),0,1);
+  SK.belt(g,P_.belt[0][0],P_.belt[0][1],P_.belt[1][0],P_.belt[1][1],12,T,{trestle:true,speed:12+40*bk,items:(g2,L,w2,tt)=>{if(bk<.02)return;const nn=floor(L/12);for(let i=0;i<nn;i++){const q=((RM?i/nn:tt*.1*(.5+bk)*140/L+i/nn)%1)*L;g2.fillStyle=i%2?'#8a4a3a':'#6b3d33';SK.circ(g2,q,(hsh(i)-.5)*w2*.5,2.4);g2.fill()}}})}
+ /* electrolyser hall: rows of stacks on busbars; a stack hums (green lamp) while hydrogen is made */
+ const h=P_.hall;if(inView((h.x0+h.x1)/2,(h.y0+h.y1)/2,240)){const W2=h.x1-h.x0,H2=h.y1-h.y0;SK.shadow(g,(h.x0+h.x1)/2+6,(h.y0+h.y1)/2+8,W2*.52,H2*.55,.3);
+  SK.box(g,h.x0,h.y0,W2,H2,'#2e333b','#14171c',8);g.strokeStyle='rgba(122,215,194,.35)';g.lineWidth=2;SK.rr(g,h.x0+6,h.y0+6,W2-12,H2-12,6);g.stroke();
+  const n=min(27,4+lv('elyz'));
+  for(let r=0;r<3;r++){const y=h.y0+34+r*58;g.fillStyle='#b8733a';g.fillRect(h.x0+16,y+26,W2-32,4);/* busbar */
+   for(let c=0;c<9;c++){const i=r*9+c,x=h.x0+22+c*34;if(i>=n){g.strokeStyle='rgba(244,241,234,.12)';g.setLineDash([3,3]);g.strokeRect(x,y,24,22);g.setLineDash([]);continue}
+    SK.box(g,x,y,24,22,'#4a5563','#1b1f25',3);g.fillStyle='#6f7d8e';for(let k=0;k<4;k++)g.fillRect(x+3,y+3+k*5,18,2);
+    const lamp=hr>.05&&(RM||hsh(i+floor(T*2))>.15);g.fillStyle=lamp?'#5fd38d':'#2a3a30';SK.circ(g,x+20,y+19,2.2);g.fill()}}}
+ /* H₂ pipes: hall → tanks → shaft furnace (flow when the shaft draws) */
+ const hk=clamp(DRI.rate/max(.01,shaftCap()),0,1);
+ SK.pipe(g,[[h.x1,140],[-1208,140],[-1208,236],[-1150,236],[-990,236]],5,'#cfd8e3',T,{flow:hr>.05?'#9fd8ff':null,speed:24});
+ if(inView(-1170,170,120)){const fk=clamp(D.h2/max(1e-6,h2Cap()),0,1);for(const t of P_.tank.slice(0,nTank())){SK.shadow(g,t.x+4,t.y+6,t.r+2,t.r*.8,.3);
+   const gr=g.createRadialGradient(t.x-t.r*.35,t.y-t.r*.4,2,t.x,t.y,t.r);gr.addColorStop(0,'#f4f6f8');gr.addColorStop(.6,'#c3cad3');gr.addColorStop(1,'#7d8590');g.fillStyle=gr;SK.circ(g,t.x,t.y,t.r);g.fill();
+   g.strokeStyle='#9fd8ff';g.lineWidth=3;g.beginPath();g.arc(t.x,t.y,t.r+4,-PI/2,-PI/2+TAU*fk);g.stroke();g.fillStyle='rgba(20,24,30,.55)';g.font=`800 9px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText('H₂',t.x,t.y)}
+  if(lv('h2st')>=3){const c=P_.cav;g.save();g.setLineDash([6,5]);g.strokeStyle='rgba(159,216,255,.55)';g.lineWidth=2;SK.rr(g,c.x,c.y,c.w,c.h,14);g.stroke();g.restore();
+   g.fillStyle='#15171c';g.beginPath();g.ellipse(c.x+c.w-16,c.y+c.h/2,10,12,0,0,TAU);g.fill();g.fillStyle='rgba(159,216,255,'+(.25+.5*fk)+')';g.fillRect(c.x+10,c.y+c.h/2-3,(c.w-40)*fk,6)}}
+ /* the shaft furnace: round shell, bustle ring for the hot reducing gas, charging hopper on top; the core glows while it runs */
+ const s=P_.shaft;if(inView(s.x,s.y,140)){const z=36;SK.shadow(g,s.x+8,s.y+10,s.R+10,s.R*.8,.35);SK2.cyl(g,s.x,s.y,s.R,0,z,'#4e535b','#8b939e',12);
+  const ty=s.y-z*OK;SK2.cap(g,s.x,ty,s.R,'#5b636d');g.strokeStyle='#b8733a';g.lineWidth=4;SK.circ(g,s.x,ty,s.R-6);g.stroke();/* bustle ring */
+  const hot=run;const gr=g.createRadialGradient(s.x,ty,4,s.x,ty,s.R-10);gr.addColorStop(0,heat(.35+.5*hot));gr.addColorStop(.7,heat(.15+.35*hot));gr.addColorStop(1,'#3a3f46');g.fillStyle=gr;SK.circ(g,s.x,ty,s.R-11);g.fill();
+  SK.box(g,s.x-16,ty-16,32,32,'#3b4048','#15171a',4);for(let q=0;q<6;q++){g.fillStyle=q%2?'#8a4a3a':'#6b3d33';SK.circ(g,s.x-8+(q%3)*8,ty-4+floor(q/3)*8,3);g.fill()}
+  /* top gas → scrubber → stack */SK.pipe(g,[[s.x+30,ty-24],[P_.stack.x-12,P_.stack.y+18]],6,'#7a8088',T)}
+ const st=P_.stack;if(inView(st.x,st.y-60,120)){SK2.cyl(g,st.x,st.y,13,0,96,'#6b7079','#c9ced6',30);SK2.cap(g,st.x,st.y-96*OK,13,'#3a3f46');
+  /* water vapour, not smoke: white puffs that drift and fade */
+  const sk=on?1:.15,top=st.y-96*OK;if(RM){g.fillStyle=`rgba(244,248,252,${.25*sk})`;SK.circ(g,st.x+10,top-26,16);g.fill()}else SK.parts(9,.45,77,T,(f,a,b)=>{g.fillStyle=`rgba(244,248,252,${(1-f)*.42*sk})`;SK.circ(g,st.x+f*36+(a-.5)*10,top-8-f*70,7+f*20);g.fill()})}
+ /* the shaft's DRI outlet → hot DRI bin */
+ const b=P_.bin;if(inView(b.x,b.y,100)){SK.pipe(g,[[s.x-30,s.y+30],[b.x+20,b.y-18]],8,'#5b616a',T,{flow:on?'#a5552c':null,speed:18});
+  SK2.cyl(g,b.x,b.y,b.r,0,40,'#4e535b','#8b939e',14);const fk=clamp(D.bin/binCap(),0,1);SK2.cap(g,b.x,b.y-40*OK,b.r,mix('#5b636d','#a5552c',fk*.6));
+  g.strokeStyle='#e0a050';g.lineWidth=3;g.beginPath();g.arc(b.x,b.y-40*OK,b.r+4,-PI/2,-PI/2+TAU*fk);g.stroke()}
+ /* era 6: the DRI gallery runs in the gaps between the old plots to the charging conveyor; era 7: down to the ESF bins */
+ if(era()===6){const k=clamp(DRI.beltOut/max(.01,driBelt()),0,1);belts(P_.gal,12,k,true,{trestle:true})}
+ else if(B_('esf')){const k=era()===7?clamp(ESF.rate/max(.01,esfRate()),0,1):0;belts(P_.feed,12,k,true,{trestle:true})}}
+function drawESF(){if(!B_('esf'))return;const E=ESFG,run=era()===7?ESF.heat:0,on=era()===7&&ESF.rate>.01,cx=(E.x0+E.x1)/2;if(!inView(cx-60,E.cy,340))return;
+ /* transformers south of the furnace, busbars up to the electrodes */
+ const T6=6,ex=i=>E.x0+(i+.5)*(E.x1-E.x0)/T6;
+ for(let i=0;i<3;i++){const x=E.trafo.x0+20+i*((E.trafo.x1-E.trafo.x0-40)/2);SK.box(g,x-30,E.trafo.y,60,E.trafo.h,'#8a8a84','rgba(0,0,0,.45)',4);for(let k=0;k<6;k++){g.fillStyle=k%2?'#5c5c56':'#a3a39c';g.fillRect(x-30+k*10.5,E.trafo.y+E.trafo.h-6,6,8)}
+  g.save();g.translate(x,E.trafo.y+12);g.fillStyle='#f5c518';g.beginPath();g.moveTo(0,-6);g.lineTo(5,4);g.lineTo(-5,4);g.closePath();g.fill();g.restore()}
+ g.strokeStyle='#b8733a';g.lineWidth=3;for(let i=0;i<T6;i++){g.beginPath();g.moveTo(ex(i),E.y1-6);g.lineTo(ex(i),E.trafo.y);g.stroke()}
+ /* the furnace: a long rectangular shell, refractory rim, roof panels; six electrodes in a row along the centre line */
+ SK.shadow(g,cx+8,E.cy+10,(E.x1-E.x0)*.52,(E.y1-E.y0)*.62,.35);SK.box(g,E.x0,E.y0,E.x1-E.x0,E.y1-E.y0,'#4e535b','#15171a',14);
+ g.fillStyle=run>.05?heat(.18+.25*run):'#3a3f46';SK.rr(g,E.x0+8,E.y0+8,E.x1-E.x0-16,E.y1-E.y0-16,10);g.fill();
+ g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1.2;for(let i=1;i<T6;i++){const x=(ex(i-1)+ex(i))/2;g.beginPath();g.moveTo(x,E.y0+8);g.lineTo(x,E.y1-8);g.stroke()}
+ for(let i=0;i<T6;i++){const x=ex(i),y=E.cy;if(run>0){const fl=RM?.8:.6+.4*Math.abs(Math.sin(T*15+i*1.7));const gr=g.createRadialGradient(x,y,0,x,y,26);gr.addColorStop(0,`rgba(255,220,150,${.75*run*fl})`);gr.addColorStop(1,'rgba(255,120,30,0)');g.fillStyle=gr;SK.circ(g,x,y,26);g.fill()}
+  g.fillStyle='#2a2d33';SK.circ(g,x,y,15);g.fill();const gr2=g.createRadialGradient(x-4,y-4,1,x,y,12);gr2.addColorStop(0,'#c9ced6');gr2.addColorStop(1,'#5b616a');g.fillStyle=gr2;SK.circ(g,x,y,12);g.fill();
+  g.strokeStyle='#c27a3e';g.lineWidth=2;SK.circ(g,x,y,15);g.stroke()}
+ /* DRI bins above the furnace with feed chutes */
+ for(const x of E.bins){SK.line(g,x,E.binY+14,x,E.y0+10,'#5b616a',5);SK2.cyl(g,x,E.binY,20,0,30,'#4e535b','#8b939e',12);SK2.cap(g,x,E.binY-30*OK,20,mix('#5b636d','#a5552c',clamp(S.dri.bin/binCap(),0,1)*.6))}
+ /* slag end (west): a runner into the slag pot; it flows all the time while the furnace runs */
+ const sp=E.slag;SK.box(g,sp.x+24,E.cy-6,E.x0-sp.x-24,12,'#3a3530','#15171a',3);SK.ladle(g,sp.x,sp.y,22,T,{fill:on?.6:.2,eye:false});
+ if(on){g.strokeStyle=rgba('#ffb030',.85);g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(E.x0,E.cy);g.lineTo(sp.x+10,sp.y-6);g.stroke();g.lineCap='butt'}
+ /* hot-metal end (east): the taphole and the runner up to the torpedo car on track A */
+ SK.box(g,E.x1-4,E.cy-34,22,40,'#3a3530','#15171a',3)}
+/* glow pass: shaft core, ESF arcs, slag and iron runners */
+function glowP4(){if(B_('h2')&&DRI.rate>.01){const s=P4G.shaft;glowC(s.x,s.y-36*OK,s.R+20,C.molten,.12*DRI.heat)}
+ if(B_('esf')&&era()===7&&ESF.rate>.01){const E=ESFG;for(let i=0;i<6;i++){const x=E.x0+(i+.5)*(E.x1-E.x0)/6;glowC(x,E.cy,46,C.arc,.12*ESF.heat)}glowC(E.slag.x,E.slag.y,50,C.molten,.2)}}

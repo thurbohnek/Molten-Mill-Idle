@@ -8,7 +8,9 @@ const STATES={
  elrj:upto('elrj')+";W.setLv('kalk',5);W.setLv('o2',4);W.setLv('strands',3)",
  eaf:upto('eaf1')+";W.setLv('strands',4)",
  uhp:upto('uhp')+";W.setLv('kull',3);W.setLv('strands',6);W.setLv('ladle',2)",
- all:"for(const b of W.BUILDS)W.build(b.id);for(const u of W.UP)W.S.lv[u.id]=u.max;W.setLv('strands',8);W.bakeFloor()"};
+ all:"for(const b of W.BUILDS)W.build(b.id);for(const u of W.UP)W.S.lv[u.id]=u.max;W.setLv('strands',8);W.bakeFloor()",
+ /* Phase 4 */era6:"W.toEra(6);for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=Math.min(u.max,8);W.bakeFloor()",
+ era7:"W.toEra(7);for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=Math.min(u.max,8);W.bakeFloor()"};
 (async()=>{const b=await chromium.launch();
 for(const [name,code] of Object.entries(STATES)){
  const p=await b.newPage({viewport:{width:1450,height:1140},deviceScaleFactor:1});const errs=[];p.on('pageerror',e=>errs.push(e.message));
@@ -18,7 +20,7 @@ for(const [name,code] of Object.entries(STATES)){
   const cv=document.querySelector('canvas');let e=cv;while(e){e.style&&(e.style.visibility='visible');e=e.parentElement}
   for(const el of document.querySelectorAll('body *'))if(el!==cv&&!el.contains(cv))el.style.visibility='hidden';
   const o=document.createElement('canvas');o.id='ov';o.style.cssText='position:fixed;left:0;top:0;pointer-events:none;z-index:99;visibility:visible';o.width=innerWidth;o.height=innerHeight;document.body.appendChild(o)},code);
- const TL=[[-380,560],[600,560],[1500,560],[2300,560],[3100,560],[3800,560]];
+ const TL=name.startsWith('era')?[[-1190,330],[-1190,860],[-380,560],[600,560]]:[[-380,560],[600,560],[1500,560],[2300,560],[3100,560],[3800,560]];
  for(let t=0;t<TL.length;t++){
   await p.evaluate(([x,y])=>{const W=window.__smelt;W.setZoom(.9);W.P.x=x;W.P.y=y;W.cam.x=x;W.cam.y=y},TL[t]);await p.waitForTimeout(400);
   await p.evaluate(()=>{const W=window.__smelt;const z=W.zoom,cam=W.cam;

@@ -1,12 +1,12 @@
 {
   "name": "molten-mill-idle",
-  "version": "7.4.0",
+  "version": "7.5.0",
   "private": true,
   "description": "Molten Mill Idle: Steel Tycoon - a mobile steel-mill carry/tycoon game (single-file HTML5 canvas).",
   "scripts": {
     "build": "sh build.sh",
-    "test": "sh build.sh && node tests/harness6.js 60 && node tests/flowtest6.js && node tests/bottest6.js && node tests/helpertest6.js && node tests/eratest6.js && node tests/i18ntest.js && node tests/torptest.js && node tests/consteeltest.js && node tests/savetest14.js && node tests/endgame.js && node tests/savestall.js && node tests/automationtest.js && node tests/mothballtest.js && node tests/future3test.js",
-    "test:long": "node tests/harness6.js 480",
+    "test": "sh build.sh && node tests/harness6.js 60 && node tests/flowtest6.js && node tests/bottest6.js && node tests/helpertest6.js && node tests/eratest6.js && node tests/i18ntest.js && node tests/torptest.js && node tests/consteeltest.js && node tests/savetest14.js && node tests/endgame.js && node tests/savestall.js && node tests/automationtest.js && node tests/mothballtest.js && node tests/future3test.js && node tests/era6test.js && node tests/era7test.js",
+    "test:long": "node tests/harness6.js 480 && node tests/harness6.js 720",
     "test:browser": "node tests/pintest.js && node tests/tapwalk.js && node tests/startcard14.js && node tests/inputtest14.js && node tests/infotest.js && node tests/padlock.js && node tests/textcol6.js"
   },
   "devDependencies": {

@@ -243,7 +243,10 @@ const tf=v=>v>=100?fmt(v):v>=10?L1(v):dsep((Math.round(v*100)/100).toFixed(2));
 /* ---------- world: one production line running left → right, every station in its own tinted zone ----------
    spine y=600; supply plants for the furnace in a blue zone above it; downstream stations follow to the right,
    utlasting (rail + quay) at the far right. */
-const WX0=-760,WW=4300,WH0=1140,WHMAX=1560,CY=600,QX=3560,QY=850;
+/* WX0 is the grid / floor origin (the Phase 4 plots left of the ironworks included); WXL is the walkable left edge:
+   -760 until the hydrogen plant's plot opens (the build after the quay), then the world grows to the left */
+const WX0=-1620,WXL0=-760,WW=4300,WH0=1140,WHMAX=1560,CY=600,QX=3560,QY=850;
+let WXL=WXL0;
 /* the world grows downward when the first old plant is mothballed: a strip of reserve plots + the control room (y 1132–1536) */
 let WH=WH0;
 /* v6: the integrated works start at the far left: ore + coke → råjernsovn → råjern by torpedo car to the steel furnace */
@@ -278,7 +281,11 @@ const ZONES=[
  {id:'endl',x0:1796,y0:956,x1:3140,y1:1236,col:'#ffa04a',n:'ENDELØS LINJE',on:()=>AUTO()&&B_('vv')&&B_('strang')},
  {id:'qa',x0:1796,y0:1252,x1:2290,y1:1536,col:'#7fd6ff',n:'STØPETEKNIKK',on:()=>AUTO()&&B_('strang')},
  {id:'byp',x0:2306,y0:1252,x1:3140,y1:1536,col:'#9be08a',n:'BIPRODUKTER',on:()=>AUTO()},
- {id:'rob',x0:3156,y0:1132,x1:3520,y1:1536,col:'#f0a0ff',n:'ROBOTCELLER',on:()=>AUTO()&&lv('endless')>0}];
+ {id:'rob',x0:3156,y0:1132,x1:3520,y1:1536,col:'#f0a0ff',n:'ROBOTCELLER',on:()=>AUTO()&&lv('endless')>0},
+ /* Phase 4 (2030 →): a new plot left of the old ironworks – the hydrogen direct-reduction plant on top, the electric smelting
+    furnace under it. The DRI gallery runs in the gaps between the old plots to the conveyor-fed arc furnace. */
+ {id:'dri',x0:-1604,y0:24,x1:-776,y1:596,col:'#7ad7c2',n:'HYDROGEN-DRI',b:'h2'},
+ {id:'esf',x0:-1604,y0:612,x1:-776,y1:1116,col:'#ff9b5a',n:'ELEKTRISK SMELTEOVN',b:'esf'}];
 const ZN=Object.fromEntries(ZONES.map(z=>[z.id,z]));
 const inZone=(z,x,y,m)=>{m=m||0;return x>=z.x0+m&&x<=z.x1-m&&y>=z.y0+m&&y<=z.y1-m};
 const POS={
@@ -308,6 +315,15 @@ const QAX=[1836,1914,1992,2070,2148],QAY=1350;
 const BYPG={slag:{x0:2330,x1:2580},heat:{x0:2616,x1:2830},co2:{x0:2866,x1:3112},y0:1296,y1:1404};
 const ROBG={bend:{x:3196,y:1160,w:150,h:96},weld:{x:3340,y:1236,w:160,h:150}};
 const SORTG={x0:60,x1:420,y:1072};
+/* Phase 4 geometry (the plot left of the ironworks): electrolyser hall, H₂ tanks (later a rock cavern), the shaft furnace and its
+   steam stack, the hot DRI bin, the pellet yard with its rail siding; the DRI gallery runs east in the gaps between the old plots
+   (y 308 between the ironworks' supply strip and the ironworks, x 16 between the ironworks and the scrap yard) to the charging
+   conveyor. The electric smelting furnace: a long rectangular hearth with six electrodes in a row, DRI bins above it, slag tapped
+   at the west end, hot metal at the east end into the torpedo cars (track A, y 692) that run to the restarted LD converter. */
+const P4G={hall:{x0:-1584,y0:70,x1:-1256,y1:262},tank:[{x:-1170,y:116,r:30},{x:-1170,y:196,r:30}],cav:{x:-1222,y:238,w:112,h:40},
+ shaft:{x:-930,y:216,R:54},stack:{x:-820,y:96},bin:{x:-1040,y:418,r:28},yard:{x0:-1584,y0:294,x1:-1270,y1:496},pile:{x:-1430,y:408},rail:318,
+ belt:[[-1290,404],[-984,236]],gal:[[-1012,418],[-760,418],[-760,308],[16,308],[16,600],[64,600]],feed:[[-1040,446],[-1040,648],[-1316,648]]};
+const ESFG={x0:-1380,x1:-952,y0:718,y1:822,cy:770,tapX:-880,bins:[-1300,-1166,-1032],binY:670,slag:{x:-1462,y:770},trafo:{x0:-1330,x1:-1000,y:846,h:30}};
 const TWINP={x:1180,y:1372};
 /* Consteel line (era 5), left → right along the spine: open charging section in the scrap yard (pan conveyor, loaded by the
    magnet crane) → dynamic seal → preheating tunnel (the off-gas leaves at its charging end, dx) → connecting car into the shell.
@@ -346,7 +362,11 @@ const ERA=[
  {n:'LD-konverter',k:'LD-KONVERTER',yr:1960,type:'conv',cap:30,blow:9,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:7,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.75,.85]},
  {n:'Lysbueovn',k:'LYSBUEOVN',yr:1975,type:'eaf',cap:40,P:52,E:600,ref:3,ch:'bucket',cd:3,req:['kalk','o2'],fb:.6,elek:22,slag:6,heel:0,tap:'spout',pu:'MVA',tt:'≈2 t',hm:[0,0]},
  {n:'UHP-lysbueovn',k:'UHP-LYSBUEOVN',yr:1985,cap:60,type:'eaf',P:85,E:420,ref:2.5,ch:'bucket',cd:1.6,req:['kalk','o2','kull'],fb:.45,elek:45,slag:12,heel:.08,tap:'ebt',pu:'MVA',tt:'<60 min',hm:[0,0]},
- {n:'Båndchargert ovn',k:'BÅNDOVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]}];
+ {n:'Båndchargert ovn',k:'BÅNDOVN',yr:1995,cap:90,type:'eaf',P:120,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0]},
+ /* Phase 4: the same conveyor-fed arc furnace, now also fed hot direct-reduced iron (DRI) from the hydrogen shaft furnace */
+ {n:'Hydrogen-DRI',k:'DRI-BÅNDOVN',yr:2030,cap:90,type:'eaf',P:140,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0],gate:'h2'},
+ /* the electric smelting furnace melts DRI to green hot metal; the restarted LD converter refines it with some scrap */
+ {n:'Elektrisk smelteovn',k:'LD-KONVERTER',yr:2035,type:'conv',cap:48,blow:12,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:22,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.6,.85],needs:['ld'],gate:'esf'}];
 ERA.forEach(e=>{e.needs=e.needs||[]});
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
@@ -371,9 +391,14 @@ const BUILDS=[
  {id:'nett',sn:'Nettverk',n:'Nettverk',z:'nett',cost:5.5e7,x:3330,y:200,d:'Valstråd sveises til armeringsnett.'},
  {id:'consteel',sn:'Båndchargering',n:'Båndchargert ovn',z:'ovn',cost:1.3e8,x:990,y:1040,era:5,d:'Kontinuerlig chargering med forvarmingstunnel og flat bad.'},
  {id:'kob',sn:'Klipp og bøy',n:'Klipp og bøy',z:'kob',cost:3.2e8,x:3330,y:950,d:'Ferdig bøyd armering per byggeprosjekt.'},
- {id:'kai',sn:'Kai',n:'Kai',z:'utlast',cost:7.5e8,x:3700,y:764,d:'Skip gir best pris for eksport.'}];
+ {id:'kai',sn:'Kai',n:'Kai',z:'utlast',cost:7.5e8,x:3700,y:764,d:'Skip gir best pris for eksport.'},
+ /* Phase 4 */
+ {id:'h2',sn:'Hydrogen-DRI',n:'Hydrogen-DRI-anlegg',z:'dri',cost:3e9,x:-1100,y:470,era:6,d:'Elektrolyse lager hydrogen som reduserer jernmalmpellets til DRI. Varm DRI mates inn i båndovnen.'},
+ {id:'esf',sn:'El. smelteovn',n:'bygg§Elektrisk smelteovn',z:'esf',cost:1.2e10,x:-1100,y:960,d:'Smelter DRI til grønt råjern. Start LD-konverteren igjen for å raffinere det.'}];
 const BLD=Object.fromEntries(BUILDS.map(b=>[b.id,b]));
 const PRES_NEED=4e9;
+/* Nytt verk is offered from the quay on (the end of the game before Phase 4); the Phase 4 eras extend the run beyond it */
+const PRES_PH=BUILDS.findIndex(b=>b.id==='kai')+1,P4_PH=BUILDS.findIndex(b=>b.id==='h2');
 
 /* ---------- upgrades: every upgrade has its own pad in its station's upgrade row; the player picks the order.
    req = only real progress gates (furnace era, building, the plant it needs); intro:1 = shown during the first two heats too ---------- */
@@ -382,13 +407,13 @@ const UP=[
  {id:'speed',st:'skrap',n:'Raskere gange',max:12,base:45,m:1.6},
  {id:'yard',st:'skrap',n:'Skraptilførsel',max:20,base:70,m:1.55,req:()=>scrapUse()},
  {id:'kran',st:'skrap',n:'Skrapkran',max:23,base:180,m:1.52,req:()=>scrapUse()},
- {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere chargeringsbånd'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
+ {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere chargeringsbånd','Raskere chargeringsbånd','Større skrapkasse'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
  {id:'yard2',st:'skrap',n:'Skraphaug 2',max:1,costs:[900],req:()=>scrapUse()},
- {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>era()===5},
+ {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>CS()},
  {id:'forvarm',st:'skrap',n:'Kurvforvarming',max:1,costs:[1e5],req:()=>era()===3||era()===4},
  {id:'sort',st:'skrap',n:'Skrapsortering',max:3,costs:[1.2e5,1.5e6,2e7],req:()=>AUTO()},
  {id:'furnace',st:'ovn',n:()=>ET()==='conv'?'Større konverter':'Større ovn',max:20,base:120,m:1.5},
- {id:'power',st:'ovn',n:()=>['Sterkere blåsemaskin','Sterkere brennere','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt'][era()],max:20,base:160,m:1.5},
+ {id:'power',st:'ovn',n:()=>['Sterkere blåsemaskin','Sterkere brennere','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt','Mer effekt','Kraftigere O₂-lanse'][era()],max:20,base:160,m:1.5},
  {id:'refine',st:'ovn',n:()=>ET()==='sm'?'Raskere raffinering':'Raskere tapping',max:8,base:300,m:1.9},
  {id:'operator',st:'ovn',n:'Tapper',max:1,costs:[1500],person:1},
  {id:'ladle',st:'ovn',n:'Ekstra øse',max:2,costs:[450,2.5e4]},
@@ -455,7 +480,16 @@ const UP=[
  {id:'slagmill',st:'byp',n:'Slagg til sement',max:10,base:3e5,m:1.7},
  {id:'dheat',st:'byp',n:'Fjernvarme',max:10,base:5e5,m:1.75,req:()=>era()>=4},
  {id:'co2',st:'byp',n:'CO₂-fangst',max:3,costs:[8e6,8e7,6e8],req:()=>era()>=4},
- {id:'twin',st:'cr',n:'Digital tvilling',max:3,costs:[2e7,2e8,1.5e9],req:()=>era()>=4&&lv('h_ovn')>=1}];
+ {id:'twin',st:'cr',n:'Digital tvilling',max:3,costs:[2e7,2e8,1.5e9],req:()=>era()>=4&&lv('h_ovn')>=1},
+ /* Phase 4: the hydrogen DRI plant (electrolysis → H₂ storage → shaft furnace ← pellets → DRI conveyor) and the ESF */
+ {id:'elyz',st:'dri',n:'Elektrolysører',max:22,base:3e7,m:1.3},
+ {id:'h2st',st:'dri',n:()=>lv('h2st')>=3?'Større fjellhall':'H₂-lager',max:6,costs:[1.5e8,6e8,2e9,6e9,1.5e10,4e10]},
+ {id:'shaft',st:'dri',n:'Større sjaktovn',max:20,base:4e7,m:1.3},
+ {id:'pellet',st:'dri',n:'Pellettilførsel',max:20,base:2e7,m:1.3},
+ {id:'dribelt',st:'dri',n:'DRI-bånd',max:12,base:1e8,m:1.5,req:()=>era()===6||lv('dribelt')>0},
+ {id:'esfmw',st:'esf',n:'Mer effekt (MW)',max:20,base:1.5e8,m:1.3},
+ {id:'etorp',st:'esf',n:'Større torpedovogner',max:8,base:4e8,m:1.5},
+ {id:'etorpn',st:'esf',n:'Ekstra torpedovogn',max:3,costs:[1e9,4e9,1.5e10]}];
 const UPm=Object.fromEntries(UP.map(u=>[u.id,u]));
 UP.forEach(u=>{if(u.costs)u.max=u.costs.length});
 const HIRE={
@@ -468,7 +502,8 @@ const HIRE={
  tc:{id:'h_tc',n:'Bråkjølingshjelper',op:'Bråkjølingsoperatør',costs:[3e6,2e7,1.2e8],col:'#7fe0d8'},
  stel:{id:'h_stel',n:'Valstrådhjelper',op:'Valstrådoperatør',costs:[8e6,5e7,3e8],col:'#c48bff'},
  nett:{id:'h_nett',n:'Netthjelper',op:'Sveiseoperatør',costs:[1.5e7,1e8,6e8],col:'#9bd35f'},
- kob:{id:'h_kob',n:'Bøyehjelper',op:'Bøyeoperatør',costs:[6e7,4e8,3e9],col:'#ef8ad6'}};
+ kob:{id:'h_kob',n:'Bøyehjelper',op:'Bøyeoperatør',costs:[6e7,4e8,3e9],col:'#ef8ad6'},
+ dri:{id:'h_dri',n:'DRI-operatør',op:'DRI-operatør',costs:[3e8,2e9,1.2e10],col:'#7ad7c2'}};
 /* upgrade rows: slots [x,y] filled in UP order by the upgrades a station shows (maxed ones keep their slot as MAKS);
    lw = label width (row pitch − 4). One hire pad per station, beside its row. */
 const R_=(x0,y,n,dx)=>Array.from({length:n},(_,i)=>[x0+i*dx,y]);
@@ -493,11 +528,13 @@ const UPROW={
  endl:{s:R_(2110,1190,4,78),lw:74},
  byp:{s:[[2400,1490],[2680,1490],[2960,1490]],lw:74},
  rob:{s:[[3200,1490],[3278,1490]],lw:74},
- cr:{s:[[1180,1480]],lw:74}};
-const HIREPOS={rj:{x:-444,y:932},skrap:{x:296,y:930},ovn:{x:600,y:930},blokk:{x:1346,y:484,lw:74},strang:{x:1354,y:690},vv:{x:2596,y:840},tc:{x:2968,y:830},stel:{x:2352,y:130},nett:{x:3456,y:130},kob:{x:3350,y:1062}};
+ cr:{s:[[1180,1480]],lw:74},
+ dri:{s:R_(-1556,548,5,78),lw:74},
+ esf:{s:R_(-1556,1056,3,78),lw:74}};
+const HIREPOS={rj:{x:-444,y:932},skrap:{x:296,y:930},ovn:{x:600,y:930},blokk:{x:1346,y:484,lw:74},strang:{x:1354,y:690},vv:{x:2596,y:840},tc:{x:2968,y:830},stel:{x:2352,y:130},nett:{x:3456,y:130},kob:{x:3350,y:1062},dri:{x:-1166,y:548}};
 /* where an idle helper goes when automation has his route covered: a control desk in the station (and the crane cab) */
 const POSTS={rj:{x:-660,y:560,crane:'malm'},skrap:{x:490,y:840,crane:'skrap'},ovn:{x:900,y:745},blokk:{x:1372,y:196},strang:{x:1700,y:628,crane:'mag'},
- vv:{x:2680,y:862},tc:{x:3060,y:724},stel:{x:2660,y:256},nett:{x:3196,y:180},kob:{x:3470,y:900}};
+ vv:{x:2680,y:862},tc:{x:3060,y:724},stel:{x:2660,y:256},nett:{x:3196,y:180},kob:{x:3470,y:900},dri:{x:-1010,y:500}};
 const TAPDESK={x:1018,y:520};
 /* the control room (arc-furnace eras): furnace, ladle-crane and caster desks; control-room / caster operators sit here */
 const CRB={x0:1080,y0:1170,x1:1280,y1:1330};
@@ -515,7 +552,10 @@ const PRESPAD={x:4120,y:600};
 const SW=[
  {id:'rjsw',x:POS.rjsw.x,y:POS.rjsw.y,lab:'Råjern',on:()=>stOn('rj')},
  {id:'cast',x:1180,y:764,lab:'Støping',on:()=>B_('strang')},
- {id:'mix',x:2470,y:448,lab:'Valseprogram',on:()=>B_('stel')}];
+ {id:'mix',x:2470,y:448,lab:'Valseprogram',on:()=>B_('stel')},
+ /* Phase 4: the DRI share of the arc furnace charge (era 6) and the pellet grade (the ESF also takes cheaper blast-furnace pellets) */
+ {id:'drimix',x:-1166,y:440,lab:'DRI-andel',on:()=>era()===6},
+ {id:'pgrade',x:-1166,y:440,lab:'Pellettype',on:()=>era()===7}];
 const SWm=Object.fromEntries(SW.map(s=>[s.id,s]));
 
 /* ---------- old plants: when a new era is built the previous main plant is mothballed (dark, no smoke) instead of torn down.
@@ -524,16 +564,22 @@ const SWm=Object.fromEntries(SW.map(s=>[s.id,s]));
 const MBU={
  bess:{n:'Bessemer-konverter',yr:1880,from:'sm',kind:'conv',R:58,dem:150,up:2,scrap:40},
  sm:{n:'Siemens-Martin-ovn',yr:1910,from:'ld',kind:'sm',dem:1500,up:20,scrap:80},
- ld:{n:'LD-konverter',yr:1960,from:'eaf1',kind:'conv',R:72,ld:1,torp:1,dem:2e4,up:300,scrap:140,re:1,rc:5e8},
+ ld:{n:'LD-konverter',yr:1960,from:'eaf1',kind:'conv',R:72,ld:1,torp:1,dem:2e4,up:300,scrap:140,re:1,rc:4e9,rb:1.2e10},
  rj:{n:'Råjernsverk',yr:1880,from:'eaf1',kind:'rj',dem:3e4,up:400,scrap:200},
  eaf:{n:'Lysbueovn',yr:1975,from:'uhp',kind:'eaf',e:3,dem:1.5e5,up:3000,scrap:220},
- uhp:{n:'UHP-lysbueovn',yr:1985,from:'consteel',kind:'eaf',e:4,dem:1.5e6,up:3e4,scrap:260}};
+ uhp:{n:'UHP-lysbueovn',yr:1985,from:'consteel',kind:'eaf',e:4,dem:1.5e6,up:3e4,scrap:260},
+ /* Phase 4: the conveyor-fed arc furnace is laid down when the LD converter is restarted for the electric smelting era */
+ cs:{n:'Båndchargert ovn',yr:1995,from:'esf',when:()=>era()===7,kind:'eaf',e:5,dem:1.5e7,up:3e5,scrap:300}};
 const MBK=Object.keys(MBU);
 const MBPLOTS=['mbp0','mbp1','mbp2','mbp3','mbp4'];
 const mbSt=u=>(S.mb&&S.mb[u]&&S.mb[u].st)||'';
 const mbOn=u=>mbSt(u)==='mb';
 const mbZone=u=>{const m=S.mb[u];return m&&m.p?ZN[m.p]:null};
-const restartOK=u=>!!MBU[u].re&&ERA[era()].needs.indexOf(u)>=0;
+/* a plant can be restarted once an era that needs it is open (its gate build done), or the current era declares the need */
+const eraOpen=i=>i<=era()||!!(ERA[i].gate&&B_(ERA[i].gate));
+const restartOK=u=>!!MBU[u].re&&ERA.some((e,i)=>e.needs.indexOf(u)>=0&&eraOpen(i));
+/* the LD converter runs again (electric smelting era) */
+const ldRun=()=>mbSt('ld')==='run';
 const rjGone=()=>mbSt('rj')==='gone';
 
 /* ---------- save ---------- */
@@ -543,11 +589,13 @@ function freshS(){return{v:6,money:0,earned:0,life:0,heats:0,ph:0,lv:{},paid:{},
  mute:false,vib:true,dest:'best',moved:false,t:0,rate:0,lvl:0,pres:{pts:0,n:0},
  st:{sold:0,scrap:0,heats:0,play:0,best:0,prod:{},soldK:{},castB:0,castS:0,slagStops:0,slagT:0,eraT:{},hm:0,ore:0,def:0,ground:0,byp:0,ord:0,ordN:0},
  piles:{},nodes:{},store:{},cash:{},kok:{slots:6,hot:0,ready:6,cool:[]},pot:0,elek:12,chg:0,yard:{y0:24,y1:0,ore:40},F:{bath:0,solid:0},
- rj:{ore:14,hearth:6},hm:10,torp:[],mb:{},bonusGiven:false,ord:null}}
+ rj:{ore:14,hearth:6},hm:10,torp:[],mb:{},bonusGiven:false,ord:null,
+ /* Phase 4: H₂ in store (t), pellets in the yard (t), hot DRI in the bin (t); DRI share set-point; pellet grade */
+ dri:{h2:0,pel:0,bin:0},drimix:.5,pgrade:'bf'}}
 let S=freshS();
 const num=v=>isFinite(v)&&v>=0?+v:0;
 (()=>{const s=rawLoad(KEY);
- if(s&&typeof s==='object'&&s.v===6){const f=freshS();S=Object.assign(f,s);for(const k of['lv','paid','b','tg','pres','st','piles','nodes','store','cash','kok','yard','F','rj'])S[k]=Object.assign(freshS()[k],s[k]&&typeof s[k]==='object'&&!Array.isArray(s[k])?s[k]:{});
+ if(s&&typeof s==='object'&&s.v===6){const f=freshS();S=Object.assign(f,s);for(const k of['lv','paid','b','tg','pres','st','piles','nodes','store','cash','kok','yard','F','rj','dri'])S[k]=Object.assign(freshS()[k],s[k]&&typeof s[k]==='object'&&!Array.isArray(s[k])?s[k]:{});
   S.st.prod=Object.assign({},S.st.prod||{});S.st.soldK=Object.assign({},S.st.soldK||{});S.st.eraT=Object.assign({},S.st.eraT||{});if(!Array.isArray(S.kok.cool))S.kok.cool=[];if(!Array.isArray(S.torp))S.torp=[];
   for(const k in S.lv){if(!UPm[k]&&!HIREbyId(k)){delete S.lv[k];continue}S.lv[k]=clamp(S.lv[k]|0,0,(UPm[k]?UPm[k].max:HIREbyId(k).costs.length))}
   for(const k in S.paid){const v=S.paid[k];if(!isFinite(v)||v<0)delete S.paid[k]}
@@ -558,6 +606,7 @@ const num=v=>isFinite(v)&&v>=0?+v:0;
   if(bonus>0){S.money=bonus;S.bonusGiven=bonus}}
  for(const k of['money','earned','life','heats','lvl','rate','pot','elek','chg','hm'])S[k]=num(S[k]);
  for(const k of['ore','hearth'])S.rj[k]=num(S.rj[k]);
+ for(const k of['h2','pel','bin'])S.dri[k]=num(S.dri[k]);if([.3,.5,.7].indexOf(S.drimix)<0)S.drimix=.5;if(S.pgrade!=='dr')S.pgrade='bf';
  if(!isFinite(S.pres.pts)||S.pres.pts<0)S.pres.pts=0;
  /* Phase 3: a construction-site order in progress (anything malformed is dropped; a new order comes later) */
  {const o=S.ord;let ok=o&&typeof o==='object'&&o.q&&typeof o.q==='object'&&o.g&&typeof o.g==='object'&&isFinite(o.left)&&isFinite(o.bonus)&&o.bonus>=0;
@@ -567,10 +616,12 @@ const num=v=>isFinite(v)&&v>=0?+v:0;
 function HIREbyId(id){for(const k in HIRE)if(HIRE[k].id===id)return HIRE[k];return null}
 const lv=id=>S.lv[id]||0;
 const B_=id=>!!S.b[id];
-const era=()=>B_('consteel')?5:B_('uhp')?4:B_('eaf1')?3:B_('ld')?2:B_('sm')?1:0;
+const era=()=>B_('esf')&&ldRun()?7:B_('h2')?6:B_('consteel')?5:B_('uhp')?4:B_('eaf1')?3:B_('ld')?2:B_('sm')?1:0;
+/* the conveyor-fed (Consteel) charging line runs: the conveyor-charged arc furnace, with or without DRI */
+const CS=()=>E_().ch==='belt';
 const E_=()=>ERA[era()];
 const ET=()=>E_().type;
-const isEAF=()=>era()>=3;
+const isEAF=()=>ET()==='eaf';
 const slagOn=()=>era()>=2;
 const rjEra=()=>B_('elrj')?1:0;
 const rjClosed=()=>era()>=3;
@@ -590,7 +641,7 @@ const hspeed=()=>130*(1+.08*lv('hspeed'));
 const fcap=()=>Math.round(E_().cap*(1+.18*lv('furnace')));
 /* the player at the furnace desk (control room) runs the power program by hand: +10 % */
 const MW=()=>(E_().P||0)*(1+.15*lv('power'))*(G.ctl==='furnace'?1.1:1);
-const kwh=()=>ET()==='conv'?0:Math.round(E_().E*(lv('forvarm')&&(era()===3||era()===4)?.88:1)*(era()===5?csPreK():1));
+const kwh=()=>ET()==='conv'?0:Math.round(E_().E*(lv('forvarm')&&(era()===3||era()===4)?.88:1)*(CS()?csPreK():1)*(era()===6?driKwhK():1));
 /* converters: the blow takes blowT seconds (blower / lance upgrades shorten it); no external energy */
 const blowT=()=>E_().blow/(1+.15*lv('power'));
 /* melting / blowing limit in t/s (game time): power / specific energy, or a full charge per blow */
@@ -605,7 +656,7 @@ const yardRate=()=>.8*Math.pow(1.22,lv('yard'));
 const kranLoad=()=>4*(1+.38*max(0,lv('kran')-1))*(1+.4*opN('skrap'));
 const kranSpd=()=>170*(1+.09*lv('kran'))*(1+.08*opN('skrap'));
 /* Consteel: the charging crane carries a big lifting magnet (Større magnet adds lift) */
-const craneLift=()=>kranLoad()*(era()===5?1.5*(1+.15*lv('magnet')):1);
+const craneLift=()=>kranLoad()*(CS()?1.5*(1+.15*lv('magnet')):1);
 const boxT=4,nBox=()=>3+lv('charge');
 const bucketT=()=>max(6,fcap()*.5)*(1+.06*lv('charge'));
 const chgCap=()=>{const e=E_().ch;return e==='conv'?max(2*SCRAP_T,Math.ceil(scrapMax()*1.6/SCRAP_T)*SCRAP_T)*(1+.15*lv('charge')):e==='box'?boxT*nBox():e==='bucket'?bucketT()*2:fcap()*.5*(1+.15*lv('charge'))};
@@ -623,9 +674,9 @@ const oreYardCap=()=>40+14*lv('malmtog');
 const oreYardRate=()=>.5*Math.pow(1.22,lv('malmtog'))*(rjEra()?3:1);
 const malmLoad=()=>4*(1+.38*max(0,lv('malmkran')-1));
 const malmSpd=()=>170*(1+.09*lv('malmkran'));
-const torpCap=()=>Math.round(12*(1+.22*lv('torp'))*(rjEra()?1.6:1));
-const nTorp=()=>1+lv('torpn');
-const torpSpd=()=>150*(1+.06*lv('torp'));
+const torpCap=l=>era()===7?Math.round(60*(1+.2*(l==null?lv('etorp'):l))):Math.round(12*(1+.22*lv('torp'))*(rjEra()?1.6:1));
+const nTorp=()=>era()===7?2+lv('etorpn'):1+lv('torpn');
+const torpSpd=()=>era()===7?260*(1+.06*lv('etorp')):150*(1+.06*lv('torp'));
 const hearthCap=()=>max(12,torpCap()*1.4);
 const hmCap=()=>max(fcap()*1.3,torpCap()*1.25);
 const potMax=()=>8+2*lv('slagcap');
@@ -655,14 +706,42 @@ const elRate=()=>.9*Math.pow(1.16,lv('elspd'));
 const hssK=()=>1+.12*lv('hss');
 /* CO₂ per tonne of steel by furnace era (t CO₂/t): the ore-based routes are high, scrap + arc furnace low. Capture, the endless
    line (no reheating furnace) and sorted scrap lower it further. With the product passport the buyers pay a green premium. */
-const CO2E=[2.3,2.1,1.9,.75,.6,.45];
-const co2t=()=>max(.05,CO2E[era()]-(lv('endless')?.04:0)-.09*lv('co2')-.01*lv('sort'));
-const greenK=()=>lv('pass')?1+clamp((1.05-co2t())*.14,0,.14):1;
+const CO2E=[2.3,2.1,1.9,.75,.6,.45,.3,.2];
+/* Phase 4: DRI made with hydrogen carries almost no CO₂ – the more DRI in the charge, the lower the footprint; fossil-free
+   steel below 0,3 t CO₂/t earns an extra green premium */
+const co2t=()=>max(era()>=6?.02:.05,CO2E[era()]-(era()===6?.25*DRI.sh:0)-(lv('endless')?.04:0)-.09*lv('co2')-.01*lv('sort'));
+const greenK=()=>lv('pass')?1+clamp((1.05-co2t())*.14,0,.14)+(era()>=6?clamp((.3-co2t())*.4,0,.1):0):1;
+/* virgin iron (DRI in the arc furnace, green hot metal in the converter) dilutes copper and tin: premium low-residual grades */
+const p4K=()=>era()===6?1+.25*DRI.sh:era()===7?1.2:1;
 /* copper in the scrap (%): the sorting line picks out copper; clean scrap gives better steel (price) and fewer surface cracks */
 const cuPct=()=>.22-.14*[0,.4,.7,1][lv('sort')];
 const cuK=()=>AUTO()?1+(.22-cuPct())*.3:1;
 const twinK=()=>1+.02*lv('twin');
-const p3K=()=>greenK()*cuK()*twinK();
+const p3K=()=>greenK()*cuK()*twinK()*p4K();
+/* ---------- Phase 4 tuning (eras 6–7). Rates in tonnes per game second, like every other flow.
+   electrolysis (MW) → H₂ (t/s) into the store → the shaft furnace draws H₂ and pellets and makes DRI into the hot bin →
+   era 6: the DRI conveyor lays it on the arc furnace's charging conveyor · era 7: the electric smelting furnace melts it ---------- */
+const H2_PER=.055,PEL_PER=1.42;              /* t H₂ and t pellets per t DRI */
+const elyMW=l=>160*Math.pow(1.165,l==null?lv('elyz'):l);
+const h2Rate=()=>elyMW()*.0004*(1+.04*opN('dri'));
+/* H₂ storage: tanks, then (level 3 on) a lined rock cavern – a bigger buffer and more flow to the shaft furnace */
+const h2Cap=l=>{l=l==null?lv('h2st'):l;return 6*Math.pow(1.7,l)*(l>=3?3:1)};
+const h2Draw=l=>{l=l==null?lv('h2st'):l;return .5*Math.pow(1.55,l)*(l>=3?1.4:1)};
+const shaftCap=l=>2.5*Math.pow(1.15,l==null?lv('shaft'):l)*(1+.04*opN('dri'))*(G.ctl==='dri'?1.1:1);
+const pelGrade=()=>era()===7&&S.pgrade==='bf';
+const pelRate=l=>3.5*Math.pow(1.18,l==null?lv('pellet'):l)*(pelGrade()?1.4:1);
+const pelCap=()=>300+60*lv('pellet');
+const binCap=()=>120+20*lv('shaft');
+const driBelt=l=>4.2*Math.pow(1.2,l==null?lv('dribelt'):l);
+/* the arc furnace with DRI: the gangue and the oxygen left in the DRI need more electricity and more lime */
+const driKwhK=()=>1+.3*DRI.sh;
+/* electric smelting furnace: DRI → hot metal. Blast-furnace grade pellets are cheaper (more per contract) but carry more gangue:
+   more DRI per tonne of iron, more slag and more kWh */
+const esfMW=l=>120*(1+.2*(l==null?lv('esfmw'):l));
+const esfKwh=()=>pelGrade()?520:450;
+const esfDriPer=()=>pelGrade()?1.2:1.08;
+const esfSlagPer=()=>pelGrade()?.25:.08;
+const esfRate=()=>esfMW()/esfKwh()*30;
 const magLoad=()=>2+lv('magkran');
 const storeMax=()=>24,storeIv=()=>1.2;
 const gm=()=>(1+.5*S.pres.pts)*(1+.03*S.lvl);
@@ -678,11 +757,11 @@ function upCost(u){const l=lv(u.id);if(u.costs)return u.costs[min(l,u.costs.leng
 const helpersHired=()=>Object.values(HIRE).some(h=>lv(h.id)>0);
 const upRaw=u=>typeof u.n==='function'?u.n():u.n;
 /* pad title: long compounds get soft hyphens so they can wrap inside the compact label */
-const PN={yard:'Skrap\u00ADtilførsel',forvarm:'Kurv\u00ADforvarming',elekkran:'Elektrode\u00ADkran',o2:'Oksygen\u00ADanlegg',kull:'Kull\u00ADinjeksjon',malmtog:'Malm\u00ADtilførsel',
+const PN={elyz:'Elektro\u00ADlysører',pellet:'Pellet\u00ADtilførsel',etorp:'Større torpedo\u00ADvogner',etorpn:'Ekstra torpedo\u00ADvogn',esfmw:'Mer effekt (MW)',yard:'Skrap\u00ADtilførsel',forvarm:'Kurv\u00ADforvarming',elekkran:'Elektrode\u00ADkran',o2:'Oksygen\u00ADanlegg',kull:'Kull\u00ADinjeksjon',malmtog:'Malm\u00ADtilførsel',
  kanal:'Kanalstein\u00ADlager',hette:'Varmholds\u00ADmasse',torch:'Skjære\u00ADbrenner',varm:'Varm\u00ADinnsetting',hcap:'Hjelper\u00ADkapasitet',gjvup:'Ovns\u00ADkapasitet',
  splitt:'Splitt\u00ADvalsing',stelup:'Finverks\u00ADfart',ktrans:'Kveile\u00ADtransport',hspeed:'Hjelper\u00ADfart',slagcap:'Større slagg\u00ADpotte',kokup:'Flere kokiller',
  operator:'Tapper',sort:'Skrap\u00ADsortering',tdheat:'Fordeler\u00ADvarme',hss:'Hurtig\u00ADstreng',insp:'Inspeksjons\u00ADbue',loop:'Sløyfe\u00ADbuffer',slagmill:'Slagg til sement',dheat:'Fjern\u00ADvarme',twin:'Digital tvilling'};
-const padTitleNo=u=>{const n=upRaw(u);if(u.id==='hcap'&&AUTO())return'Vogn\u00ADkapasitet';if(u.id==='hspeed'&&AUTO())return'Vognfart';if(u.id==='lans')return lv('lans')?'Vegg\u00ADinjektorer':'Dørlanse';if(u.id==='charge'&&era()===1)return'Flere kasser';if(u.id==='charge'&&era()===5)return'Raskere bånd';if(u.id==='skip'&&rjEra())return'Større bånd';
+const padTitleNo=u=>{const n=upRaw(u);if(u.id==='hcap'&&AUTO())return'Vogn\u00ADkapasitet';if(u.id==='hspeed'&&AUTO())return'Vognfart';if(u.id==='lans')return lv('lans')?'Vegg\u00ADinjektorer':'Dørlanse';if(u.id==='charge'&&era()===1)return'Flere kasser';if(u.id==='charge'&&CS())return'Raskere bånd';if(u.id==='skip'&&rjEra())return'Større bånd';
  if(u.id==='power'&&era()===0)return'Sterkere blåse\u00ADmaskin';return PN[u.id]||n};
 /* English pad titles come from the dictionary (keyed by the Norwegian text without soft hyphens) */
 const padTitle=u=>{const n=padTitleNo(u);return NO_()?n:t_(n.replace(/\u00AD/g,''))};
@@ -693,8 +772,8 @@ const upOpen=u=>stOn(u.st)&&(!u.req||u.req())&&(u.intro||S.heats>=2||S.pres.n>0)
 const upAvail=u=>upOpen(u)&&lv(u.id)<u.max;
 function upSub(u){const l=lv(u.id),nx=l+1,ar=(a,b,un)=>a+' → '+b+(un?' '+un:''),pc=()=>t_('stk'),fa=n=>t_('+{0} % fart',n),ka=n=>t_('+{0} % kapasitet',n);switch(u.id){
  case'carry':return ar(capCarry(),capCarry()+2,pc());case'speed':return fa(8);
- case'yard':return t_('+{0} % skrap',22);case'kran':{const e5=era()===5?1.5*(1+.15*lv('magnet')):1;return l?ar(tf(craneLift()),tf(4*(1+.38*l)*e5*(1+.4*opN('skrap'))),'t'):era()===5?ar(tf(craneLift()),tf(4*e5),'t'):t_('Henter selv')}case'magnet':return ar(tf(craneLift()),tf(kranLoad()*1.5*(1+.15*(l+1))),'t');
- case'charge':return era()===1?ar(nBox(),nBox()+1,t_('kasser')):era()===5?fa(20):ET()==='conv'?t_('+{0} % kasse',15):t_('+{0} % kurv',6);
+ case'yard':return t_('+{0} % skrap',22);case'kran':{const e5=CS()?1.5*(1+.15*lv('magnet')):1;return l?ar(tf(craneLift()),tf(4*(1+.38*l)*e5*(1+.4*opN('skrap'))),'t'):CS()?ar(tf(craneLift()),tf(4*e5),'t'):t_('Henter selv')}case'magnet':return ar(tf(craneLift()),tf(kranLoad()*1.5*(1+.15*(l+1))),'t');
+ case'charge':return era()===1?ar(nBox(),nBox()+1,t_('kasser')):CS()?fa(20):ET()==='conv'?t_('+{0} % kasse',15):t_('+{0} % kurv',6);
  case'furnace':return ar(fcap(),Math.round(E_().cap*(1+.18*nx)),'t');
  case'power':return ET()==='conv'?ar(L1(blowT()),L1(E_().blow/(1+.15*nx)),t_('s blåsing')):ar(Math.round(MW()),Math.round(E_().P*(1+.15*nx)),t_(E_().pu));
  case'refine':return t_('−{0} % tid',14);case'operator':return t_('Tapper ovnen for deg');
@@ -717,7 +796,11 @@ function upSub(u){const l=lv(u.id),nx=l+1,ar=(a,b,un)=>a+' → '+b+(un?' '+un:''
  case'sort':return t_('Cu {0} → {1} %',dsep(cuPct().toFixed(2)),dsep((.22-.14*[0,.4,.7,1][min(3,nx)]).toFixed(2)));case'tdheat':return t_('Jevnere overheting');case'slagdet':case'ems':return t_('Færre feilemner');
  case'hss':return fa(12);case'insp':return t_('Finner og sliper feil');case'pass':return t_('Grønn pris +{0} %',Math.round(clamp((1.05-co2t())*.14,0,.14)*100));case'endless':return t_('Støp rett til armering');
  case'elspd':return fa(16);case'loop':return ar(L1(1.2+1.3*l),L1(1.2+1.3*nx),'s');case'robot':return t_('Bøyer og sveiser kurver');case'robspd':return fa(16);
- case'slagmill':return t_('Slaggpris ×{0}',L1(1+1.2*nx));case'dheat':return t_('Varme fra ovnen blir inntekt');case'co2':return ar(L1(co2t()),L1(max(.05,co2t()-.09)),t_('t CO₂/t'));case'twin':return t_('+{0} % pris',2);case'sinter':return t_('{0} → {1} % jern',Math.round(feY()*100),Math.round([.5,.58,.64][min(2,l+1)]*100));case'togp':case'kaip':return t_('+{0} % pris',8);}
+ case'slagmill':return t_('Slaggpris ×{0}',L1(1+1.2*nx));case'dheat':return t_('Varme fra ovnen blir inntekt');case'co2':return ar(L1(co2t()),L1(max(.05,co2t()-.09)),t_('t CO₂/t'));case'twin':return t_('+{0} % pris',2);
+ /* Phase 4 */
+ case'elyz':return ar(Math.round(elyMW()),Math.round(elyMW(nx)),'MW');case'h2st':return l===2?t_('Fjellhall: ×{0} lager',3):ar(tf(h2Cap()),tf(h2Cap(nx)),t_('t H₂'));
+ case'shaft':return ar(tf(shaftCap()*60),tf(shaftCap(nx)*60),t_('t/min'));case'pellet':return t_('+{0} % pellets',18);case'dribelt':return ar(tf(driBelt()*60),tf(driBelt(nx)*60),t_('t/min'));
+ case'esfmw':return ar(Math.round(esfMW()),Math.round(esfMW(nx)),'MW');case'etorp':return ar(Math.round(60*(1+.2*l)),Math.round(60*(1+.2*nx)),'t');case'etorpn':return ar(2+l,3+l,t_('vogner'));case'sinter':return t_('{0} → {1} % jern',Math.round(feY()*100),Math.round([.5,.58,.64][min(2,l+1)]*100));case'togp':case'kaip':return t_('+{0} % pris',8);}
  return fa(16)}
 
 /* ---------- runtime state ---------- */
@@ -736,6 +819,36 @@ function t_(s,...a){let o=s==null?'':''+s;
  else{const i=o.indexOf('§');if(i>=0)o=o.slice(i+1)}
  return a.length?o.replace(/\{(\d)\}/g,(m,i)=>a[+i]):o}
 const EN={
+ /* --- Phase 4: hydrogen DRI (2030) and electric smelting (2035) --- */
+ 'HYDROGEN-DRI':'HYDROGEN DRI','ELEKTRISK SMELTEOVN':'ELECTRIC SMELTING FURNACE','Hydrogen-DRI':'Hydrogen DRI','DRI-BÅNDOVN':'DRI CONVEYOR EAF','kart§DRI-BÅNDOVN':'DRI EAF',
+ 'Elektrisk smelteovn':'Electric smelting','bygg§Elektrisk smelteovn':'Electric smelting furnace','Hydrogen-DRI-anlegg':'Hydrogen DRI plant','El. smelteovn':'Smelting furnace',
+ 'Elektrolyse lager hydrogen som reduserer jernmalmpellets til DRI. Varm DRI mates inn i båndovnen.':'Electrolysis makes hydrogen that reduces iron-ore pellets to DRI. Hot DRI is fed into the conveyor furnace.',
+ 'Smelter DRI til grønt råjern. Start LD-konverteren igjen for å raffinere det.':'Melts DRI into green hot metal. Restart the LD converter to refine it.',
+ 'Elektrolysører':'Electrolysers','Større fjellhall':'Bigger rock cavern','H₂-lager':'H₂ storage','Større sjaktovn':'Bigger shaft furnace','Pellettilførsel':'Pellet supply','DRI-bånd':'DRI conveyor',
+ 'Mer effekt (MW)':'More power (MW)','Større torpedovogner':'Bigger torpedo cars','DRI-operatør':'DRI operator','DRI-andel':'DRI share','Pellettype':'Pellet type','sw§Masovn':'BF grade','sw§DR-grad':'DR grade',
+ 'Masovnspellets':'Blast-furnace pellets','DR-pellets':'DR-grade pellets','Masovnspellets (billigere)':'Blast-furnace pellets (cheaper)',
+ 'Fjellhall: ×{0} lager':'Rock cavern: ×{0} storage','t H₂':'t H₂','t/min':'t/min','+{0} % pellets':'+{0}% pellets',
+ 'Flaskehals: elektrolyse':'Bottleneck: electrolysis','Flaskehals: H₂-lager':'Bottleneck: H₂ storage','Flaskehals: sjaktovn':'Bottleneck: shaft furnace','Flaskehals: pellettilførsel':'Bottleneck: pellet supply',
+ 'Flaskehals: DRI-bånd':'Bottleneck: DRI conveyor','DRI-lageret er fullt':'DRI bin full','{0} t/min DRI · {1} % i chargen':'{0} t/min DRI · {1}% of the charge','{0} t/min DRI':'{0} t/min DRI',
+ 'Venter på LD-konverteren':'Waiting for the LD converter','Flaskehals: ovnseffekt (MW)':'Bottleneck: furnace power (MW)','Venter på DRI':'Waiting for DRI',
+ 'Grønt råjern fra den elektriske smelteovnen går med torpedovogn til konverteren':'Green hot metal from the electric smelting furnace goes by torpedo car to the converter',
+ 'Skrapet på båndet går tilbake til skrapplassen':'The scrap on the conveyor goes back to the scrap yard',
+ 'Bygg opp igjen':'Rebuild','Mål: <span>{0}</span> – gå på ruta':'Goal: <span>{0}</span> – step on the pad',
+ 'Den elektriske smelteovnen trenger konverteren: grønt råjern går med torpedovogn til LD-konverteren.':'The electric smelting furnace needs the converter: green hot metal goes by torpedo car to the LD converter.',
+ 'Hydrogen erstatter kull':'Hydrogen replaces coal',
+ 'Elektrolysører lager hydrogen. I sjaktovnen reduserer hydrogenet jernmalmpellets til jernsvamp (DRI) – pipa slipper ut vanndamp, ikke CO₂.':'Electrolysers make hydrogen. In the shaft furnace the hydrogen reduces iron-ore pellets to sponge iron (DRI) – the stack lets out water vapour, not CO₂.',
+ 'Varm DRI går på et galleribånd til chargeringsbåndet og blandes med skrapet. Mer DRI gir renere stål og lavere CO₂ (bedre grønn pris), men trenger mer strøm og kalk. Velg andelen på bryteren.':'Hot DRI rides a gallery conveyor to the charging conveyor and mixes with the scrap. More DRI gives cleaner steel and lower CO₂ (a better green price), but needs more power and lime. Set the share on the switch.',
+ 'Anlegget kjøres fra pulten i DRI-anlegget. Trykk for å lukke.':'The plant is run from the desk in the DRI plant. Tap to close.',
+ 'Elektrisk smelteovn + LD-konverter':'Electric smelting furnace + LD converter',
+ 'Den elektriske smelteovnen smelter DRI til grønt råjern med seks elektroder på rad. Slagget renner kontinuerlig ut i den ene enden og selges til sementverket.':'The electric smelting furnace melts DRI into green hot metal with six electrodes in a row. The slag runs out continuously at one end and is sold to the cement works.',
+ 'LD-konverteren er startet igjen: torpedovogner frakter råjernet til den, og den blåser det til stål med litt skrap – akkurat som før. Billigere pellets går nå også an.':'The LD converter is running again: torpedo cars bring it the hot metal, and it blows it into steel with a little scrap – just like before. Cheaper pellets work now too.',
+ 'Båndovnen er lagt ned på en reservetomt. Trykk for å lukke.':'The conveyor furnace is mothballed on a reserve plot. Tap to close.',
+ 'sjaktovnen':'the shaft furnace','Du styrer sjaktovnen fra pulten (+10 % DRI)':'You run the shaft furnace from the desk (+10% DRI)',
+ 'Pelletlager':'Pellet yard','Hydrogen':'Hydrogen','Sjaktovn':'Shaft furnace','Pellets':'Pellets','DRI (jernsvamp)':'DRI (sponge iron)','Elektrolyse':'Electrolysis',
+ '{0} MW · {1} t H₂/min':'{0} MW · {1} t H₂/min','{0}/{1} t · uttak {2} t/min':'{0}/{1} t · flow {2} t/min','{0}/{1} t · {2} t/min inn':'{0}/{1} t · {2} t/min in','Kvalitet':'Grade',
+ 'DRI-lager':'DRI bin','{0} % (satt {1} %)':'{0}% (set {1}%)','CO₂':'CO₂','{0} t/t stål':'{0} t/t steel','Effekt':'Power','{0} MW · {1} t/min råjern':'{0} MW · {1} t/min hot metal',
+ 'Torpedovogner':'Torpedo cars','{0} × {1} t':'{0} × {1} t','lageret er fullt':'store full','{0}/{1} t H₂ · uttak {2} t/min':'{0}/{1} t H₂ · flow {2} t/min',
+ '{0} av {1} t/min DRI':'{0} of {1} t/min DRI','DRI-andel {0} %':'DRI share {0}%','{0} t i ovnen':'{0} t in the furnace',
  /* --- Phase 3: the future downstream --- */
  'ENDELØS LINJE':'ENDLESS LINE','STØPETEKNIKK':'CASTING TECH','BIPRODUKTER':'BY-PRODUCTS','ROBOTCELLER':'ROBOT CELLS',
  'Endeløs armering':'Endless rebar','Armeringskurv':'Rebar cage','endeløs armering':'endless rebar','armeringskurver':'rebar cages','Armeringskurver':'Rebar cages','Rette stenger':'Straight bars',
@@ -1380,8 +1493,9 @@ function plateW(p,g){g=g||ctx;g.font=`800 11px ${FONT}`;return g.measureText(p.t
 const ROLLS=[];/* [path, built()] static roller tables / conveyors */
 function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0,0,FS,-WX0*FS,0);
  f.fillStyle='#373c44';f.fillRect(WX0,0,WW-WX0,WH);
- f.strokeStyle='rgba(0,0,0,.2)';f.lineWidth=1;f.beginPath();for(let x=24-48*16;x<WW;x+=48){f.moveTo(x+.5,0);f.lineTo(x+.5,WH)}for(let y=24;y<WH;y+=48){f.moveTo(0,y+.5);f.lineTo(WW,y+.5)}f.stroke();
- for(let i=0;i<620;i++){const x=WX0+r()*(WW-WX0),y=r()*WH,rad=3+r()*18;f.fillStyle=r()>.5?'rgba(0,0,0,.06)':'rgba(255,255,255,.025)';f.beginPath();f.arc(x,y,rad,0,TAU);f.fill()}
+ f.strokeStyle='rgba(0,0,0,.2)';f.lineWidth=1;f.beginPath();for(let x=24-48*34;x<WW;x+=48){f.moveTo(x+.5,0);f.lineTo(x+.5,WH)}for(let y=24;y<WH;y+=48){f.moveTo(0,y+.5);f.lineTo(WW,y+.5)}f.stroke();
+ for(let i=0;i<620;i++){const x=WXL0+r()*(WW-WXL0),y=r()*WH,rad=3+r()*18;f.fillStyle=r()>.5?'rgba(0,0,0,.06)':'rgba(255,255,255,.025)';f.beginPath();f.arc(x,y,rad,0,TAU);f.fill()}
+ if(WXL<WXL0){const r2=seeded(11);for(let i=0;i<110;i++){const x=WX0+r2()*(WXL0-WX0),y=r2()*WH,rad=3+r2()*18;f.fillStyle=r2()>.5?'rgba(0,0,0,.06)':'rgba(255,255,255,.025)';f.beginPath();f.arc(x,y,rad,0,TAU);f.fill()}}
  /* zones: tinted floor + dashed border (plates are drawn on top later) */
  for(const z of ZONES){if(!zoneShown(z))continue;const built=zoneBuilt(z),w=z.x1-z.x0,h=z.y1-z.y0;
   f.fillStyle=z.rj&&rjClosed()?'rgba(0,0,0,.16)':built?rgba(z.col,z.sup?.08:.075):'rgba(0,0,0,.12)';SK.rr(f,z.x0,z.y0,w,h,16);f.fill();
@@ -1391,13 +1505,20 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   if(!on){f.font=`800 12px ${FONT}`;f.textAlign='center';f.fillStyle='rgba(244,241,234,.3)';f.fillText(t_('SKRAPHAUG 2'),p.x,p.y)}}
  /* råjernsverk floor: ore bay, ore-train track, cast house, skip pit, torpedo tracks to the steel plant */
  {const cl=rjClosed(),p=POS.ore,gn=rjGone();if(!gn){f.fillStyle=cl?'rgba(46,50,56,.55)':'#2e3238';SK.rr(f,p.x-96,p.y-122,192,244,10);f.fill();f.strokeStyle='#1b1e23';f.lineWidth=5;f.strokeRect(p.x-96,p.y-122,192,244);
-  const ty=POS.oreTrainY;f.fillStyle='#2b2826';f.fillRect(WX0+10,ty-20,640,40);for(let x=WX0+14;x<WX0+650;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=cl?'#5a4a40':C.rail;f.fillRect(WX0+10,ty-11,640,4);f.fillRect(WX0+10,ty+7,640,4);
+  const ty=POS.oreTrainY;f.fillStyle='#2b2826';f.fillRect(WXL0+10,ty-20,640,40);for(let x=WXL0+14;x<WXL0+650;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=cl?'#5a4a40':C.rail;f.fillRect(WXL0+10,ty-11,640,4);f.fillRect(WXL0+10,ty+7,640,4);
   f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,-236,590,200,70,8);f.fill();f.fillStyle='rgba(0,0,0,.25)';SK.rr(f,POS.skip.x-54,POS.skip.y-48,108,96,10);f.fill()}
   const rail=(y,x0,x1)=>{f.fillStyle='#2b2620';for(let x=x0;x<x1;x+=8)f.fillRect(x,y-13,3.4,26);f.fillStyle=cl?'#5a4e44':'#7d7064';f.fillRect(x0,y-9,x1-x0,2.6);f.fillRect(x0,y+7,x1-x0,2.6)};
   /* Consteel: the old torpedo tracks are gone, the line's foundation runs through the yard */
-  if(era()<5){if(!gn){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
+  /* Phase 4 (era 7): the torpedo line runs again, from the electric smelting furnace's taphole across the old ironworks */
+  if(era()===7){rail(POS.torpA,ESFG.tapX-80,POS.torpX1+70);rail(POS.torpB,ESFG.tapX+60,POS.torpX1-60)}
+  else if(era()<5){if(!gn){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
   if(cl){f.fillStyle='rgba(55,60,68,.55)';f.fillRect(-340,POS.torpA-16,POS.torpX1+410,54)}}}
   else{f.fillStyle='rgba(0,0,0,.22)';f.fillRect(20,CSG.y-34,CSG.xf-20,68);f.fillStyle='rgba(0,0,0,.18)';SK.rr(f,SLAGP.x-60,SLAGP.y-50,120,104,10);f.fill()}}
+ /* Phase 4: pellet yard bed, the siding the pellet trains come in on, the furnace platform and slag bay of the ESF */
+ if(B_('h2')){const Y=P4G.yard;f.fillStyle='#2e3238';SK.rr(f,Y.x0,Y.y0+40,Y.x1-Y.x0,Y.y1-Y.y0-40,10);f.fill();f.strokeStyle='#1b1e23';f.lineWidth=5;f.strokeRect(Y.x0,Y.y0+40,Y.x1-Y.x0,Y.y1-Y.y0-40);
+  const ty=P4G.rail;f.fillStyle='#2b2826';f.fillRect(WX0+10,ty-20,-1270-WX0,40);for(let x=WX0+14;x<-1272;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=C.rail;f.fillRect(WX0+10,ty-11,-1270-WX0,4);f.fillRect(WX0+10,ty+7,-1270-WX0,4);
+  f.fillStyle='rgba(0,0,0,.18)';f.beginPath();f.arc(P4G.shaft.x,P4G.shaft.y,P4G.shaft.R+30,0,TAU);f.fill()}
+ if(B_('esf')){const E=ESFG;f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,E.x0-110,E.y0-30,E.x1-E.x0+150,E.trafo.y+E.trafo.h+16-(E.y0-30),14);f.fill()}
  /* crane rails */
  f.fillStyle='#22252b';{const c=CRN.skrap;f.fillRect(c.x0-6,c.y0-8,c.x1-c.x0+12,6);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,6)}
  {const c=CRN.ose;f.fillRect(c.x0-6,c.y0-10,c.x1-c.x0+12,5);f.fillRect(c.x0-6,c.y1+4,c.x1-c.x0+12,5)}
@@ -1419,7 +1540,7 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   f.fillStyle=hazPat(f);f.fillRect(QX,qy-8,WW-QX,8);f.fillStyle='#22262c';for(let x=QX+50;x<WW;x+=140){f.fillRect(x,qy-20,14,12)}
   f.strokeStyle='rgba(255,255,255,.08)';f.lineWidth=2;for(let i=0;i<22;i++){const x=QX+10+r()*(WW-QX-40),y=qy+20+r()*(WH-qy-30);f.beginPath();f.moveTo(x,y);f.quadraticCurveTo(x+12,y-4,x+24,y);f.stroke()}}
  /* border */
- f.fillStyle='#1d2026';f.fillRect(WX0,0,WW-WX0,10);f.fillRect(WX0,0,10,WH);f.fillRect(WX0,WH-10,QX-WX0,10);f.fillRect(WW-10,0,10,QY);
+ f.fillStyle='#1d2026';if(WXL>WX0)f.fillRect(WX0,0,WXL-WX0,WH);f.fillRect(WXL,0,WW-WXL,10);f.fillRect(WXL,0,10,WH);f.fillRect(WXL,WH-10,QX-WXL,10);f.fillRect(WW-10,0,10,QY);
  /* zone name plates */
  f.textBaseline='middle';for(const z of ZONES){if(!zoneShown(z))continue;const p=zonePlate(z),w=plateW(p,f);SK.box(f,p.x,p.y,w,p.h,p.col,null,10);f.font=`800 11px ${FONT}`;f.textAlign='center';f.fillStyle='#111';f.fillText(p.t,p.x+w/2,p.y+p.h/2+.5)}
 }
@@ -1433,7 +1554,9 @@ function mbSolids(u){const G2=mbGeo(u),M=MBU[u];if(!G2)return[];const{cx,cy}=G2;
  if(M.kind==='sm')return[{x:cx-148,y:cy-90,w:296,h:180}];
  return[{x:cx,y:cy,r:94},{x:cx-56,y:cy-128,w:112,h:44}]}
 /* the world is 1140 tall until the first old plant is mothballed (or the control room is needed); then 1560 */
-function setWorldH(){const h=AUTO()||MBK.some(u=>S.mb&&S.mb[u])?WHMAX:WH0;if(h!==WH){WH=h;navDirty=true}}
+function setWorldH(){const h=AUTO()||MBK.some(u=>S.mb&&S.mb[u])?WHMAX:WH0;if(h!==WH){WH=h;navDirty=true}
+ /* Phase 4: the world grows to the left once the hydrogen plant is the next build */
+ const xl=S.ph>=P4_PH?WX0:WXL0;if(xl!==WXL){WXL=xl;navDirty=true}}
 const FURN_SOL=()=>ET()==='sm'?[{x:688,y:416,w:226,h:370}]:ET()==='conv'?[{x:POS.F.x,y:POS.F.y+6,r:90},{x:POS.F.x-50,y:POS.F.y-136,w:100,h:70}]:[{x:POS.F.x,y:POS.F.y,r:98}];
 function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
  /* the ladle car track (tap position + the two parking spots) and the hot-metal transfer ladle are not walked across */
@@ -1447,7 +1570,7 @@ function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
  setWorldH();for(const u of MBK)if(mbOn(u)&&u!=='rj')SOLIDS.push(...mbSolids(u));
  if(AUTO())SOLIDS.push({x:CRB.x0+10,y:CRB.y0,w:CRB.x1-CRB.x0-20,h:18});
  /* supply plants: only what is built is solid */if(lv('kull'))SOLIDS.push({x:666,y:60,w:98,h:108});if(lv('o2'))SOLIDS.push({x:786,y:56,w:150,h:104});if(lv('kalk'))SOLIDS.push({x:928,y:68,w:112,h:56});
- if(era()===5){const C=CSG,t=C.y-C.hw;/* Consteel: seal + tunnel + connecting car, off-gas duct, gas cleaning, slag chute, measuring robot */
+ if(CS()){const C=CSG,t=C.y-C.hw;/* Consteel: seal + tunnel + connecting car, off-gas duct, gas cleaning, slag chute, measuring robot */
   SOLIDS.push({x:C.xc,y:t+6,w:C.xs-C.xc,h:2*C.hw-12},{x:C.xs,y:t,w:C.xt-C.xs,h:2*C.hw},{x:C.xt,y:C.y-22,w:32,h:44},{x:C.dx-C.dw/2,y:C.gy,w:C.dw,h:t-C.gy},
    {x:C.dx-40,y:150,w:80,h:C.gy-150},{x:150,y:56,w:206,h:178},{x:60,y:96,w:96,h:96},{x:786,y:POS.F.y+96,w:28,h:58},{x:TROBP.x,y:TROBP.y,r:20})}
  if(B_('lf'))SOLIDS.push({x:POS.lf.x,y:POS.lf.y,r:62});
@@ -1466,13 +1589,17 @@ function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
  if(lv('robot'))SOLIDS.push(ROBG.bend,ROBG.weld);
  if(AUTO()&&lv('sort'))SOLIDS.push({x:SORTG.x0-4,y:SORTG.y-18,w:SORTG.x1-SORTG.x0+8,h:36});
  if(AUTO()&&lv('twin'))SOLIDS.push({x:TWINP.x,y:TWINP.y,r:28});
+ /* Phase 4: electrolyser hall, H₂ tanks, shaft furnace + stack, DRI bin, pellet hopper; the electric smelting furnace */
+ if(B_('h2'))SOLIDS.push(...P4SOL());if(B_('esf'))SOLIDS.push(...ESFSOL());
  navDirty=true}
 /* the scrap yard is laid out per era (the Consteel line runs through it): pile 1, the hand-charging ring, the pad rows,
    the desk and the crane's reach move; everything that copied a position is updated here */
 let layEra=-1;
-function eraLayout(){const L=era()===5?LAY5:LAY0;if(layEra===era())return;layEra=era();
+function eraLayout(){const L=CS()?LAY5:LAY0;if(layEra===era())return;layEra=era();
+ /* the torpedo cars fill at the ironworks' cast house – or, in the electric smelting era, at the ESF's taphole */
+ POS.torpX0=era()===7?ESFG.tapX:-110;
  POS.y0.x=L.y0.x;POS.y0.y=L.y0.y;const y=SRCm.y0;y.x=L.y0.x;y.y=L.y0.y;
- POS.drop.x=L.drop.x;POS.drop.y=L.drop.y;const d=TGm.drop;d.x=L.drop.x;d.y=L.drop.y;d.fx={x:L.drop.x+(era()===5?0:30),y:L.drop.y-(era()===5?40:0)};
+ POS.drop.x=L.drop.x;POS.drop.y=L.drop.y;const d=TGm.drop;d.x=L.drop.x;d.y=L.drop.y;d.fx={x:L.drop.x+(CS()?0:30),y:L.drop.y-(CS()?40:0)};
  POSTS.skrap.x=L.post.x;POSTS.skrap.y=L.post.y;CRN.skrap.x1=L.x1;CRN.skrap.park=L.park;
  UPROW.skrap.s.length=0;for(const q of L.row)UPROW.skrap.s.push(q.slice());PADPOS.skrap.up={x:L.row[0][0],y:L.row[0][1]};
  try{for(const k in YC)YC[k].n=-1}catch(e){}layKey='';
@@ -1480,7 +1607,7 @@ function eraLayout(){const L=era()===5?LAY5:LAY0;if(layEra===era())return;layEra
  for(const h of helpers)if(h.r==='skrap'&&h.state==='unload'&&h.tg===d){const[sx,sy]=slot(d,h.gi);h.x=sx;h.y=sy;h.vx=h.vy=0}}
 const NC=20,GW=Math.ceil((WW-WX0)/NC),GH=Math.ceil(WHMAX/NC);
 const BLK=new Uint8Array(GW*GH);let navDirty=true;let FIELDS={},nFields=0;const QUE=new Int32Array(GW*GH);
-function blockedPt(x,y,m){if(x<WX0+26||y<26||x>WW-26||y>WH-26||(x>QX-16&&y>QY-16))return true;
+function blockedPt(x,y,m){if(x<WXL+26||y<26||x>WW-26||y>WH-26||(x>QX-16&&y>QY-16))return true;
  for(const s of SOLIDS){if(s.r){if(hyp(x-s.x,y-s.y)<s.r+m)return true}else if(x>s.x-m&&x<s.x+s.w+m&&y>s.y-m&&y<s.y+s.h+m)return true}return false}
 function rebuildNav(){for(let j=0;j<GH;j++)for(let i=0;i<GW;i++)BLK[j*GW+i]=blockedPt(WX0+i*NC+NC/2,j*NC+NC/2,12)?1:0;FIELDS={};nFields=0;navDirty=false}
 const DIRS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
@@ -1518,7 +1645,7 @@ function planPath(ax,ay,tx,ty){if(navDirty)rebuildNav();const f=field(tx,ty);
 function collide(a){
  for(const s of SOLIDS){if(s.r){const dx=a.x-s.x,dy=a.y-s.y,d=hyp(dx,dy),m=s.r+14;if(d<m){if(d<.01){a.y=s.y+m}else{a.x=s.x+dx/d*m;a.y=s.y+dy/d*m}}}
   else{const nx=clamp(a.x,s.x,s.x+s.w),ny=clamp(a.y,s.y,s.y+s.h),dx=a.x-nx,dy=a.y-ny,d=hyp(dx,dy);if(d<14){if(d>.01){a.x=nx+dx/d*14;a.y=ny+dy/d*14}else{const l=a.x-s.x,r=s.x+s.w-a.x,t=a.y-s.y,b=s.y+s.h-a.y,m=min(l,r,t,b);if(m===l)a.x=s.x-14;else if(m===r)a.x=s.x+s.w+14;else if(m===t)a.y=s.y-14;else a.y=s.y+s.h+14}}}}
- a.x=clamp(a.x,WX0+30,WW-30);a.y=clamp(a.y,30,WH-30);
+ a.x=clamp(a.x,WXL+30,WW-30);a.y=clamp(a.y,30,WH-30);
  if(a.x>QX-22&&a.y>QY-22){if(a.x-(QX-22)<a.y-(QY-22))a.x=QX-22;else a.y=QY-22}}
 const near=(a,x,y,r)=>hyp(a.x-x,a.y-y)<r;
 const stackKinds=a=>{const o=[],seen={};for(let i=a.stack.length-1;i>=0;i--){const it=a.stack[i];if(!seen[it.k]){seen[it.k]=1;o.push(it)}}return o};
@@ -1561,7 +1688,7 @@ const HOPK=6;
 const NODE={};
 const nodeRoom=id=>{const n=NODE[id];return n?max(0,n.cap-n.in.length-n.inc):0};
 const TG=[
- {id:'drop',kind:'scrap',x:POS.drop.x,y:POS.drop.y,r:56,open:()=>true,free:()=>floor((era()===5?csRoomAt(POS.drop.x,26):chgCap()-S.chg)/SCRAP_T+1e-6),give:it=>{if(era()===5)csAdd(POS.drop.x,it.t||SCRAP_T,26,20);else S.chg+=it.t||SCRAP_T;rec('f:skrap>ovn',it.t||SCRAP_T)},fx:{x:POS.drop.x+30,y:POS.drop.y}},
+ {id:'drop',kind:'scrap',x:POS.drop.x,y:POS.drop.y,r:56,open:()=>true,free:()=>floor((CS()?csRoomAt(POS.drop.x,26):chgCap()-S.chg)/SCRAP_T+1e-6),give:it=>{if(CS())csAdd(POS.drop.x,it.t||SCRAP_T,26,20);else S.chg+=it.t||SCRAP_T;rec('f:skrap>ovn',it.t||SCRAP_T)},fx:{x:POS.drop.x+30,y:POS.drop.y}},
  {id:'skip',kind:'ore',x:POS.skip.x,y:POS.skip.y,r:56,open:()=>!rjClosed(),free:()=>floor((skipCap()-S.rj.ore)/ORE_T+1e-6),give:it=>{S.rj.ore+=it.t||ORE_T;rec('f:malm>rj',it.t||ORE_T);S.st.ore+=it.t||ORE_T},fx:{x:POS.skip.x+20,y:POS.skip.y-20}},
  {id:'rjsale',sell:'dock',x:POS.rjsale.x,y:POS.rjsale.y,r:56,open:()=>!rjClosed()||PILE.pig.length>0||P.stack.some(i=>i.k==='pig')||helpers.some(h=>h.stack.some(i=>i.k==='pig'))},
  {id:'rack',kind:'elek',x:POS.rack.x,y:POS.rack.y,r:44,open:()=>isEAF(),free:()=>floor(12-S.elek+1e-6),give:()=>{S.elek=min(12,S.elek+1)}},
@@ -1638,10 +1765,12 @@ const ROUTES={
  stel:prodRoute('coil',HIRE.stel.col),nett:prodRoute('mesh',HIRE.nett.col),kob:prodRoute('bent',HIRE.kob.col)};
 /* automatic transport cars (driverless) in the automated eras: product pile → buyer or next station */
 /* Phase 3: the endless line and the robot cells have no helpers, only their own transport cars */
-ROUTES.endl=prodRoute('ebar','#ffb36b');ROUTES.rob=prodRoute('cage','#f0a0ff');
+ROUTES.endl=prodRoute('ebar','#ffb36b');
+/* Phase 4: the DRI plant is run from its desk only (its operators never carry) */
+ROUTES.dri={col:HIRE.dri.col,src:()=>SRCm.y0,tgt:()=>TGm.drop};ROUTES.rob=prodRoute('cage','#f0a0ff');
 const AROUTE=Object.fromEntries(Object.keys(AGVK).map(st=>[st,prodRoute(AGVK[st],(HIRE[st]||ROUTES[st]).col)]));
 const nAGV=st=>!AUTO()||!AGVK[st]||!stOn(st)?0:HIRE[st]?1+lv(HIRE[st].id):st==='endl'?(lv('endless')?2:0):st==='rob'?(lv('robot')?2:0):0;
-function syncHelpers(){for(const st of[...Object.keys(HIRE),'endl','rob']){const want=HIRE[st]?lv(HIRE[st].id):0;let have=helpers.filter(h=>h.r===st&&!h.agv).length;const pp=HIREPOS[st]||PR[AGVK[st]].pile;
+function syncHelpers(){for(const st of[...Object.keys(HIRE),'endl','rob']){const want=HIRE[st]&&!(st==='dri'&&!B_('h2'))?lv(HIRE[st].id):0;/* DRI operators exist only with the DRI plant */let have=helpers.filter(h=>h.r===st&&!h.agv).length;const pp=HIREPOS[st]||PR[AGVK[st]].pile;
   while(have<want){helpers.push({r:st,i:have,gi:helpers.length,x:pp.x+rnd(-10,10),y:pp.y+30,vx:0,vy:0,walk:0,stack:[],cd:0,wait:0,moving:false,state:'toSrc',src:null,tg:null,trip:0,stuck:0});have++}
   const wa=nAGV(st);let ha=helpers.filter(h=>h.r===st&&h.agv).length;const pl=PR[AGVK[st]]&&PR[AGVK[st]].pile;
   while(ha<wa){const blk=pl&&blockedPt(pl.x,pl.y,14);helpers.push({r:st,agv:true,i:ha,gi:helpers.length,x:blk?pp.x:pl.x+rnd(-14,14),y:blk?pp.y+30:pl.y+rnd(-8,8),vx:0,vy:0,walk:0,stack:[],cd:0,wait:0,moving:false,state:'toSrc',src:null,tg:null,trip:0,stuck:0});ha++}
@@ -1706,7 +1835,7 @@ function hUpdate(h,dt){const R=h.agv?AROUTE[h.r]:ROUTES[h.r];h.cd-=dt;
 const F={x:POS.F.x,y:POS.F.y,state:'melt',bath:0,solid:0,temp:1540,tilt:0,tapT:0,refT:0,flick:1,arc:0,tapAmt:0,slagAcc:0,stop:false,L:null,
  ch:null,chT:0,roof:0,lim:'',rate:0,rp:0,sup:{},elekOut:false,starve:0,waitHM:0,waitLadle:0,smDoor:-1,SB:null,scIn:0,hmIn:0,hmCh:null,lance:0};
 function furnRate(){const E=E_();let rp=Rpow();F.elekOut=isEAF()&&S.elek<=0;if(F.elekOut)rp*=.4;F.rp=rp;let r=rp,lim='';
- for(const s of E.req){const c=lv(s)>0?supCap(s):E.fb*rp;F.sup[s]={cap:lv(s)>0?c:0,lim:c};if(c<r-1e-9){r=c;lim=s}}
+ for(const s of E.req){const c=(lv(s)>0?supCap(s):E.fb*rp)/(s==='kalk'&&era()===6?1+.8*DRI.sh:1);F.sup[s]={cap:lv(s)>0?c:0,lim:c};if(c<r-1e-9){r=c;lim=s}}
  F.lim=lim;return r}
 function furnRoom(){return max(0,fcap()-F.bath-F.solid)}
 /* scrap the furnace may still take this heat (the rest of the charge must be råjern) */
@@ -1718,7 +1847,7 @@ function addSolid(m){F.solid+=m;F.scIn+=m}
    through the preheating tunnel and over the connecting car into the bath. The crane drops its lifts along the charging section;
    the conveyor moves the whole layer at one speed (fed to the melting rate, stopped while the furnace cannot take scrap);
    the off-gas flowing back through the tunnel heats the layer before it falls into the hot heel. ---------- */
-const CSN=64,CSB={m:new Float32Array(CSN),tc:new Float32Array(CSN).fill(20),v:0,vmax:0,pos:0,feed:0,pre:380,gasK:.5,slot:0,lim:{band:0,kran:0,yard:0},drops:[]};
+const CSN=64,CSB={m:new Float32Array(CSN),d:new Float32Array(CSN),tc:new Float32Array(CSN).fill(20),v:0,vmax:0,pos:0,feed:0,pre:380,gasK:.5,slot:0,lim:{band:0,kran:0,yard:0},drops:[]};
 const csL=()=>(CSG.xf-CSG.x0)/CSN;
 const csX=i=>CSG.x0+(i+.5)*csL();
 const csI=x=>clamp(floor((x-CSG.x0)/csL()),0,CSN-1);
@@ -1739,20 +1868,24 @@ function csRoomAll(){const cap=csCap();let r=0;for(let i=0;i<=CSI1();i++)r+=max(
 function csNextDrop(need){if(csRoomAll()<min(need,csCap()*2))return null;const x=csSlotX(CSORD[CSB.slot]);CSB.slot=(CSB.slot+1)%CSSLOT;return x}
 function csBestDrop(){let b=null,bv=csCap()*.6;for(let k=0;k<CSSLOT;k++){const x=csSlotX(k),r=csRoomAt(x,30);if(r>bv){bv=r;b=x}}return b}
 /* a new save, or Consteel just built: what was waiting at the furnace is spread on the conveyor from the furnace end */
-function csInit(t){CSB.m.fill(0);CSB.tc.fill(20);const cap=csCap();for(let i=CSN-1;i>=0&&t>1e-6;i--){const a=min(cap*.8,t);CSB.m[i]=a;t-=a;CSB.tc[i]=csX(i)>CSG.xs?csGasT(csX(i))*.7:20}S.chg=csSum()}
+function csInit(t){CSB.m.fill(0);CSB.d.fill(0);CSB.tc.fill(20);const cap=csCap();for(let i=CSN-1;i>=0&&t>1e-6;i--){const a=min(cap*.8,t);CSB.m[i]=a;t-=a;CSB.tc[i]=csX(i)>CSG.xs?csGasT(csX(i))*.7:20}S.chg=csSum()}
 /* off-gas temperature along the tunnel: about 1200 °C where it leaves the furnace, kept up by post-combustion, cooler at the takeoff */
 function csGasT(x){if(x<CSG.xs)return 20;const k=clamp((x-CSG.xs)/(CSG.xf-CSG.xs),0,1),g=CSB.gasK;return 20+g*(300+880*Math.pow(k,.7))+g*110*Math.sin(PI*k)}
 /* preheated scrap needs less electricity: about 340 kWh/t at a typical ~450 °C, more when it arrives cold */
 const csPreK=()=>1+.2*(500-clamp(CSB.pre,20,650))/600;
-function csStep(dt,can,sr){const L=csL(),cap=csCap(),m=CSB.m,tc=CSB.tc,N=CSN;
+function csStep(dt,can,sr){const L=csL(),cap=csCap(),m=CSB.m,tc=CSB.tc,N=CSN,dd=CSB.d;
  CSB.gasK=lerp(CSB.gasK,F.state==='tapping'?.45:F.arc>0?clamp(.5+.5*F.arc,0,1):.4,min(1,dt*.4));
  CSB.vmax=beltRate()*L/cap;
  /* feed control: run at full speed until the bath holds some scrap, then match the melting rate */
  let v=0;if(can){const want=F.solid>fcap()*.08?furnRate():1e9,lim=min(want,sr/max(dt,1e-3));v=m[N-1]>1e-4?min(CSB.vmax,lim*L/m[N-1]):CSB.vmax}
  CSB.v=can?lerp(CSB.v,v,min(1,dt*6)):0;
  let f=CSB.v*dt/L,steps=1;while(f>.5){f/=2;steps*=2}let out=0,outT=0;
- for(let st=0;st<steps;st++){const o=m[N-1]*f;out+=o;outT+=o*tc[N-1];
-  for(let i=N-1;i>=1;i--){const dm=m[i-1]*f,keep=m[i]*(1-f),nm=keep+dm;tc[i]=nm>1e-9?(keep*tc[i]+dm*tc[i-1])/nm:tc[i];m[i]=nm}m[0]*=1-f}
+ let outD=0;for(let st=0;st<steps;st++){const o=m[N-1]*f;out+=o;outT+=o*tc[N-1];outD+=dd[N-1]*f;
+  for(let i=N-1;i>=1;i--){const dm=m[i-1]*f,keep=m[i]*(1-f),nm=keep+dm;tc[i]=nm>1e-9?(keep*tc[i]+dm*tc[i-1])/nm:tc[i];m[i]=nm;dd[i]=dd[i]*(1-f)+dd[i-1]*f}m[0]*=1-f;dd[0]*=1-f}
+ /* Phase 4 (era 6): the DRI gallery drops hot DRI on the first cell of the charging section, up to the set share of the layer;
+    the crane fills the rest with scrap */
+ if(era()===6)driJoin(dt);else{DRI.beltOut=0;DRI.beltLim=lerp(DRI.beltLim,0,min(1,dt*.25))}
+ if(outD>0)rec('drifeed',min(out,outD));
  CSB.pos+=CSB.v*dt;
  /* heat transfer: counter-current off-gas over the layer in the tunnel; the open section only cools a little */
  const kx=1-Math.exp(-.2*dt),kc=1-Math.exp(-.02*dt);for(let i=0;i<N;i++){if(m[i]<=1e-6){m[i]=0;tc[i]=20;continue}const x=csX(i);tc[i]+=x>=CSG.xs?(csGasT(x)-tc[i])*kx:(20-tc[i])*kc}
@@ -1761,12 +1894,12 @@ function csStep(dt,can,sr){const L=csL(),cap=csCap(),m=CSB.m,tc=CSB.tc,N=CSN;
  /* what holds the feed back while the furnace could melt more: conveyor speed (full layer at full speed), the crane, or the yard */
  const hungry=can&&F.state==='melt'&&F.solid<fcap()*.03&&sr>1,yardLow=count(SRCm.y0)+(SRCm.y1.open()?count(SRCm.y1):0)<3;
  const tgt=!hungry?'':m[N-1]>=cap*.8&&CSB.v>=CSB.vmax*.95?'band':yardLow?'yard':'kran',a=min(1,dt*.25);for(const k in CSB.lim)CSB.lim[k]+=((k===tgt?1:0)-CSB.lim[k])*a}
-const csLim=()=>{if(era()!==5)return'';let b='',bv=.55;for(const k in CSB.lim)if(CSB.lim[k]>bv){bv=CSB.lim[k];b=k}return b};
+const csLim=()=>{if(!CS())return'';let b='',bv=.55;for(const k in CSB.lim)if(CSB.lim[k]>bv){bv=CSB.lim[k];b=k}return b};
 /* temperature-measuring robot at the slag door: probe from the magazine → lance in through the door → reading → burnt probe to the bin */
 const TROB={st:'park',t:0,n:0,val:0,show:0,wait:5,done:0};
 const TROBD={fetch:1.1,mount:.7,go:1.2,in:2.6,out:1.1,eject:.9,home:1.1};
 const TROBN={park:'fetch',fetch:'mount',mount:'go',go:'in',in:'out',out:'eject',eject:'home',home:'park'};
-function updTRob(dt){if(era()!==5){TROB.st='park';TROB.t=0;return}TROB.t+=dt;CSB.slk=lerp(CSB.slk||0,F.rate>0&&!F.stop?1:0,min(1,dt*.8));TROB.show=max(0,TROB.show-dt);
+function updTRob(dt){if(!CS()){TROB.st='park';TROB.t=0;return}TROB.t+=dt;CSB.slk=lerp(CSB.slk||0,F.rate>0&&!F.stop?1:0,min(1,dt*.8));TROB.show=max(0,TROB.show-dt);
  if(TROB.st==='park'){if(TROB.t>=TROB.wait&&F.state!=='tapping'&&F.bath>fcap()*.2){TROB.st='fetch';TROB.t=0}return}
  if(TROB.st==='in'&&!TROB.done&&TROB.t>=TROBD.in*.55){TROB.done=1;TROB.val=Math.round(F.temp+rnd(-4,4));TROB.n++;TROB.show=3.4;if(near(P,POS.F.x,POS.F.y,520))sfx('tick',900)}
  if(TROB.t>=TROBD[TROB.st]){TROB.st=TROBN[TROB.st];TROB.t=0;if(TROB.st==='park'){TROB.wait=13+rnd(0,4);TROB.done=0}}}
@@ -1797,7 +1930,7 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
  if(F.solid>0&&!F.stop&&!paused&&F.state!=='tapping'){const m=min(F.solid,r*dt);F.solid-=m;F.bath+=m;F.rate=dt>0?m/dt:0;S.st.scrap+=m;rec('melt',m);
   for(const s of E.req)if(lv(s)>0)rec('s:'+s,m);
   if(isEAF()){S.elek=max(0,S.elek-m/E.elek)}
-  if(slagOn()){F.slagAcc+=m/E.slag;while(F.slagAcc>=1){F.slagAcc-=1;if(S.pot<potMax())S.pot++}}
+  if(slagOn()){F.slagAcc+=m/E.slag*(era()===6?1+.6*DRI.sh:1);while(F.slagAcc>=1){F.slagAcc-=1;if(S.pot<potMax())S.pot++}}
   if(typ!=='conv'&&Math.random()<dt*30)spark(F.x+rnd(-30,30),F.y-20+rnd(-20,20),2,120,C.arc,.35)}
  G.chgFull=(G.chgFull||0)*(1-dt*.1)+(F.state!=='ready'&&!F.stop&&!F.waitHM&&(typ==='conv'?S.hm>=hmCap()*.95&&S.chg>=scrapMin():E.ch==='belt'?S.chg>=chgCap()*.8&&!csLim():S.chg>=chgCap()-SCRAP_T-.01)?dt*.1:0);
  /* waiting reasons: no scrap (starve) or no råjern (waitHM) */
@@ -1850,8 +1983,8 @@ function syncTorps(){const want=nTorp();while(TORPS.length<want)TORPS.push(mkTor
 function rjRate(){let rp=rjPow(),r=rp,lim='';RJ.rp=rp;for(const s of rjReq()){const c=lv(s)>0?rjSupCap(s):.7*rp;RJ.sup[s]={cap:lv(s)>0?c:0,lim:c};if(c<r-1e-9){r=c;lim=s}}RJ.lim=lim;return r}
 const castTorp=()=>TORPS.find(t=>t.st==='fill'&&Math.abs(t.x-POS.torpX0)<4);
 /* the taphole and the car pour scale with the plant, so a big furnace and big cars are not held back by a fixed 4-5 t/s stream */
-const tapRate=()=>max(4,rjPow()*1.6,torpCap()/10),pourRate=()=>max(5,torpCap()/6);
-function updRJ(dt){if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.heat-dt*.05);return}
+const tapRate=()=>max(4,(era()===7?esfRate():rjPow())*1.6,torpCap()/10),pourRate=()=>max(5,torpCap()/6);
+function updRJ(dt){if(era()===7){RJ.rate=0;RJ.heat=max(0,RJ.heat-dt*.05);updESF(dt);return}if(rjClosed()){RJ.rate=0;RJ.tapping=false;RJ.heat=max(0,RJ.heat-dt*.05);return}
  /* ore train fills the ore yard */
  const oy=SRCm.ore;S.yard.ore=min(oreYardCap(),yardT(oy)+oreYardRate()*dt);RJ.trainT+=dt;
  /* smelting: limited by the furnace size (or MVA) and by coke / hot blast */
@@ -1881,7 +2014,7 @@ function updTorps(dt){syncTorps();const sp=torpSpd(),X0=POS.torpX0,X1=POS.torpX1
     if(full||(t.load>0&&empty&&short&&(have+t.load>=need||t.wait>6||t.load>=cap*.6))){t.st='go';t.wait=0}else if(t.load>0&&empty&&short)t.wait+=dt;else t.wait=0}
    if(!S.tg.rj||!usesHM()){t.wait=0}break}
   case'go':{const ahead=TORPS.filter(o=>o!==t&&(o.st==='pour'||(o.st==='go'&&o.x>t.x)));const tx=X1-ahead.length*150;t.x=min(tx,t.x+sp*dt);if(t.x>=X1-1){t.x=X1;t.st='pour'}break}
-  case'pour':{if(!usesHM()){t.st='back';break}const room=max(0,hmCap()-S.hm),a=min(t.load,room,pourRate()*dt);if(a>0){t.load-=a;S.hm+=a;rec('f:rj>ovn',a);t.pouring=1}else t.pouring=0;
+  case'pour':{if(!usesHM()){t.st='back';break}const room=max(0,hmCap()-S.hm),a=min(t.load,room,pourRate()*dt);if(a>0){t.load-=a;S.hm+=a;rec(era()===7?'f:esf>ovn':'f:rj>ovn',a);t.pouring=1}else t.pouring=0;
    if(t.load<=.01){t.load=0;t.st='back';t.pouring=0}break}
   case'back':{const ahead=TORPS.filter(o=>o!==t&&o.st==='back'&&o.x<t.x).length,tx=X0+150*(fillQ().length+ahead);t.x=max(tx,t.x-sp*dt);if(t.x<=tx+.5){t.st='fill';t.wait=0;t.ord=torpSeq++}break}}}}
 
@@ -1889,13 +2022,13 @@ function updTorps(dt){syncTorps();const sp=torpSpd(),X0=POS.torpX0,X1=POS.torpX1
 function mkCrane(id,o){const d=CRN[id];return Object.assign({id,d,x:d.park.x,y:d.park.y,h:1,state:'idle',job:null,load:0,pay:null,t:0,man:false},o)}
 const CRANES=[
  /* scrap crane; with Consteel it is the charging crane: a big lifting magnet that lays its lifts along the charging section */
- mkCrane('skrap',{n:'skrapkran',built:()=>lv('kran')>0||era()>=3,spd:()=>kranSpd(),bonus:'dobbel last',ht:()=>era()===5?.24:.35,
-  dropAny:c=>era()===5&&c.x>CSG.x0-4&&c.x<CSG.xc+4&&Math.abs(c.y-CSG.y)<34,
+ mkCrane('skrap',{n:'skrapkran',built:()=>lv('kran')>0||era()>=3,spd:()=>kranSpd(),bonus:'dobbel last',ht:()=>CS()?.24:.35,
+  dropAny:c=>CS()&&c.x>CSG.x0-4&&c.x<CSG.xc+4&&Math.abs(c.y-CSG.y)<34,
   find(c){const y=bestYard(null);if(count(y)<=0)return null;
-   if(era()===5){const tx=csNextDrop(craneLift()*(c.man?2:1)*.3);if(tx==null)return null;return{from:c.man?{x:y.x,y:y.y}:{x:y.x+rnd(-40,40),y:y.y+rnd(-56,56)},to:{x:tx,y:CSG.y},y}}
+   if(CS()){const tx=csNextDrop(craneLift()*(c.man?2:1)*.3);if(tx==null)return null;return{from:c.man?{x:y.x,y:y.y}:{x:y.x+rnd(-40,40),y:y.y+rnd(-56,56)},to:{x:tx,y:CSG.y},y}}
    if(chgCap()-S.chg<1)return null;return{from:{x:y.x,y:y.y},to:{x:POS.drop.x-10,y:POS.drop.y},y}},
-  pick(c,j){const want=craneLift()*(c.man?2:1),amt=min(want,yardT(j.y),era()===5&&!c.man?max(csCap()*4,csRoomAll()*.5):1e9);if(amt<1)return false;S.yard[j.y.id]=yardT(j.y)-amt;c.load=amt;return true},
-  drop(c,j){if(era()===5){const x=c.man?clamp(c.x,CSG.x0+12,CSG.xc-12):j.to.x;
+  pick(c,j){const want=craneLift()*(c.man?2:1),amt=min(want,yardT(j.y),CS()&&!c.man?max(csCap()*4,csRoomAll()*.5):1e9);if(amt<1)return false;S.yard[j.y.id]=yardT(j.y)-amt;c.load=amt;return true},
+  drop(c,j){if(CS()){const x=c.man?clamp(c.x,CSG.x0+12,CSG.xc-12):j.to.x;
     if(!c.man&&csRoomAt(x,30)<min(c.load,csCap()*1.5)){j.w0=j.w0||T;if(T-j.w0>min(9,1.5+(x-CSG.x0)/max(1,CSB.vmax*.6))){j.w0=0;const nx=csBestDrop();if(nx!=null&&Math.abs(nx-x)>8){j.to={x:nx,y:CSG.y};return'move'}}return false}
     const left=csAdd(x,c.load,22,20),put=c.load-left;
     if(put>0){rec('f:skrap>ovn',put);CSB.drops.push({x,t:T,a:put});if(CSB.drops.length>40)CSB.drops.shift();spark(x,CSG.y,10,120,'#a8d4ff',.4);if(near(P,x,CSG.y,500))sfx('clank')}
@@ -1914,7 +2047,7 @@ const CRANES=[
   pick(c){const n=min(magLoad()*(c.man?2:1),PILE.billet.length,nodeRoom('gjv'));if(n<=0)return false;c.pay=PILE.billet.splice(PILE.billet.length-n,n);return true},
   drop(c){const a=c.pay||[];while(a.length&&nodeRoom('gjv')>0){const it=a.shift();NODE.gjv.in.push(it);rec('f:strang>gjv',it.t)}if(a.length)return false;c.pay=null;return true}})];
 const CRm=Object.fromEntries(CRANES.map(c=>[c.id,c]));
-Object.defineProperty(CRm.skrap,'n',{get:()=>era()===5?'chargeringskran':'skrapkran'});
+Object.defineProperty(CRm.skrap,'n',{get:()=>CS()?'chargeringskran':'skrapkran'});
 const canMan=c=>c.built()&&(!c.man_ok||c.man_ok());
 function craneMove(c,tx,ty,dt,sp){const dx=tx-c.x,dy=ty-c.y,d=hyp(dx,dy);if(d<1)return 0;const s=min(d,sp*dt);c.x+=dx/d*s;c.y+=dy/d*s;return d-s}
 function updCrane(c,dt,ix,iy){if(!c.built()){c.man=false;return}const sp=c.spd()*(c.man?1.6:1),ht=c.ht?c.ht():.35;c.t+=dt;c.busy=(c.busy||0)*(1-min(1,dt*.2))+(c.state!=='idle'?min(1,dt*.2):0);
@@ -2186,9 +2319,9 @@ function updOrders(dt){if(!ordOn())return;const o=S.ord;
 /* ---------- by-products: slag → cement (in the slag price), waste heat → district heating (income from the furnace power),
    CO₂ capture (lowers CO₂ per tonne → green price) ---------- */
 const slagK=()=>1+1.2*lv('slagmill');
-const dhInc=()=>lv('dheat')&&isEAF()?MW()*.018*lv('dheat')*BASEP()*gm():0;/* per second at full arc */
+const dhInc=()=>lv('dheat')&&(isEAF()||era()===7)?(era()===7?esfMW():MW())*.018*lv('dheat')*BASEP()*gm():0;/* per second at full arc */
 function updP3(dt){updSH(dt);
- if(lv('dheat')&&isEAF()&&F.arc>0){const a=dhInc()*F.arc*dt;S.money+=a;earn(a);S.st.byp=(S.st.byp||0)+a;rec('v:dheat',a);rec('v:salg',a)}
+ if(lv('dheat')&&(isEAF()&&F.arc>0||era()===7&&ESF.rate>0)){const a=dhInc()*(era()===7?min(1,ESF.rate/max(1e-6,esfRate())):F.arc)*dt;S.money+=a;earn(a);S.st.byp=(S.st.byp||0)+a;rec('v:dheat',a);rec('v:salg',a)}
  updOrders(dt)}
 /* ---------- vehicles ---------- */
 function updVeh(v,dt,dist){if(v.drive>0){v.drive+=dt;const t=v.drive;v.off=t<1.2?ease(t/1.2)*dist:t<1.8?dist:dist*(1-ease((t-1.8)/1.2));if(t>=3){v.drive=0;v.off=0}}else if(v.load>=v.cap){v.load-=v.cap;v.drive=.001}}
@@ -2229,6 +2362,8 @@ function urgentIds(st){switch(st){
  case'strang':return LADLES.some(l=>l.state==='await'&&l.next==='tur'&&l.steel>.01)&&LADLES.some(l=>l.state==='cast')?['caster','strands','turret']:[];
  case'endl':return elOn()&&elDiv()>.08?(EL.rc>0||EL.feedE<=elRate()*1.02?['loop']:['elspd','loop']):[];
  case'qa':return shOn()&&shState()!=='ok'?['tdheat']:[];
+ case'dri':return DRI.shortB?[{elyz:'elyz',h2st:'h2st',shaft:'shaft',pellet:'pellet'}[driLim()]]:DRI.beltB?['dribelt']:[];
+ case'esf':return era()===7&&(F.waitHM>1.5||ESF.hmShort>.5)?(esfLim()==='full'||RJ.stopT>1.5?['etorpn','etorp']:esfLim()==='mw'?['esfmw']:[]):[];
  case'gjv':if(PILE.billet.length>20&&B_('vv')&&!lv('varm'))return['magkran','varm'];
  default:{const n=NODE[st];return n&&n.util>.9&&n.in.length>=n.cap*.5?[{gjv:'gjvup',vv:'vvup',tc:'tcup',stel:'stelup',nett:'nettup',kob:'kobup',rob:'robspd'}[st],'bjelke','splitt','stelmor']:[]}}}
 /* the upgrade the station would suggest (part-paid → fixes the bottleneck → cheapest); used by the KART panel and tests */
@@ -2241,10 +2376,13 @@ function vis(d){switch(d.kind){
  case'up':return d.slot>=0&&lv(d.u.id)<d.u.max;
  case'hire':return stOn(d.st)&&(!d.h.req||d.h.req())&&lv(d.h.id)<d.h.costs.length;
  case'build':{const b=nextBuild();if(!b)return false;d.x=b.x;d.y=b.y;return true}
- case'prestige':return S.ph>=BUILDS.length;
- case'demol':case'restart':return mbOn(d.u)&&mbPadPos(d)}return false}
-function cost(d){switch(d.kind){case'up':return upCost(d.u);case'hire':return d.h.costs[min(lv(d.h.id),d.h.costs.length-1)];case'build':{const b=nextBuild();return b?b.cost:0}case'demol':return MBU[d.u].dem;case'restart':return restartOK(d.u)?MBU[d.u].rc:0}return 0}
-function padName(d){switch(d.kind){case'up':return upName(d.u);case'hire':return hName(d.h);case'build':{const b=nextBuild();return b?t_('Bygg: {0}',t_(b.n)):''}case'prestige':return t_('Nytt verk');case'demol':return t_('Riv');case'restart':return t_('Start igjen')}return''}
+ case'prestige':return S.ph>=PRES_PH;
+ case'demol':return mbOn(d.u)&&mbPadPos(d);
+ /* the LD converter demolished: in the electric smelting era it can be built again, in the melt shop */
+ case'restart':if(rebuildLD(d)){d.x=990;d.y=1040;d.st='ovn';return true}return mbOn(d.u)&&mbPadPos(d)}return false}
+const rebuildLD=d=>d.u==='ld'&&mbSt('ld')==='gone'&&B_('esf')&&!ldRun();
+function cost(d){switch(d.kind){case'up':return upCost(d.u);case'hire':return d.h.costs[min(lv(d.h.id),d.h.costs.length-1)];case'build':{const b=nextBuild();return b?b.cost:0}case'demol':return MBU[d.u].dem;case'restart':return restartOK(d.u)?(rebuildLD(d)?MBU[d.u].rb:MBU[d.u].rc):0}return 0}
+function padName(d){switch(d.kind){case'up':return upName(d.u);case'hire':return hName(d.h);case'build':{const b=nextBuild();return b?t_('Bygg: {0}',t_(b.n)):''}case'prestige':return t_('Nytt verk');case'demol':return t_('Riv');case'restart':return t_(rebuildLD(d)?'Bygg opp igjen':'Start igjen')}return''}
 function padSub(d){switch(d.kind){case'up':{const u=d.u;if(u.person)return t_('Hjelpere {0} av {1}',lv(u.id),u.max);return lv(u.id)>=u.max?t_('MAKS'):t_('Nivå {0}/{1}',lv(u.id),u.max)}
  case'hire':return t_(AUTO()&&d.h.op?'Operatører {0} av {1}':'Hjelpere {0} av {1}',lv(d.h.id),d.h.costs.length);case'build':return t_('Fase {0} · ny stasjon',S.ph+2);
  case'prestige':return presGain()>0?t_('+{0} ekspertise',presGain()):t_('Tjen {0} totalt',kr(PRES_NEED));
@@ -2265,9 +2403,9 @@ function onBuild(b){S.st.eraT[b.id]=S.st.play;const nu=mbSync();if(b.id==='eaf1'
  if(b.era){const E=E_();if(F.state==='tapping')finishTap();
   if(F.ch){const c=F.ch;if(c.hm!=null){F.solid+=c.s+c.hm;F.scIn+=c.s;F.hmIn+=c.hm}else if(!c.done)addSolid(c.amt)}if(F.hmCh){F.bath+=F.hmCh.amt;F.hmIn+=F.hmCh.amt;F.hmCh=null}
   F.ch=null;F.roof=0;F.smDoor=-1;F.tilt=0;F.lance=0;F.bath=min(F.bath,fcap());F.solid=min(F.solid,max(0,fcap()-F.bath));
-  if(b.id==='eaf1'){closeRJ();toOperators();eraCard()}
-  toast(E.yr+' · '+t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
-  if(usesHM())toast(t_('Chargen: {0}–{1} % råjern, resten skrap',Math.round(E.hm[0]*100),Math.round(E.hm[1]*100)));
+  if(b.id==='eaf1'){closeRJ();toOperators();eraCard()}if(b.id==='h2'){S.dri.pel=max(S.dri.pel,120);eraCard()}
+  if(b.id==='h2'){toast(E.yr+' · '+t_('{0} er bygget!',t_(b.n)),true);toast(t_(b.d))}else{toast(E.yr+' · '+t_('Ny ovn: {0}!',t_(E.n)),true);toast((E.type==='conv'?t_('Ingen ekstern energi – oksidasjonen gir varmen'):E.E+' kWh/t')+' · '+t_('tap-til-tap {0}',t_(E.tt))+(E.req.length?' · '+t_('trenger {0}',E.req.map(s=>t_(SUPN[s])).join(', ')):''));
+  if(usesHM())toast(t_('Chargen: {0}–{1} % råjern, resten skrap',Math.round(E.hm[0]*100),Math.round(E.hm[1]*100)))}
   if(b.id==='eaf1'){ST.elek=max(ST.elek,12);S.elek=12}if(b.id==='consteel'){csInit(S.chg);if(G.crane==='skrap'){CRm.skrap.man=false;G.crane=null}const c=CRm.skrap;c.state='idle';c.job=null;c.load=0;toast(t_('Chargeringskranen legger skrapet langs hele chargeringsseksjonen – ingen trenger å bære skrap.'))}G.chFx=2;sfx('mile');buzz([30,40,30,40,60])}
  else if(b.rjEra){toast(year()+' · '+t_('Ny råjernsovn: {0}!',t_(RJE[rjEra()].n)),true);toast(t_(b.d));G.chFx=2;sfx('mile')}
  else{toast(t_('{0} er bygget!',t_(b.n)),true);if(b.d)toast(t_(b.d))}
@@ -2292,11 +2430,11 @@ function closeRJ(){let t=S.hm+S.rj.hearth+RJ.pigAcc;for(const c of TORPS){t+=c.l
    a save already in a later era gets its old plants as if they had been kept) */
 function mbSync(){if(!S.mb||typeof S.mb!=='object'||Array.isArray(S.mb))S.mb={};const nu=[];
  for(const k in S.mb){const m=S.mb[k];if(!MBU[k]||!m||typeof m!=='object'||['mb','gone','run'].indexOf(m.st)<0||!B_(MBU[k].from)){delete S.mb[k];continue}
-  if(m.st==='gone'){S.mb[k]={st:'gone'};continue}if(k==='rj')m.p='rj';else if(MBPLOTS.indexOf(m.p)<0||MBK.some(o=>o!==k&&S.mb[o]&&S.mb[o].p===m.p&&S.mb[o].st!=='gone'&&MBK.indexOf(o)<MBK.indexOf(k)))m.p=null}
- for(const k of MBK){const m=S.mb[k];if(m&&m.st!=='gone'&&m.p==null){const p=freePlot();if(p)m.p=p;else S.mb[k]={st:'gone'}}}
- for(const k of MBK){if(S.mb[k]||!B_(MBU[k].from))continue;const p=k==='rj'?'rj':freePlot();S.mb[k]=p?{st:'mb',p}:{st:'gone'};if(p)nu.push(k)}
+  if(m.st==='gone'||m.st==='run'){S.mb[k]={st:m.st};continue}if(MBU[k].when&&!MBU[k].when()){delete S.mb[k];continue}if(k==='rj')m.p='rj';else if(MBPLOTS.indexOf(m.p)<0||MBK.some(o=>o!==k&&S.mb[o]&&S.mb[o].p===m.p&&S.mb[o].st!=='gone'&&MBK.indexOf(o)<MBK.indexOf(k)))m.p=null}
+ for(const k of MBK){const m=S.mb[k];if(m&&m.st==='mb'&&m.p==null){const p=freePlot();if(p)m.p=p;else S.mb[k]={st:'gone'}}}
+ for(const k of MBK){if(S.mb[k]||!B_(MBU[k].from)||(MBU[k].when&&!MBU[k].when()))continue;const p=k==='rj'?'rj':freePlot();S.mb[k]=p?{st:'mb',p}:{st:'gone'};if(p)nu.push(k)}
  return nu}
-function freePlot(){for(const p of MBPLOTS)if(!MBK.some(k=>S.mb[k]&&S.mb[k].st!=='gone'&&S.mb[k].p===p))return p;return null}
+function freePlot(){for(const p of MBPLOTS)if(!MBK.some(k=>S.mb[k]&&S.mb[k].st==='mb'&&S.mb[k].p===p))return p;return null}
 const mbUpkeep=()=>MBK.reduce((a,k)=>a+(mbOn(k)?MBU[k].up:0),0);
 const mbName=u=>t_(MBU[u].n);
 function demolish(u){const M=MBU[u];if(!mbOn(u))return;const g2=u==='rj'?{cx:POS.rjF.x,cy:POS.rjF.y}:mbGeo(u);S.mb[u]={st:'gone'};
@@ -2305,7 +2443,7 @@ function demolish(u){const M=MBU[u];if(!mbOn(u))return;const g2=u==='rj'?{cx:POS
  rebuildSolids();bakeFloor();layKey='';layoutPads();if(g2){for(let i=0;i<4;i++)spark(g2.cx+rnd(-60,60),g2.cy+rnd(-50,50),8,140,'#c9ced6',.7);confetti(g2.cx,g2.cy,20)}
  toast(t_('{0} er revet · +{1} t skrap til skrapplassen',mbName(u),M.scrap),true);collide(P);for(const h of helpers)collide(h);save()}
 /* restart hook (Phase 4: the LD converter + torpedo cars come back for green pig iron); locked until an era needs it */
-function restartUnit(u){if(!mbOn(u)||!restartOK(u))return false;S.mb[u].st='run';MBC[u]=null;rebuildSolids();bakeFloor();toast(t_('{0} startes igjen',mbName(u)),true);save();return true}
+function restartUnit(u){if(!restartOK(u))return false;if(u==='ld'){if(!mbOn('ld')&&mbSt('ld')!=='gone'||!B_('esf')||ldRun())return false;startESF();return true}if(!mbOn(u))return false;S.mb[u].st='run';MBC[u]=null;rebuildSolids();bakeFloor();toast(t_('{0} startes igjen',mbName(u)),true);save();return true}
 /* the cached dark sprite of each mothballed plant (cleared when it changes) */
 const MBC={};
 function padUnlock(wx,wy){for(const d of PADS){if(!d.lock||!vis(d))continue;if((wx==null||hyp(wx-d.x,wy-d.y)<64)&&near(P,d.x,d.y,40)){d.lock=false;d.dw=.3;sfx('tick',600);buzz(10);return true}}return false}
@@ -2324,9 +2462,9 @@ function updPads(dt){let onPres=false;layoutPads();
  for(const s of SW){const on=s.on(),inside=on&&near(P,s.x,s.y,30)&&!G.crane;G.swT=G.swT||{};if(!inside){G.swT[s.id]=0;G.swIn[s.id]=false;continue}
   if(hyp(P.vx,P.vy)<70)G.swT[s.id]+=dt;if(G.swT[s.id]>.35&&!G.swIn[s.id]){G.swIn[s.id]=true;flipSw(s.id,true)}}}
 const CASTN={auto:'Auto',blokk:'Blokk',strang:'Streng'},MIXN={arm:'Armering',begge:'Begge',vals:'Valstråd'};
-function flipSw(id,fx){if(id==='cast'){const o=['auto','blokk','strang'];S.cast=o[(o.indexOf(S.cast)+1)%3]}else if(id==='mix'){const o=['arm','begge','vals'];S.mix=o[(o.indexOf(S.mix)+1)%3]}else{const k=id==='rjsw'?'rj':id;S.tg[k]=S.tg[k]?0:1}
+function flipSw(id,fx){if(id==='cast'){const o=['auto','blokk','strang'];S.cast=o[(o.indexOf(S.cast)+1)%3]}else if(id==='mix'){const o=['arm','begge','vals'];S.mix=o[(o.indexOf(S.mix)+1)%3]}else if(id==='drimix'){const o=[.3,.5,.7];S.drimix=o[(o.indexOf(S.drimix)+1)%3]}else if(id==='pgrade'){S.pgrade=S.pgrade==='bf'?'dr':'bf'}else{const k=id==='rjsw'?'rj':id;S.tg[k]=S.tg[k]?0:1}
  if(fx){const s=SWm[id];sfx('tick',300);buzz(15);ftext(swTxt(id),s.x,s.y-46,C.hazard)}save();if(menu.classList.contains('on'))syncMenu()}
-const swTxt=id=>id==='cast'?t_('Støping')+': '+t_(CASTN[S.cast]):id==='mix'?t_('Valseprogram')+': '+t_(MIXN[S.mix]):id==='rjsw'?t_('Råjern')+': '+t_(S.tg.rj?'Stålverk':'Salg'):t_(S.tg[id]?'VIDERE':'SALG');
+const swTxt=id=>id==='drimix'?t_('DRI-andel')+': '+Math.round(S.drimix*100)+' %':id==='pgrade'?t_('Pellettype')+': '+t_(S.pgrade==='bf'?'Masovnspellets':'DR-pellets'):id==='cast'?t_('Støping')+': '+t_(CASTN[S.cast]):id==='mix'?t_('Valseprogram')+': '+t_(MIXN[S.mix]):id==='rjsw'?t_('Råjern')+': '+t_(S.tg.rj?'Stålverk':'Salg'):t_(S.tg[id]?'VIDERE':'SALG');
 
 /* ---------- station status: every built station says what it is doing or waiting for ---------- */
 const NODEZ={gjv:'gjv',vv:'vv',tc:'tc',stel:'stel',nett:'nett',kob:'kob',rob:'rob'};
@@ -2363,6 +2501,12 @@ function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>
  case'qa':{if(!B_('strang'))return{lv:0,t:''};const st=shState();if(st==='hot')return{lv:1,t:t_('For varmt i fordeleren – lavere støpefart')};if(st==='cold')return{lv:1,t:t_('For kaldt – dysene gror igjen')};
   return{lv:0,t:t_('Overheting {0} °C · {1} % feil',Math.round(CAST.sh),Math.round(P3.dq*100))}}
  case'byp':{const v=rate('v:dheat')+rate('v:slagc');return v>0?{lv:0,t:kr(v,'/min')}:{lv:0,t:''}}
+ /* Phase 4: the DRI plant flags its own limit when the furnace side is short of DRI (or the DRI conveyor holds it back) */
+ case'dri':{if(DRI.shortB)return{lv:2,t:t_(DRIL[driLim()]||'Flaskehals: sjaktovn')};if(DRI.beltB)return{lv:2,t:t_('Flaskehals: DRI-bånd')};
+  if(DRI.full>.6)return{lv:0,t:t_('DRI-lageret er fullt')};return{lv:0,t:era()===6?t_('{0} t/min DRI · {1} % i chargen',tf(DRI.rate*60),Math.round(DRI.sh*100)):t_('{0} t/min DRI',tf(DRI.rate*60))}}
+ case'esf':{if(era()!==7)return{lv:1,t:t_('Venter på LD-konverteren')};const l=esfLim();
+  if(F.waitHM>1.5||ESF.hmShort>.5){if(l==='full'||RJ.stopT>1.5)return{lv:2,t:t_('Flaskehals: torpedovogner')};if(l==='dri')return{lv:1,t:t_('Venter på DRI')};return{lv:2,t:t_('Flaskehals: ovnseffekt (MW)')}}
+  if(l==='full'&&RJ.stopT>2)return{lv:1,t:t_('Venter på torpedovogn')};return{lv:0,t:t_('{0} t/min råjern',tf(ESF.rate*60))}}
  default:{const n=NODE[NODEZ[id]];if(!n)return{lv:0,t:''};const q=n.in.length+(n.cur?1:0);
   if(n.cur&&n.util>.9&&n.in.length>=n.cap*.5)return{lv:2,t:t_('Flaskehals')};if(q)return{lv:0,t:tf(rate('o:'+id))+' t/min'};
   const need={gjv:'emner',vv:'emner',tc:'stenger',stel:'stenger',nett:'valstråd',kob:'armering',rob:'armering'}[id];
@@ -2391,6 +2535,69 @@ function workAvail(noCash){if(!noCash&&TG.some(z=>z.cash>=10&&z.open()))return t
  for(const s of SRC){if(!s.open()||count(s)<=0)continue;if(P.stack.filter(i=>i.k===s.kind).length<demand(s.kind))return true}
  return false}
 
+/* ---------- Phase 4: hydrogen direct reduction (era 6 on) and the electric smelting furnace (era 7) ----------
+   electrolysis fills the H₂ store; the shaft furnace draws H₂ and pellets and fills the hot DRI bin. Era 6: the DRI gallery lays
+   DRI on the charging conveyor up to the set share (driJoin, called from the conveyor step). Era 7: the ESF melts DRI to hot
+   metal, taps it into torpedo cars (the ironworks' torpedo logic) and runs its slag off continuously (sold for cement). */
+const DRI={rate:0,L:{elyz:0,h2st:0,shaft:0,pellet:0},short:0,want:0,full:0,sh:0,beltOut:0,beltLim:0,h2run:0,trainT:0,pelIn:0,heat:0};
+const ESF={rate:0,L:{dri:0,mw:0,full:0},heat:0,slagAcc:0,slagT:0,hmShort:0};
+const DRIL={elyz:'Flaskehals: elektrolyse',h2st:'Flaskehals: H₂-lager',shaft:'Flaskehals: sjaktovn',pellet:'Flaskehals: pellettilførsel'};
+const nTank=()=>lv('h2st')>=1?2:1;
+function P4SOL(){const g=P4G,h=g.hall;return[{x:h.x0,y:h.y0,w:h.x1-h.x0,h:h.y1-h.y0},...g.tank.slice(0,nTank()).map(t=>({x:t.x,y:t.y,r:t.r+4})),{x:g.shaft.x,y:g.shaft.y,r:g.shaft.R+8},{x:g.stack.x,y:g.stack.y,r:20},{x:g.bin.x,y:g.bin.y,r:g.bin.r+4}]}
+function ESFSOL(){const e=ESFG;return[{x:e.x0-16,y:e.y0-6,w:e.x1-e.x0+32,h:e.y1-e.y0+12},...e.bins.map(x=>({x,y:e.binY,r:24})),{x:e.slag.x,y:e.slag.y,r:30},{x:e.trafo.x0,y:e.trafo.y,w:e.trafo.x1-e.trafo.x0,h:e.trafo.h}]}
+const driLim=()=>{let b='shaft',bv=-1;for(const k in DRI.L)if(DRI.L[k]>bv){bv=DRI.L[k];b=k}return b};
+const esfLim=()=>{let b='mw',bv=.45;for(const k in ESF.L)if(ESF.L[k]>bv){bv=ESF.L[k];b=k}return b};
+function updDRI(dt){if(!B_('h2')){DRI.rate=0;DRI.sh=0;DRI.short=0;return}const D=S.dri;
+ /* pellets arrive by train and are tipped in the pellet yard */
+ const pr=min(pelRate()*dt,max(0,pelCap()-D.pel));D.pel+=pr;DRI.pelIn=pr/max(dt,1e-6);if(pr>0)rec('pelin',pr);DRI.trainT+=dt;
+ /* electrolysis: the stacks run whenever there is room in the store */
+ const hp=h2Rate()*dt,hin=min(hp,max(0,h2Cap()-D.h2));D.h2+=hin;DRI.h2run=hp>0?hin/hp:0;if(hin>0)rec('h2prod',hin);
+ /* the shaft furnace: limited by its size, by pellets, by H₂ (store empty → the electrolysers' output; else the store's flow)
+    and by room in the hot DRI bin */
+ const want=shaftCap()*dt,room=max(0,binCap()-D.bin),pl=D.pel/PEL_PER,hl=min(D.h2,h2Draw()*dt)/H2_PER,r=max(0,min(want,pl,hl,room));
+ let lim='shaft';if(r<want*.98){if(room<=min(pl,hl)+1e-9)lim='full';else if(pl<=hl)lim='pellet';else lim=D.h2<=h2Draw()*dt*1.05?'elyz':'h2st'}
+ D.pel-=r*PEL_PER;D.h2-=r*H2_PER;D.bin+=r;DRI.rate=r/max(dt,1e-6);if(r>0){rec('dri',r);rec('f:pel>dri',r*PEL_PER);rec('f:h2>dri',r*H2_PER)}S.st.dri=(S.st.dri||0)+r;
+ DRI.full=lerp(DRI.full,lim==='full'?1:0,min(1,dt*.5));if(lim!=='full'){const a=min(1,dt*.25);for(const k in DRI.L)DRI.L[k]+=((k===lim?1:0)-DRI.L[k])*a}
+ /* short of DRI: the furnace side wanted more than the bin had */
+ DRI.short=lerp(DRI.short,DRI.want>.5?1:0,min(1,dt*.3));
+ /* bottleneck flags with hysteresis, so the chip (and the suggested pad) does not flicker */
+ if(era()===6){/* era 6: the share stays under its set-point – the chain is short (bin nearly empty) or the DRI conveyor holds it back (DRI waits in the bin) */
+  const k=min(1,dt*.2);DRI.lowK=lerp(DRI.lowK||0,rate('csfeed')>1&&DRI.sh<S.drimix*.85?1:0,k);DRI.binK=lerp(DRI.binK||0,D.bin>binCap()*.5?1:0,k);
+  DRI.shortB=DRI.lowK>.6&&DRI.binK<.5?1:DRI.lowK<.3?0:DRI.shortB||0;DRI.beltB=DRI.lowK>.6&&DRI.binK>=.5?1:DRI.lowK<.3?0:DRI.beltB||0;if(DRI.shortB&&DRI.beltB){if(DRI.binK>=.5)DRI.shortB=0;else DRI.beltB=0}}
+ else{DRI.shortB=DRI.short>.55?1:DRI.short<.3?0:DRI.shortB||0;DRI.beltB=0}
+ DRI.sh=era()===6?clamp(rate('drifeed')/max(1e-6,rate('csfeed')),0,.9):0;DRI.heat=lerp(DRI.heat,r>0?1:.15,min(1,dt*.5))}
+/* era 6: hot DRI onto the first cell of the charging section, up to the share set on the switch */
+function driJoin(dt){const cap=csCap(),m=CSB.m,dd=CSB.d,room=max(0,min(cap*S.drimix-dd[0],cap-m[0])),bl=driBelt()*dt,a=max(0,min(room,S.dri.bin,bl));
+ if(a>1e-9){const m0=m[0];m[0]+=a;dd[0]+=a;CSB.tc[0]=(m0*CSB.tc[0]+a*600)/m[0];S.dri.bin-=a;rec('f:dri>ovn',a)}
+ DRI.beltOut=a/max(dt,1e-6);const more=room>a+1e-6,k=min(1,dt*.4);
+ DRI.beltLim=lerp(DRI.beltLim,more&&bl<=a+1e-9?1:0,k);DRI.want=lerp(DRI.want,more&&a<bl-1e-9?1:0,k)}
+/* era 7: the electric smelting furnace */
+function updESF(dt){const D=S.dri,room=max(0,hearthCap()-S.rj.hearth),per=esfDriPer(),want=esfRate()*dt,dl=D.bin/per,m=max(0,min(want,dl,room));
+ D.bin-=m*per;S.rj.hearth+=m;ESF.rate=m/max(dt,1e-6);if(m>0){rec('esfmelt',m);rec('o:esf',m);rec('f:dri>esf',m*per)}S.st.hm+=m;
+ const lim=m>=want*.98?'mw':room<=dl+1e-9?'full':'dri',a=min(1,dt*.25);for(const k in ESF.L)ESF.L[k]+=((k===lim?1:0)-ESF.L[k])*a;
+ DRI.want=lerp(DRI.want,lim==='dri'?1:0,min(1,dt*.4));ESF.hmShort=F.waitHM>0?lerp(ESF.hmShort,1,min(1,dt*.3)):lerp(ESF.hmShort,0,min(1,dt*.05));ESF.heat=lerp(ESF.heat,m>0?1:.3,min(1,dt*.5));
+ /* slag runs off continuously at the west end and is sold to the cement works */
+ ESF.slagAcc+=m*esfSlagPer();while(ESF.slagAcc>=2){ESF.slagAcc-=2;const pr=itemVal({k:'slag',t:2})*SELLM.dock()*gm();S.money+=pr;earn(pr);S.st.soldK.slag=(S.st.soldK.slag||0)+1;rec('v:esf',pr);rec('v:salg',pr);rec('f:esf>salg',2)}
+ ESF.slagT+=dt*(m>0?1:0);
+ /* hot metal into the torpedo car at the taphole */
+ const tc=castTorp();RJ.tapping=false;RJ.overflow=0;
+ if(tc&&S.rj.hearth>.05){const t=min(S.rj.hearth,tapRate()*dt,torpCap()-tc.load);if(t>0){tc.load+=t;S.rj.hearth-=t;RJ.tapping=true}}
+ RJ.stopT=room<=.01?RJ.stopT+dt:0;RJ.starve=0;updTorps(dt)}
+/* the LD converter is restarted (or rebuilt): it goes back into the melt shop, the conveyor-fed arc furnace is laid down on a
+   reserve plot, and the torpedo line runs again – now from the electric smelting furnace */
+function startESF(){if(F.state==='tapping')finishTap();
+ const back=F.bath+F.solid+(CS()?csSum():S.chg);S.yard.y0=yardT(SRCm.y0)+back;
+ csInit(0);Object.assign(F,{state:'melt',bath:0,solid:0,scIn:0,hmIn:0,ch:null,hmCh:null,roof:0,tilt:0,lance:0,smDoor:-1,starve:0,waitHM:0,stop:false});S.chg=0;
+ S.mb.ld={st:'run'};S.tg.rj=1;S.hm=0;S.rj.hearth=0;
+ if(G.crane==='skrap'){CRm.skrap.man=false;G.crane=null}{const c=CRm.skrap;c.state='idle';c.job=null;c.load=0}
+ S.st.eraT.ldre=S.st.play;const nu=mbSync();for(const k in MBC)MBC[k]=null;
+ TORPS.length=0;torpSeq=0;layEra=-1;eraLayout();syncTorps();
+ rebuildSolids();bakeFloor();layKey='';layoutPads();syncHelpers();
+ const E=E_();toast(E.yr+' · '+t_('{0} startes igjen',mbName('ld')),true);toast(t_('Grønt råjern fra den elektriske smelteovnen går med torpedovogn til konverteren'));
+ if(back>1)toast(t_('Skrapet på båndet går tilbake til skrapplassen'));
+ for(const u of nu)toast(t_('{0} er lagt ned på en reservetomt – riv den eller la den stå',mbName(u)));
+ eraCard();G.chFx=2;G.chGuide=T+30;sfx('mile');buzz([30,40,30,40,60]);collide(P);for(const h of helpers)collide(h);hudT=0;save()}
+
 /* ---------- init / restore ---------- */
 const packIt=it=>[it.k,Math.round(it.t*1000)/1000,Math.round((it.q||1)*1000)/1000,it.wc?1:0,it.tc?1:0];
 /* the player's own stack: any carryable kind, incl. scrap/ore/stores */
@@ -2405,8 +2612,9 @@ function initRun(){LADLES.length=0;syncLadles();
  Object.assign(F,{state:'melt',tilt:0,L:null,ch:null,hmCh:null,roof:0,slagAcc:0,starve:0,waitHM:0,SB:null,stop:false,lance:0});
  F.bath=clamp(num(S.F.bath),0,fcap()-1);F.solid=clamp(num(S.F.solid),0,max(0,fcap()-1-F.bath));F.scIn=clamp(num(S.F.scIn),0,fcap());F.hmIn=clamp(num(S.F.hmIn),0,fcap());
  TORPS.length=0;torpSeq=0;syncTorps();Object.assign(RJ,{rate:0,starve:0,stopT:0,overflow:0,pigAcc:0,tapping:false});
- S.rj.hearth=clamp(num(S.rj.hearth),0,hearthCap());S.rj.ore=clamp(num(S.rj.ore),0,skipCap());S.hm=clamp(num(S.hm),0,hmCap());if(rjClosed()){S.rj.hearth=0;S.rj.ore=0;S.hm=0}
- S.chg=clamp(num(S.chg),0,chgCap());layEra=-1;if(era()===5)csInit(S.chg);Object.assign(TROB,{st:'park',t:0,show:0,wait:5,done:0});
+ S.rj.hearth=clamp(num(S.rj.hearth),0,hearthCap());S.rj.ore=clamp(num(S.rj.ore),0,skipCap());S.hm=clamp(num(S.hm),0,hmCap());if(rjClosed()){S.rj.ore=0;if(era()!==7){S.rj.hearth=0;S.hm=0}}
+ S.chg=clamp(num(S.chg),0,chgCap());layEra=-1;eraLayout();TORPS.length=0;torpSeq=0;syncTorps();if(CS())csInit(S.chg);
+ S.dri.h2=clamp(S.dri.h2,0,h2Cap());S.dri.pel=clamp(S.dri.pel,0,pelCap());S.dri.bin=clamp(S.dri.bin,0,binCap());Object.assign(DRI,{rate:0,short:0,want:0,full:0,beltLim:0,heat:0});Object.assign(ESF,{rate:0,heat:0,slagAcc:0});Object.assign(TROB,{st:'park',t:0,show:0,wait:5,done:0});
  const K=S.kok;K.slots=clamp(K.slots|0,0,slotsMax());K.hot=clamp(K.hot|0,0,40);K.ready=clamp(K.ready|0,0,40);K.cool=K.cool.filter(isFinite).slice(0,40);
  if(K.slots+K.hot+K.ready+K.cool.length<4)K.ready=6;
  S.pot=clamp(S.pot|0,0,potMax());S.elek=clamp(num(S.elek),0,12);S.kanal=clamp(S.kanal|0,0,HOPK);S.hette=clamp(S.hette|0,0,HOPK);
@@ -2479,7 +2687,7 @@ function update(dt){
  /* the furnace / caster desk: leaving the desk hands control back */
  if(G.ctl&&!near(P,ctlDesk(G.ctl).x,ctlDesk(G.ctl).y+STAND,70)){G.ctl=null;hudT=0}
  G.stT=(G.stT||0)+dt;if(G.stT>storeIv()){G.stT=0;for(const k in ST)if(ST[k]<storeMax())ST[k]++}
- updRJ(dt);updFurnace(dt);updParked(dt);for(const L of LADLES)updLadle(L,dt);
+ updDRI(dt);updRJ(dt);updFurnace(dt);updParked(dt);for(const L of LADLES)updLadle(L,dt);
  for(const c of CRANES)updCrane(c,dt,c===cr?ix:0,c===cr?iy:0);
  updPit(dt);updCaster(dt);updEndless(dt);updFlow(dt);updP3(dt);updRates(dt);
  updVeh(VEH.bil1,dt,520);updVeh(VEH.bil2,dt,900);updVeh(VEH.tog,dt,1200);updVeh(VEH.kai,dt,1100);
@@ -2497,7 +2705,7 @@ function update(dt){
  if(T-HUDM.t>.5){HUDM.t=T;try{const st=$('stage').getBoundingClientRect(),g=$('goal').getBoundingClientRect(),s=$('stat').getBoundingClientRect();
    if(g.height>0)HUDM.top=g.bottom-st.top+10;if(s.height>0)HUDM.bot=st.bottom-s.top+10}catch(e){}}
  const pt=max(150,HUDM.top/zoom),pb=max(90,HUDM.bot/zoom);
- cam.x=vw>=WW-WX0?(WW+WX0)/2:clamp(cam.x,WX0+vw/2-40,WW-vw/2+40);cam.y=vh>=WH+pt+pb?WH/2+(pb-pt)/2:clamp(cam.y,vh/2-pt,WH-vh/2+pb);
+ cam.x=vw>=WW-WXL?(WW+WXL)/2:clamp(cam.x,WXL+vw/2-40,WW-vw/2+40);cam.y=vh>=WH+pt+pb?WH/2+(pb-pt)/2:clamp(cam.y,vh/2-pt,WH-vh/2+pb);
  shake=max(0,shake-dt*10);shx=shake?rnd(-shake,shake):0;shy=shake?rnd(-shake,shake):0;
  setLoops();
  if(tOn>0){tOn-=dt;if(tOn<=0)$('toast').classList.remove('on')}else if(qT.length&&tOn<=0&&!G.modal&&!(ecT>0)){const e=$('toast'),[m,b]=qT.shift();e.textContent=m;e.classList.toggle('big',b);e.classList.add('on');tOn=b?2.6:2.2}
@@ -2517,7 +2725,7 @@ function srcPrio(s,n){const k=s.kind;
  if(k==='slag')return S.pot>=potMax()-1?12:S.pot>=3?5:1.5;
  if(k==='kokk')return pitRoom()>0?(PIT.state==='idle'&&LADLES.some(l=>l.state==='pit')?9:5):0;
  if(k==='kokv')return n>=3?5:2.5;
- if(k==='scrap'&&era()===5)return csLim()==='kran'?3:0;/* Consteel: the charging crane does it; carry only when the crane cannot keep up */
+ if(k==='scrap'&&CS())return csLim()==='kran'?3:0;/* Consteel: the charging crane does it; carry only when the crane cannot keep up */
  if(k==='scrap')return era()===0?(S.chg<SCRAP_T?2:.8):S.chg<chgCap()*.6?5:2.5;
  if(k==='ore')return S.rj.ore<skipCap()*.6?(F.waitHM>0?7:5.5):2.5;
  if(k==='elek')return S.elek<4?7:2;
@@ -2545,16 +2753,21 @@ function tutor(){const L=tapLadle();
  if(F.state==='tapping')return{m:t_('Tapper stål i øsa!')};
  if(ET()==='conv'){if(F.ch)return{m:t_('Konverteren tippes: skrap og <span>råjern</span> chargeres')};if(F.solid>0)return{m:t_('Konverteren blåser luft gjennom råjernet … <span>{0} °C</span>',Math.round(F.temp))};if(F.state==='refine')return{m:t_('Prøvetaking …')};return{m:t_('Venter på <span>råjern</span> fra masovnen ({0} t klart)',tf(S.hm))}}
  return{m:t_(F.state==='refine'?'Raffinerer … <span>{0} °C</span>':'Ovnen smelter … <span>{0} °C</span>',Math.round(F.temp))}}
-const PW=d=>d.kind==='build'?40:d.kind==='hire'?3:d.kind==='demol'?.6:1;
-function recommend(){let best=null,bs=1e99;for(const d of PADS){if(!payable(d))continue;const left=cost(d)-(S.paid[paidKey(d)]||0);let w=PW(d);
+const PW=d=>d.kind==='build'||d.kind==='restart'?40:d.kind==='hire'?3:d.kind==='demol'?.6:1;
+/* the goal / bot never suggests tearing down a plant a later era will restart (the LD converter) */
+const keepIt=d=>d.kind==='demol'&&MBU[d.u].re&&ERA.some(e=>e.needs.indexOf(d.u)>=0);
+function recommend(){let best=null,bs=1e99;for(const d of PADS){if(!payable(d)||keepIt(d))continue;const left=cost(d)-(S.paid[paidKey(d)]||0);let w=PW(d);
   if(d.kind==='up'){if(padUrgent(d))w=6;else if({kran:1,operator:1,yard2:1,truck:1,ladle:1}[d.u.id])w=1.6}
   const sc=left/w;if(sc<bs){bs=sc;best={d,left}}}return best}
 /* what to buy now: the recommendation, or something small on the way. While saving for the phase build only
    bottleneck fixes and very small things are worth it. */
 function buyTarget(){const r=recommend();if(!r)return null;if(r.left<=S.money+.01)return r;const sav=r.d.kind==='build';
- let b=null;for(const d of PADS){if(!payable(d))continue;const left=cost(d)-(S.paid[paidKey(d)]||0);if(left>S.money+.01)continue;
+ let b=null;for(const d of PADS){if(!payable(d)||keepIt(d))continue;const left=cost(d)-(S.paid[paidKey(d)]||0);if(left>S.money+.01)continue;
   const ok=sav?(left<=r.left*.04||(padUrgent(d)&&left<=r.left*.2)):left<=r.left*.25;if(ok&&(!b||left<b.left))b={d,left}}return b}
-function phaseGoal(){const b=nextBuild();if(!b)return S.ph>=BUILDS.length?{m:presGain()>0?t_('Mål: <span>Nytt verk</span> er klart'):t_('Mål: tjen {0} → <span>Nytt verk</span>',kr(PRES_NEED)),p:clamp(S.earned/PRES_NEED,0,1)}:null;
+/* Phase 4: once the electric smelting furnace stands, the goal is to restart (or rebuild) the LD converter */
+function rsGoal(){if(!B_('esf')||ldRun())return null;const d=PAD.rst_ld;if(!vis(d))return null;const c=cost(d),paid=S.paid[paidKey(d)]||0,left=c-paid,nm=t_(rebuildLD(d)?'Bygg opp igjen':'Start igjen')+': '+mbName('ld');
+ return{m:S.money>=left?t_('Mål: <span>{0}</span> – gå på ruta',nm):t_('Mål: tjen {0} → <span>{1}</span>',kr(c),nm),p:clamp((S.money+paid)/c,0,1),b:{id:'_rs',x:d.x,y:d.y,cost:left,d:'Den elektriske smelteovnen trenger konverteren: grønt råjern går med torpedovogn til LD-konverteren.'}}}
+function phaseGoal(){const b=nextBuild();if(!b){const rg=rsGoal();if(rg)return rg}if(!b)return S.ph>=BUILDS.length?{m:presGain()>0?t_('Mål: <span>Nytt verk</span> er klart'):t_('Mål: tjen {0} → <span>Nytt verk</span>',kr(PRES_NEED)),p:clamp(S.earned/PRES_NEED,0,1)}:null;
  const left=b.cost-(S.paid['b:'+b.id]||0);return{m:S.money>=left?t_('Mål: bygg <span>{0}</span> – gå på ruta',t_(b.n)):t_('Mål: tjen {0} → <span>{1}</span>',kr(b.cost),t_(b.n)),p:clamp((S.money+(S.paid['b:'+b.id]||0))/b.cost,0,1),b}}
 function goal(){const pg=phaseGoal();let x=null,y=null,sub='';
  if(S.heats<2&&!S.pres.n){const t=tutor();return{m:t.m,x:t.x,y:t.y,sub:'',p:null}}
@@ -2603,9 +2816,9 @@ function ordCard(){const o=S.ord,on=!!o&&ordOn()&&G.mode==='play';let h='';
  if(lastHud.ord!==h){lastHud.ord=h;const e=$('ord');e.innerHTML=h;e.classList.toggle('on',on);e.classList.toggle('done',on&&o.done===1);e.classList.toggle('exp',on&&o.done===2);stage.classList.toggle('ordon',on)}}
 /* control desks (automated eras): the scrap-crane pulpit, the magnet-crane pulpit and, in the control room, the furnace,
    ladle-crane and caster desks. Before that a crane is taken over anywhere in its zone. */
-const CTLN={furnace:'ovnen',caster:'strengen'};
+const CTLN={furnace:'ovnen',caster:'strengen',dri:'sjaktovnen'};
 function ctlDesks(){if(!AUTO())return[];const o=[{id:'furnace',x:CRDESK.furnace.x,y:CRDESK.furnace.y},{id:'ladle',crane:'ose',x:CRDESK.ladle.x,y:CRDESK.ladle.y},{id:'skrap',crane:'skrap',x:POSTS.skrap.x,y:POSTS.skrap.y}];
- if(B_('strang'))o.push({id:'caster',x:CRDESK.caster.x,y:CRDESK.caster.y});if(CRm.mag.built())o.push({id:'mag',crane:'mag',x:POSTS.strang.x,y:POSTS.strang.y});return o}
+ if(B_('strang'))o.push({id:'caster',x:CRDESK.caster.x,y:CRDESK.caster.y});if(B_('h2'))o.push({id:'dri',x:POSTS.dri.x,y:POSTS.dri.y});if(CRm.mag.built())o.push({id:'mag',crane:'mag',x:POSTS.strang.x,y:POSTS.strang.y});return o}
 const ctlDesk=id=>ctlDesks().find(d=>d.id===id)||{x:CRDESK.furnace.x,y:CRDESK.furnace.y};
 /* where the player stands at a desk: below it, clear of its name */
 const STAND=70;
@@ -2613,7 +2826,7 @@ const deskNear=()=>{let b=null,bd=56;for(const d of ctlDesks()){const dd=hyp(P.x
 function ctlHere(){if(G.ctl)return G.ctl;const d=deskNear();return d&&!d.crane?d.id:null}
 function craneHere(){if(G.crane)return CRm[G.crane];if(AUTO()){const d=deskNear();const c=d&&d.crane&&CRm[d.crane];return c&&canMan(c)?c:null}
  for(const c of CRANES){if(!canMan(c))continue;const d=c.d;if(P.x>d.x0-40&&P.x<d.x1+40&&P.y>d.y0-40&&P.y<d.y1+40)return c}return null}
-function setCtl(k){if(G.ctl===k){G.ctl=null;toast(t_('Automatikken tar over igjen'))}else{G.ctl=k;G.go=null;P.vx=P.vy=0;toast(t_(k==='furnace'?'Du styrer ovnen fra pulten (+10 % effekt, tapper straks)':'Du styrer strengen fra pulten (+15 % støpefart)'))}hudT=0;sfx('tick',200);buzz(12)}
+function setCtl(k){if(G.ctl===k){G.ctl=null;toast(t_('Automatikken tar over igjen'))}else{G.ctl=k;G.go=null;P.vx=P.vy=0;toast(t_(k==='furnace'?'Du styrer ovnen fra pulten (+10 % effekt, tapper straks)':k==='dri'?'Du styrer sjaktovnen fra pulten (+10 % DRI)':'Du styrer strengen fra pulten (+15 % støpefart)'))}hudT=0;sfx('tick',200);buzz(12)}
 /* walking up to a desk you tapped: take over when you get there */
 function ctlArrive(id){const d=ctlDesks().find(o=>o.id===id);if(!d||hyp(P.x-d.x,P.y-(d.y+STAND))>60)return;if(d.crane){if(!G.crane)toggleCrane()}else if(G.ctl!==d.id)setCtl(d.id)}
 /* a tap on a desk: take over (or hand back) when you stand at it, else walk there first */
@@ -2631,10 +2844,16 @@ $('craneBtn').addEventListener('click',e=>{initAudio();toggleCrane();e.stopPropa
 
 /* ---------- era card: shown once at the change to the arc furnace (non-blocking; any press or 12 s closes it) ---------- */
 let ecT=0;
-function eraCard(){const E=E_();$('ecY').textContent=E.yr+' · '+t_(E.n);$('ecT').textContent=t_('Fra nå av styres verket fra kontrollrom');
- $('ecP').textContent=t_('Kraner, transportbånd og transportvogner flytter skrap, slagg, emner og ferdigvarer. Ingen bærer lenger.');
- $('ecQ').textContent=t_('Hjelperne blir operatører ved pultene. Du går mellom pultene og tar over ovnen, strengen eller en kran ved å trykke på pulten – oppgraderinger kjøpes fortsatt på rutene.');
- $('ecD').textContent=t_('Det gamle verket står igjen, lagt ned. Trykk for å lukke.');$('eracard').classList.add('on');ecT=12;G.eraCard=1;tOn=0;$('toast').classList.remove('on')}
+/* the era cards: the arc furnace (automation), hydrogen DRI (2030) and electric smelting (2035) */
+const ECARD={
+ 6:['Hydrogen erstatter kull','Elektrolysører lager hydrogen. I sjaktovnen reduserer hydrogenet jernmalmpellets til jernsvamp (DRI) – pipa slipper ut vanndamp, ikke CO₂.',
+  'Varm DRI går på et galleribånd til chargeringsbåndet og blandes med skrapet. Mer DRI gir renere stål og lavere CO₂ (bedre grønn pris), men trenger mer strøm og kalk. Velg andelen på bryteren.','Anlegget kjøres fra pulten i DRI-anlegget. Trykk for å lukke.'],
+ 7:['Elektrisk smelteovn + LD-konverter','Den elektriske smelteovnen smelter DRI til grønt råjern med seks elektroder på rad. Slagget renner kontinuerlig ut i den ene enden og selges til sementverket.',
+  'LD-konverteren er startet igjen: torpedovogner frakter råjernet til den, og den blåser det til stål med litt skrap – akkurat som før. Billigere pellets går nå også an.','Båndovnen er lagt ned på en reservetomt. Trykk for å lukke.']};
+function eraCard(){const E=E_(),e=era(),c=ECARD[e];$('ecY').textContent=E.yr+' · '+t_(E.n);$('ecT').textContent=t_(c?c[0]:'Fra nå av styres verket fra kontrollrom');
+ $('ecP').textContent=t_(c?c[1]:'Kraner, transportbånd og transportvogner flytter skrap, slagg, emner og ferdigvarer. Ingen bærer lenger.');
+ $('ecQ').textContent=t_(c?c[2]:'Hjelperne blir operatører ved pultene. Du går mellom pultene og tar over ovnen, strengen eller en kran ved å trykke på pulten – oppgraderinger kjøpes fortsatt på rutene.');
+ $('ecD').textContent=t_(c?c[3]:'Det gamle verket står igjen, lagt ned. Trykk for å lukke.');$('eracard').classList.add('on');ecT=12;G.eraCard=1;tOn=0;$('toast').classList.remove('on')}
 function hideEraCard(){if(!ecT)return;ecT=0;$('eracard').classList.remove('on')}
 document.addEventListener('pointerdown',()=>{if(ecT>0)hideEraCard()},true);
 
@@ -2690,23 +2909,32 @@ const MN={
  kalk:{x:360,y:44,sup:1,n:'Kalk / dolo'},o2:{x:465,y:44,sup:1,n:'Oksygen'},kull:{x:570,y:44,sup:1,n:'Kullinjeksjon'},
  skrap:{x:320,y:215,n:'Skrapplass'},ovn:{x:445,y:215,n:'Ovn'},lf:{x:570,y:215,n:'Øseovn'},
  strang:{x:700,y:150,n:'kart§Stranggjuting'},blokk:{x:700,y:300,n:'Blokkstøping'},gjv:{x:830,y:215,n:'Gjennomvarming'},vv:{x:960,y:215,n:'Valseverk'},
+ /* Phase 4 */pel:{x:75,y:130,p4:1,n:'Pelletlager'},h2:{x:75,y:215,p4:1,n:'Hydrogen'},dri:{x:190,y:215,p4:1,n:'Sjaktovn'},esf:{x:320,y:330,p4:1,n:'El. smelteovn'},
  tc:{x:1090,y:300,n:'Bråkjøling'},endl:{x:960,y:420,n:'Endeløs linje'},rob:{x:1220,y:290,n:'Robotceller'},stel:{x:1090,y:130,n:'Valstråd'},nett:{x:1220,y:130,n:'Nettverk'},kob:{x:1220,y:420,n:'Klipp og bøy'},salg:{x:1360,y:260,sale:1,n:'Salg'}};
-const PCOL={malm:'#a0604a',rajern:'#ffb030',pig:'#9a8f86',skrap:'#c0804f',stal:'#ff7a1a',ingot:'#e8b04a',billet:'#ff5d5d',rebar:'#b9c1cb',tcore:'#6fb7ff',coil:'#c39bff',mesh:'#9bd35f',bent:'#4dd0c8',slag:'#8b8780',ebar:'#ffb36b',cage:'#f0a0ff'};
-const PNAME={malm:'Malm',rajern:'Råjern (flytende)',pig:'Masseljern',skrap:'Skrap',stal:'Flytende stål',ingot:'Støpeblokk',billet:'Emne',rebar:'Armeringsstål',tcore:'Bråkjølt armering',coil:'Valstråd',mesh:'Armeringsnett',bent:'Bøyd armering',slag:'Slagg',ebar:'Endeløs armering',cage:'Armeringskurv'};
+const PCOL={pellet:'#9a5a46',h2:'#9fd8ff',dri:'#8c939c',malm:'#a0604a',rajern:'#ffb030',pig:'#9a8f86',skrap:'#c0804f',stal:'#ff7a1a',ingot:'#e8b04a',billet:'#ff5d5d',rebar:'#b9c1cb',tcore:'#6fb7ff',coil:'#c39bff',mesh:'#9bd35f',bent:'#4dd0c8',slag:'#8b8780',ebar:'#ffb36b',cage:'#f0a0ff'};
+const PNAME={pellet:'Pellets',h2:'Hydrogen',dri:'DRI (jernsvamp)',malm:'Malm',rajern:'Råjern (flytende)',pig:'Masseljern',skrap:'Skrap',stal:'Flytende stål',ingot:'Støpeblokk',billet:'Emne',rebar:'Armeringsstål',tcore:'Bråkjølt armering',coil:'Valstråd',mesh:'Armeringsnett',bent:'Bøyd armering',slag:'Slagg',ebar:'Endeløs armering',cage:'Armeringskurv'};
 /* value per tonne used for kr/min on the map: scrap 1,0 · liquid steel ~1,27 · products by the price ladder */
-const VALT=p=>({malm:1.5,rajern:6,skrap:7.5,stal:9.5,slag:PR.slag.p}[p]||PR[p].p)*BASEP()*gm();
+const VALT=p=>({pellet:1.2,h2:20,dri:4,malm:1.5,rajern:6,skrap:7.5,stal:9.5,slag:PR.slag.p}[p]||PR[p].p)*BASEP()*gm();
 const MEDG=[['malm','rj','malm'],['rj','ovn','rajern'],['rj','salg','pig'],['skrap','ovn','skrap'],['ovn','lf','stal'],['ovn','blokk','stal'],['ovn','strang','stal'],['lf','blokk','stal'],['lf','strang','stal'],['strang','gjv','billet'],['gjv','vv','billet'],['vv','tc','rebar'],['vv','stel','rebar'],['vv','kob','rebar'],['tc','kob','tcore'],['stel','nett','coil'],
+ ['pel','dri','pellet'],['h2','dri','h2'],['dri','ovn','dri'],['dri','esf','dri'],['esf','ovn','rajern'],['esf','salg','slag'],
  ['blokk','salg','ingot'],['strang','salg','billet'],['vv','salg','rebar'],['tc','salg','tcore'],['stel','salg','coil'],['nett','salg','mesh'],['kob','salg','bent'],['ovn','salg','slag'],['strang','endl','billet'],['endl','rob','ebar'],['endl','salg','ebar'],['rob','salg','cage']];
 const mClosed=id=>!!MN[id].rj&&rjClosed()&&!rjGone();
-const mBuilt=id=>id==='endl'?lv('endless')>0&&stOn('endl'):id==='rob'?lv('robot')>0:id==='salg'||(mClosed(id)||MN[id].rj&&rjGone()?false:id==='malm'?true:MN[id].rj&&MN[id].sup?rjReq().indexOf(id)>=0||lv(id)>0:MN[id].sup?E_().req.indexOf(id)>=0||lv(id)>0:stOn(id==='blokk'?'blokk':id));
+const mBuilt=id=>MN[id].p4?(id==='esf'?B_('esf'):B_('h2')):id==='endl'?lv('endless')>0&&stOn('endl'):id==='rob'?lv('robot')>0:id==='salg'||(mClosed(id)||MN[id].rj&&rjGone()?false:id==='malm'?true:MN[id].rj&&MN[id].sup?rjReq().indexOf(id)>=0||lv(id)>0:MN[id].sup?E_().req.indexOf(id)>=0||lv(id)>0:stOn(id==='blokk'?'blokk':id));
 let MMODE='prod',MSEL='ovn';
 function edgeV(e){return flow(e[0],e[1])}
-function mUtil(id){if(id==='rj')return clamp(rate('rjmelt')/max(1e-6,RJ.rp*60),0,1);if(MN[id].sup&&!MN[id].rj){if(F.lim===id)return{lv:2,t:lv(id)?t_('Flaskehals: {0} – for liten kapasitet',t_(SUPN[id])):t_('Flaskehals: {0} mangler',t_(SUPN[id]))};return{lv:0,t:''}}if(MN[id].rj&&MN[id].sup){const c=rjSupCap(id);return c>0?clamp(rate('s:'+id)/(c*60),0,1):0}if(MN[id].sup){const c=supCap(id);return c>0?clamp(rate('s:'+id)/(c*60),0,1):0}
+function mUtil(id){if(id==='dri')return clamp(rate('dri')/60/max(1e-6,shaftCap()),0,1);if(id==='h2')return clamp(h2Rate()*DRI.h2run/max(1e-6,h2Rate()),0,1);if(id==='pel')return clamp(DRI.pelIn/max(1e-6,pelRate()),0,1);if(id==='esf')return clamp(rate('esfmelt')/60/max(1e-6,esfRate()),0,1);
+ if(id==='rj')return clamp(rate('rjmelt')/max(1e-6,RJ.rp*60),0,1);if(MN[id].sup&&!MN[id].rj){if(F.lim===id)return{lv:2,t:lv(id)?t_('Flaskehals: {0} – for liten kapasitet',t_(SUPN[id])):t_('Flaskehals: {0} mangler',t_(SUPN[id]))};return{lv:0,t:''}}if(MN[id].rj&&MN[id].sup){const c=rjSupCap(id);return c>0?clamp(rate('s:'+id)/(c*60),0,1):0}if(MN[id].sup){const c=supCap(id);return c>0?clamp(rate('s:'+id)/(c*60),0,1):0}
  if(id==='ovn')return clamp(rate('melt')/max(1e-6,F.rp*60),0,1);if(NODE[id])return clamp(NODE[id].util,0,1);
  if(id==='endl')return clamp(EL.outE/max(.01,elRate()),0,1);if(id==='strang')return clamp(rate('o:strang')/(nStr()*strandRate()*60),0,1);if(id==='skrap')return clamp(flow('skrap','ovn')/max(1e-6,F.rp*60),0,1);return null}
-function mStat(id){if(id==='malm'){if(RJ.starve>1.5)return F.waitHM>1.5?{lv:2,t:t_('Flaskehals: malm til ovnen')}:{lv:1,t:t_('Venter på malm')};return{lv:0,t:''}}if(MN[id].sup&&!MN[id].rj){if(F.lim===id)return{lv:2,t:lv(id)?t_('Flaskehals: {0} – for liten kapasitet',t_(SUPN[id])):t_('Flaskehals: {0} mangler',t_(SUPN[id]))};return{lv:0,t:''}}if(MN[id].rj&&MN[id].sup){if(RJ.lim===id&&status('rjsup')&&status('rjsup').lv===2)return{lv:2,t:t_('Flaskehals: {0}',t_(SUPN[id]))};return{lv:0,t:''}}return status(id)}
+function mStat(id){if(id==='h2'||id==='pel'){const d=status('dri');if(d&&d.lv===2&&DRI.shortB&&(id==='pel'?driLim()==='pellet':driLim()==='elyz'||driLim()==='h2st'))return d;return{lv:0,t:''}}
+ if(id==='dri'){const d=status('dri');if(d&&d.lv===2&&DRI.shortB&&driLim()!=='shaft')return{lv:1,t:d.t};return d}
+ if(id==='malm'){if(RJ.starve>1.5)return F.waitHM>1.5?{lv:2,t:t_('Flaskehals: malm til ovnen')}:{lv:1,t:t_('Venter på malm')};return{lv:0,t:''}}if(MN[id].sup&&!MN[id].rj){if(F.lim===id)return{lv:2,t:lv(id)?t_('Flaskehals: {0} – for liten kapasitet',t_(SUPN[id])):t_('Flaskehals: {0} mangler',t_(SUPN[id]))};return{lv:0,t:''}}if(MN[id].rj&&MN[id].sup){if(RJ.lim===id&&status('rjsup')&&status('rjsup').lv===2)return{lv:2,t:t_('Flaskehals: {0}',t_(SUPN[id]))};return{lv:0,t:''}}return status(id)}
 function nodeVA(id){let vin=0,vout=0;for(const e of MEDG){const v=edgeV(e)*VALT(e[2]);if(e[1]===id)vin+=v;if(e[0]===id)vout+=e[1]==='salg'?rate('v:'+id):v}return{vin,vout,va:vout-vin}}
 function mPath(a,b){const A=MN[a],B=MN[b],NW=104,NH=54;
+ if(a==='dri'&&b==='ovn'){const ax=A.x,bx=B.x;return`M${ax},${A.y-NH/2} C${ax},${A.y-90} ${bx},${B.y-90} ${bx-20},${B.y-NH/2}`}
+ if(a==='pel'&&b==='dri')return`M${A.x+NW/2},${A.y} C${A.x+NW/2+40},${A.y} ${B.x},${B.y-70} ${B.x},${B.y-NH/2}`;
+ if(a==='esf'&&b==='ovn'){const ax=A.x+NW/2;return`M${ax},${A.y} C${ax+40},${A.y} ${B.x},${B.y+70} ${B.x},${B.y+NH/2}`}
+ if(a==='esf'&&b==='salg'){const bx=B.x-50;return`M${A.x},${A.y+NH/2} C${A.x},${A.y+110} ${A.x+60},460 ${A.x+120},460 L${bx},460`}
  if(a==='rj'&&b==='ovn'){const ax=A.x+NW/2,bx=B.x-NW/2;return`M${ax},${A.y} C${ax+70},${A.y} ${bx-60},${B.y+16} ${bx},${B.y+16}`}
  if(a==='rj'&&b==='salg'){const bx=B.x-50;return`M${A.x},${A.y+NH/2} C${A.x},${A.y+120} ${A.x+60},476 ${A.x+120},476 L${bx},476`}
  if(b==='salg'){const ax=A.x+NW/2,bx=B.x-50,ay=A.y,by=clamp(A.y,80,440);if(a==='blokk')return`M${ax},${ay} C${ax+40},${ay} ${ax+20},470 ${ax+70},470 L${bx},470 L${bx},${by+40}`;if(a==='stel')return`M${ax},${ay-8} C${ax+24},${ay-8} ${ax+14},70 ${ax+44},70 L${bx},70`;if(a==='ovn')return`M${A.x},${A.y+NH/2} C${A.x},${A.y+200} ${A.x+60},486 ${A.x+120},486 L${bx},486`;const dx=(bx-ax)/2;return`M${ax},${ay} C${ax+dx},${ay} ${bx-dx},${by} ${bx},${by}`}
@@ -2745,7 +2973,7 @@ function renderMap(){if(!G.mapOn)return;const money=MMODE==='money',FN='font-fam
  const bn=bottlenecks();$('mapSum').innerHTML=t_('Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>',kr(income,'/min'),tf(rate('melt')))+(bn.length?' · '+t_('Flaskehals')+': <b class="bad">'+[...new Set(bn.map(b=>b[0]==='rjsup'?t_(MN[RJ.lim||'koks'].n):b[0]==='rj'?(RJ.lim&&b[1]===t_('Flaskehals: {0}',t_(SUPN[RJ.lim]))?t_(MN[RJ.lim].n):t_('Råjernsovn')):b[0]==='sup'||b[0]==='ovn'&&F.lim?t_(MN[F.lim||'kalk'].n):MN[b[0]]?t_(MN[b[0]].n):t_(ZN[b[0]].n).toLowerCase()))].join(', ')+'</b>':' · '+t_('ingen flaskehals'))+(()=>{const l=MBK.filter(mbOn);return l.length?'<br>'+t_('Lagt ned: {0} · vedlikehold {1}',l.map(mbName).join(', '),kr(mbUpkeep(),'/min')):''})();
  renderPanel()}
 const li=(col,t)=>'<li><i style="background:'+col+'"></i><span>'+t+'</span></li>';
-const MZ={kalk:'sup',o2:'sup',kull:'sup',salg:'salg1',koks:'rjsup',cowper:'rjsup',malm:'rj'};
+const MZ={pel:'dri',h2:'dri',kalk:'sup',o2:'sup',kull:'sup',salg:'salg1',koks:'rjsup',cowper:'rjsup',malm:'rj'};
 function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel').innerHTML='';return}if(mClosed(id)){$('mapPanel').innerHTML='<h3>'+on+' <span class="flag amb">'+t_('NEDLAGT')+'</span></h3><p class="pnote">'+t_('Råjernsverket ble lagt ned ved omleggingen. Stålet lages nå av skrap.')+(PILE.pig.length?' '+t_('{0} masseljern ligger igjen for salg.',PILE.pig.length):'')+'</p>';return}
  const built=mBuilt(id),st=id==='salg'?null:mStat(id);let h='<h3>'+on;
  if(st&&st.lv===2)h+=' <span class="flag">'+t_('FLASKEHALS')+'</span>';else if(st&&st.lv===1)h+=' <span class="flag amb">'+t_('VENTER')+'</span>';else if(built&&id!=='salg')h+=' <span class="flag ok">OK</span>';h+='</h3>';
@@ -2764,8 +2992,12 @@ function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel
   h+='<div class="prow"><div class="k">'+t_('Inn')+'</div><ul>'+(inL||'<li>—</li>')+'</ul></div><div class="prow"><div class="k">'+t_('Ut')+'</div><ul>'+(outs.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' → '+t_(MN[e[1]].n))).join('')||'<li>—</li>')+'</ul></div>';
   h+=row(CUR()+'/min',t_('Verdi inn {0} → ut {1}',kr(v.vin),kr(v.vout))+' · <b style="color:'+(v.va>=0?'var(--good)':'var(--danger)')+'">'+(v.va>=0?'+':'')+kr(v.va,'/min')+'</b>');
   const u=mUtil(id);if(u!=null){const p=Math.round(u*100);h+=row(t_('Utnyttelse'),t_('{0} %',p)+'<div class="util"><i style="width:'+p+'%;background:'+(p>=95?'var(--danger)':p>85?'var(--hazard)':'var(--good)')+'"></i></div>')}}
- if(id==='skrap'&&era()===5){h+=row(t_('Kran'),t_('{0} t/min · løft {1} t',tf(flow('skrap','ovn')),tf(craneLift())))+row(t_('Bånd'),t_('{0} t/min · maks {1} t/min',tf(rate('csfeed')),tf(beltRate()*60)))+row(t_('Forvarming'),t_('Skrapet inn i ovnen: {0} °C',Math.round(CSB.pre)));
+ if(id==='skrap'&&CS()){h+=row(t_('Kran'),t_('{0} t/min · løft {1} t',tf(flow('skrap','ovn')),tf(craneLift())))+row(t_('Bånd'),t_('{0} t/min · maks {1} t/min',tf(rate('csfeed')),tf(beltRate()*60)))+row(t_('Forvarming'),t_('Skrapet inn i ovnen: {0} °C',Math.round(CSB.pre)));
   const l=csLim();if(l)h+='<p class="pnote">'+(l==='kran'?t_('Kranen fyller ikke linja raskt nok – kjøp Skrapkran eller Større magnet.'):l==='band'?t_('Linja er full, men båndet går for sakte – kjøp Raskere chargeringsbånd.'):t_('Skrapplassen er tom – kjøp Skraptilførsel.'))+'</p>'}
+ if(MN[id].p4){const D=S.dri;if(id==='h2')h+=row(t_('Elektrolyse'),t_('{0} MW · {1} t H₂/min',Math.round(elyMW()),tf(h2Rate()*60)))+row(t_('H₂-lager'),t_('{0}/{1} t · uttak {2} t/min',tf(D.h2),tf(h2Cap()),tf(h2Draw()*60)));
+  if(id==='pel')h+=row(t_('Pellets'),t_('{0}/{1} t · {2} t/min inn',tf(D.pel),tf(pelCap()),tf(pelRate()*60)))+row(t_('Kvalitet'),t_(pelGrade()?'Masovnspellets (billigere)':'DR-pellets'));
+  if(id==='dri')h+=row(t_('Sjaktovn'),t_('{0} av {1} t/min',tf(DRI.rate*60),tf(shaftCap()*60)))+row(t_('DRI-lager'),t_('{0}/{1} t',tf(D.bin),tf(binCap())))+(era()===6?row(t_('DRI-andel'),t_('{0} % (satt {1} %)',Math.round(DRI.sh*100),Math.round(S.drimix*100)))+row(t_('CO₂'),t_('{0} t/t stål',L1(co2t()))):'');
+  if(id==='esf')h+=row(t_('Effekt'),t_('{0} MW · {1} t/min råjern',Math.round(esfMW()),tf(ESF.rate*60)))+row(t_('Torpedovogner'),t_('{0} × {1} t',nTorp(),torpCap()))}
  const zid=MZ[id]||id,hi=HIRE[zid];if(hi)h+=row(t_('Hjelpere'),t_('{0} av {1}',lv(hi.id),hi.costs.length));
  const ups=UP.filter(u=>u.st===zid);if(ups.length)h+='<div class="prow"><div class="k">'+t_('Oppgr.')+'</div><div class="lv">'+ups.map(u=>{const l=lv(u.id),on=upOpen(u),mx=l>=u.max,ok=on||l>0,urg=on&&!mx&&urgentIds(u.st).indexOf(u.id)>=0;return'<span'+(ok?'':' class="lk"')+'>'+upName(u)+(urg?' <i class="urg">'+t_('flaskehals')+'</i>':'')+'</span><b class="'+(mx?'mx':ok?'':'lk')+'">'+(mx?t_('MAKS'):!on?t_('låst'):(u.max>1?t_('Nivå {0}/{1}',l,u.max):t_('kan kjøpes'))+' · '+kr(upCost(u)))+'</b>'}).join('')+'</div></div>';
  h+='<p class="pnote">'+t_('Hver oppgradering har sin egen rute i stasjonen – velg selv rekkefølgen. Låst = kommer med en senere ovn eller et nytt bygg.')+'</p>';$('mapPanel').innerHTML=h}
@@ -2830,7 +3062,7 @@ function drawYard(s){if(!s.open()||!inView(s.x,s.y,170))return;const n=min(170,M
  g.drawImage(c.cv,s.x-110,s.y-130,220,260);
  txt(tf(yardT(s))+' t',s.x,s.y+112,10,C.ui,800,'center',3);LOBS.push({x:s.x-26,y:s.y+105,w:52,h:14})}
 /* ---- charging: chargeringskasser (SM), skrapkurv (EAF/UHP), Consteel trough with preheat tunnel ---- */
-function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&era()===5){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
+function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&CS()){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
  if(E.ch==='conv'){/* converter: one scrap charging box on a rail car between the yard and the vessel */
   SK.rail(g,cx+40,640,cy,26);const fl=F.ch&&F.ch.s>0&&F.ch.t/F.ch.dur>.1&&F.ch.t/F.ch.dur<.5;SK.car(g,cx+84,cy,70,40);
   if(!fl){SK.box(g,cx+56,cy-14,56,28,'#4a5058','#1b1e22',3);const n=Math.round(fillK*8);for(let q=0;q<n;q++)SK.chunk(g,cx+64+(q%4)*13,cy-6+floor(q/4)*11,4,hsh(q),SK.SCRAPC[q%5])}}
@@ -2845,7 +3077,7 @@ function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&
    for(let k=0;k<Math.round(f*16);k++){const a=hsh(k*3+i)*TAU,r=17*Math.sqrt(hsh(k*7+i));SK.chunk(g,bx+Math.cos(a)*r,by+Math.sin(a)*r,3+hsh(k)*2.5,hsh(k*2),SK.SCRAPC[k%5])}
    g.fillStyle='#55595f';g.fillRect(bx-34,by-5,8,10);g.fillRect(bx+26,by-5,8,10)}
   txt(t_('KURV'),cx,cy+1,10.5,C.ui,800,'center',3)}
- else if(era()===5)drawBeltLine();
+ else if(CS())drawBeltLine();
  else{/* Consteel: open charging section → dynamic seal → preheating tunnel → connecting car */
   const x0=262,x1=POS.F.x-86,y=cy,w=30,T0=494;/* scrap lies from the furnace end back as far as the belt is filled */
   g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x0+2,y-w/2+3,x1-x0,w);g.fillStyle='#575c64';g.fillRect(x0,y-w/2-3,x1-x0,w+6);g.fillStyle='#1d1f23';g.fillRect(x0,y-w/2,x1-x0,w);
@@ -2861,17 +3093,17 @@ function drawBucketFlight(){if(!F.ch||E_().ch!=='bucket')return;const c=F.ch,k=c
  SK.line(g,bx-6,by-40,bx-6,by-26,'#15161a',1.5);SK.line(g,bx+6,by-40,bx+6,by-26,'#15161a',1.5);SK.shadow(g,bx+16,by+24,34,30,.35);
  if(op<.9)for(let q=0;q<12;q++)SK.chunk(g,bx+(hsh(q)-.5)*36,by+(hsh(q*3)-.5)*36+op*16,3.6,hsh(q*2),SK.SCRAPC[q%5]);
  g.fillStyle='#3a3f46';g.beginPath();g.arc(bx-op*14,by,30,PI/2,PI*1.5);g.fill();g.beginPath();g.arc(bx+op*14,by,30,-PI/2,PI/2);g.fill();g.strokeStyle='#e0b020';g.lineWidth=2.5;SK.circ(g,bx,by,32);g.stroke();g.fillStyle='#55595f';g.fillRect(bx-36,by-5,8,10);g.fillRect(bx+28,by-5,8,10)}
-const dropRing=()=>padRing(POS.drop.x,POS.drop.y,40,E_().ch==='box'?t_('KASSER'):E_().ch==='bucket'?'':E_().ch==='conv'?t_('SKRAP'):era()===5?t_('SJAKT'):t_('BÅND'),0,S.chg/chgCap(),'#8a5a32');
+const dropRing=()=>padRing(POS.drop.x,POS.drop.y,40,E_().ch==='box'?t_('KASSER'):E_().ch==='bucket'?'':E_().ch==='conv'?t_('SKRAP'):CS()?t_('SJAKT'):t_('BÅND'),0,S.chg/chgCap(),'#8a5a32');
 /* ---- the furnace, per era ---- */
 const ROT=PI/2;/* local −x (transformer side) faces up toward the supply zone, tap faces right */
 function furnOpts(){const e=era(),A={tap:-PI/2,door:0,car:PI/2,h4:-2.4-ROT,h5:-.9-ROT},melt=F.solid>0&&!F.stop&&!(F.ch&&E_().ch==='bucket');
  const o={a:A,trafo:e>=4?2:1,arc:F.arc*(F.state==='tapping'?0:1),tapping:F.state==='tapping'&&F.tapT>.6,slag:slagOn()&&melt,ductAng:-2.4-ROT,duct:92*1.05,smoke:true};
  if(e===3){o.refr=1;o.spout=1;o.h5=false;o.inj=lv('lans')?[]:[];o.roofOff=F.roof;o.bath=clamp(F.bath/fcap(),.15,1);o.scrapIn=clamp(F.solid/fcap(),0,1)}
  if(e>=4){o.inj=lv('lans')>=2?[-2.0-ROT,-2.7-ROT,2.6-ROT,-1.0-ROT]:[-1.0-ROT];o.kullInj=lv('kull')?0:-1;if(lv('kull'))o.inj=[-2.05-ROT].concat(o.inj);o.roofOff=F.roof;o.foam=lv('kull')>0;o.bath=clamp(F.bath/fcap(),.2,1)}
- if(e===5){o.car=true;o.roofOff=0;o.h4=false}
+ if(e===5||e===6){o.car=true;o.roofOff=0;o.h4=false}
  return o}
 function drawFurnace(){const x=F.x,y=F.y;if(!inView(x,y,260))return;const e=era(),tl=F.tilt;
- if(ET()==='conv'){const E=E_();SK2.converter(g,x,y,convR(),T,{tilt:tl,ld:e===2,blow:F.state==='melt'&&F.solid>0&&!F.stop&&!F.ch?1:0,lance:F.lance,hot:F.bath>0||F.solid>0?clamp(.35+.65*(F.bath+F.solid)/fcap(),0,1):0,tapping:F.state==='tapping'&&F.tapT>.6});drawConvCharge();return}
+ if(ET()==='conv'){const E=E_();SK2.converter(g,x,y,convR(),T,{tilt:tl,ld:e===2||e===7,blow:F.state==='melt'&&F.solid>0&&!F.stop&&!F.ch?1:0,lance:F.lance,hot:F.bath>0||F.solid>0?clamp(.35+.65*(F.bath+F.solid)/fcap(),0,1):0,tapping:F.state==='tapping'&&F.tapT>.6});drawConvCharge();return}
  if(ET()==='sm'){SK.smFurnace(g,x,y,T,{heat:clamp(.25+.75*F.bath/fcap(),0,1),door:F.ch?F.smDoor:-1,tapping:F.state==='tapping'&&F.tapT>.6,fire:F.state!=='tapping'});return}
  g.save();g.translate(x,y);g.rotate(tl*.25);SK.eaf(g,0,0,92,T,ROT,furnOpts());g.restore()}
 /* supply plants (blue zone) and the pipes / belt that feed the furnace; flow animates with real use */
@@ -2903,7 +3135,7 @@ const injPt=a=>({x:POS.F.x+Math.cos(a)*92*.9,y:POS.F.y+Math.sin(a)*92*.9});
 function limTag(x,y,w,h){const a=RM?1:.55+.45*Math.sin(T*5);g.save();g.globalAlpha=a;g.strokeStyle='#ff6b5a';g.lineWidth=3;g.setLineDash([8,5]);g.lineDashOffset=RM?0:-T*24;SK.rr(g,x-6,y-6,w+12,h+12,10);g.stroke();g.setLineDash([]);g.restore()}
 /* slag pot + slag truck, electrode rack, electrode store */
 function drawOvnSide(){if(!inView(780,900,320))return;
- if(slagOn()&&era()===5){const x=POS.pot.x,y=POS.pot.y,f=S.pot/potMax();drawCsSlag();txt(t_('SLAGG')+' '+S.pot+'/'+potMax(),x,y+46,10,f>=1?C.danger:f>.6?C.hazard:C.ui,800,'center',3);LOBS.push({x:x-38,y:y+39,w:76,h:14});const sy=POS.slagp;for(let i=0;i<9;i++){const a=i/9*TAU;drawSlag(sy.x+Math.cos(a)*56,sy.y+Math.sin(a)*36,10,i)}}
+ if(slagOn()&&CS()){const x=POS.pot.x,y=POS.pot.y,f=S.pot/potMax();drawCsSlag();txt(t_('SLAGG')+' '+S.pot+'/'+potMax(),x,y+46,10,f>=1?C.danger:f>.6?C.hazard:C.ui,800,'center',3);LOBS.push({x:x-38,y:y+39,w:76,h:14});const sy=POS.slagp;for(let i=0;i<9;i++){const a=i/9*TAU;drawSlag(sy.x+Math.cos(a)*56,sy.y+Math.sin(a)*36,10,i)}}
  else if(slagOn()){const x=POS.pot.x,y=POS.pot.y,f=S.pot/potMax();SK.shadow(g,x+4,y+8,34,28,.35);g.fillStyle='#3a3c40';circ(x,y,30);g.fill();g.strokeStyle='#1b1d20';g.lineWidth=3;circ(x,y,30);g.stroke();
   const gr=g.createRadialGradient(x-6,y-6,2,x,y,24);gr.addColorStop(0,mix('#3a3430','#ffb030',f));gr.addColorStop(1,mix('#2a2420','#c2410c',f));g.fillStyle=gr;circ(x,y,24*(.4+.6*f));g.fill();
   if(f>=1){g.strokeStyle=rgba(C.danger,.6+.4*Math.sin(T*8));g.lineWidth=4;circ(x,y,36);g.stroke()}
@@ -3118,7 +3350,7 @@ function drawPileK(k){const p=PR[k].pile,a=PILE[k];if(!pileOn(k)||!inView(p.x,p.
  ctx.font=`800 9.5px ${FONT}`;let PW=ctx.measureText(pn).width;ctx.font=`700 9px ${FONT}`;PW=Math.ceil(max(88,PW+14,ctx.measureText(n1+' · '+n2).width+14));const hw=PW/2;
  LBL.push({k:'p'+k,x:p.x-hw,y:p.y+38,w:PW,h:30,pr:1,ax:p.x,f:(lx,ly)=>{g.fillStyle='rgba(16,19,26,.9)';SK.rr(g,lx,ly,PW,30,8);g.fill();g.strokeStyle='rgba(245,197,24,.6)';g.lineWidth=1;SK.rr(g,lx+.5,ly+.5,PW-1,29,8);g.stroke();txt(pn,lx+hw,ly+9,9.5,C.ui,800);txt(n1+' · '+n2,lx+hw,ly+21,9,C.coin,700)}})}
 /* ---- converters: charging animation (scrap box, then the råjern ladle) and the råjern station at the steel plant ---- */
-const convR=()=>era()===2?72:58;
+const convR=()=>era()===2||era()===7?72:58;
 const convMouth=()=>SK2.convPt(F.x,F.y,convR(),F.tilt,1.05);
 function hmLadlePos(){const c=F.ch,hp=POS.hmL;
  if(ET()==='conv'&&c&&c.hm>0){const k=c.t/c.dur;if(k>.36&&k<.95){const[mx,my]=convMouth(),kk=(k-.36)/.59,go=ease(min(1,kk*3)),back=kk>.8?ease((kk-.8)/.2):0,f=go-back;return{x:lerp(hp.x,mx-40,f),y:lerp(hp.y,my-46,f),lift:f,pour:kk>.3&&kk<.8?1:0,to:[mx,my]}}}
@@ -3187,13 +3419,13 @@ function drawRJ(){if(rjGone()||!inView(-368,570,560))return;const cl=rjClosed(),
  if(cl){/* closed: desaturate and darken the whole råjernsverk (cheap blend modes, no canvas filter) */g.save();const z0=ZN.rjsup,z1=ZN.rj;g.globalCompositeOperation='saturation';g.fillStyle='#808080';g.fillRect(z0.x0,z0.y0,z0.x1-z0.x0,z1.y1-z0.y0);g.globalCompositeOperation='source-over';g.fillStyle='rgba(18,20,24,.42)';g.fillRect(z0.x0,z0.y0,z0.x1-z0.x0,z1.y1-z0.y0);g.restore();const a=.85;g.globalAlpha=a;SK.box(g,RJX-60,RJY-40,120,28,'rgba(16,19,26,.9)','rgba(255,255,255,.2)',8);txt(t_('NEDLAGT'),RJX,RJY-26,14,C.uidim,800);g.globalAlpha=1}
  /* malm buffer at the top */
  if(!cl){const t=t_('SKIP')+' '+tf(S.rj.ore)+'/'+skipCap()+' t';ctx.font=`800 10px ${FONT}`;const w=ctx.measureText(t).width+10;LBL.push({k:'skip',x:POS.skip.x-w/2,y:POS.skip.y+44,w,h:15,pr:1,ax:POS.skip.x,f:(lx,ly)=>txt(t,lx+w/2,ly+7,10,RJ.starve>1.5?C.danger:C.ui,800,'center',3)})}}
-function drawTorps(){if(rjClosed()||!inView(220,700,700))return;const cl=false;
+function drawTorps(){const e7=era()===7;if(rjClosed()&&!e7||!inView(e7?-200:220,700,e7?900:700))return;const cl=false;
  for(const t of TORPS){if(cl&&t.i>0)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;if(!inView(t.x,y,90))continue;
   const k=t.load/max(1,torpCap()),pour=t.st==='pour'&&t.pouring;SK2.torpedo(g,t.x,y,130,k,T,{tilt:pour?.9:0});
   if(pour){const mx=t.x,my=y-16*OK+10;stream(mx,my,POS.hmL.x-6,POS.hmL.y-6,.6)}
   if(t.load>.5){const s=tf(t.load)+' t';ctx.font=`800 10px ${FONT}`;const w=ctx.measureText(s).width+8;LBL.push({k:'tp'+t.i,x:t.x-w/2,y:y-48,w,h:15,pr:0,ax:t.x,f:(lx,ly)=>txt(s,lx+w/2,ly+7,10,C.moltenhi,800,'center',3)})}}
  /* tap stream into the car at the cast house */
- const tc=castTorp();if(tc&&RJ.tapping&&!RJ.overflow&&!cl)stream(-112,664,tc.x,POS.torpA-16*OK-4,.6)}
+ const tc=castTorp();if(tc&&RJ.tapping&&!RJ.overflow&&!cl){if(e7)stream(ESFG.x1+8,ESFG.cy-26,tc.x,POS.torpA-16*OK-4,.6);else stream(-112,664,tc.x,POS.torpA-16*OK-4,.6)}}
 /* ---- mothballed plants on the reserve plots: drawn once, cold, into a sprite that is darkened and greyed ---- */
 function mbSprite(u){const G2=mbGeo(u),M=MBU[u],z=G2.z,W2=z.x1-z.x0,H2=z.y1-z.y0,K=2,c=document.createElement('canvas');c.id='ov';c.width=W2*K;c.height=H2*K;const q=c.getContext('2d');
  q.scale(K,K);q.translate(-z.x0,-z.y0);const{cx,cy}=G2;
@@ -3232,7 +3464,7 @@ function drawAGV(h){const x=h.x,y=h.y,a=hyp(h.vx,h.vy)>8?Math.atan2(h.vy,h.vx):(
 /* ---- cranes ---- */
 function drawCraneBridge(c){if(!c.built())return;const d=c.d,x=c.x,y=c.y;if(!inView(x,(d.y0+d.y1)/2,(d.y1-d.y0)/2+40))return;const man=G.crane===c.id;
  g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x-4,d.y0,18,d.y1-d.y0);
- const big=c.id==='skrap'&&era()===5,hl=1-c.h,my=y+6+10*hl,mr=c.id==='ose'?10:big?13+3*c.h:9+2.5*c.h;
+ const big=c.id==='skrap'&&CS(),hl=1-c.h,my=y+6+10*hl,mr=c.id==='ose'?10:big?13+3*c.h:9+2.5*c.h;
  if(c.id!=='ose'){SK.shadow(g,x+3+5*c.h,my+4+6*c.h,mr*1.1,mr*.75,.35);SK.line(g,x-3,y,x-3,my,'#15161a',1.3);SK.line(g,x+3,y,x+3,my,'#15161a',1.3);
   if(c.load>0||(c.pay&&c.pay.length)){for(let i=0;i<10;i++){const a=i/10*TAU,rr2=mr*(.8+.35*hsh(i));if(c.id==='mag')SK.billetBar(g,x-14,my-6+i%3*6,28,4,.1);else if(c.id==='malm'){g.fillStyle=i%2?'#6b3d33':'#4a3a36';SK.circ(g,x+Math.cos(a)*rr2,my+Math.sin(a)*rr2,3);g.fill()}else SK.chunk(g,x+Math.cos(a)*rr2,my+Math.sin(a)*rr2,2.5+hsh(i*2)*2.5,hsh(i),SK.SCRAPC[i%4])}}
   g.fillStyle='#2a2c31';SK.circ(g,x,my,mr);g.fill();g.strokeStyle='#e0b020';g.lineWidth=2.2;SK.circ(g,x,my,mr);g.stroke();g.fillStyle='#3f434a';SK.circ(g,x,my,mr*.45);g.fill();
@@ -3338,15 +3570,15 @@ function drawDesks(){const au=AUTO();
   if(!(au&&CRPOST[r]))desk(p.x,p.y,t_(au?(r==='skrap'?'KRANPULT':'PULT'):postCrane(r)&&helpers.some(h=>h.r===r&&inCab(h))?'KRANFØRER':'OPERATØR'),at.length>0||(au&&r==='skrap'&&G.crane==='skrap'),au&&r==='skrap'&&G.crane==='skrap'?1:null,seatsAt(r));
   }
  if(lv('operator')&&stOn('ovn')){const k=F.state==='tapping'?1:F.state==='ready'&&tapLadle()?clamp((F.opT||0)/.8,0,1):0;desk(TAPDESK.x,TAPDESK.y,t_('TAPPER'),F.state==='ready'||F.state==='tapping',k)}}
-function drawSwitches(){for(const s of SW){if(!s.on()||!inView(s.x,s.y,60))continue;LOBS.push({x:s.x-38,y:s.y-24,w:76,h:44});const t=t_(s.id==='cast'?CASTN[S.cast]:s.id==='rjsw'?(S.tg.rj?'Stålverk':'Salg'):MIXN[S.mix]);
+function drawSwitches(){for(const s of SW){if(!s.on()||!inView(s.x,s.y,60))continue;LOBS.push({x:s.x-38,y:s.y-24,w:76,h:44});const t=s.id==='drimix'?Math.round(S.drimix*100)+' %':t_(s.id==='pgrade'?(S.pgrade==='bf'?'sw§Masovn':'sw§DR-grad'):s.id==='cast'?CASTN[S.cast]:s.id==='rjsw'?(S.tg.rj?'Stålverk':'Salg'):MIXN[S.mix]);
  ctx.fillStyle='rgba(0,0,0,.35)';rr(s.x-36,s.y-20,74,44,10);ctx.fill();ctx.fillStyle='#173826';rr(s.x-38,s.y-24,76,44,10);ctx.fill();ctx.strokeStyle=C.good;ctx.lineWidth=2.5;rr(s.x-38,s.y-24,76,44,10);ctx.stroke();
  txt(t_(s.lab).toUpperCase(),s.x,s.y-12,8,C.uidim,800);txt(t,s.x,s.y+5,12,C.good,800)}}
 /* status chips beside every zone name plate: what the station waits for, or FLASKEHALS */
 /* status chip beside a zone plate: never runs past the zone edge or under the furnace gauge — shrink to 9px, drop " (…)", then cut with "…" */
 function chipLayout(z,txt0){const p=zonePlate(z),pw=plateW(p),x=p.x+pw+6,y=p.y;
- let R=z.x1-8;if(z.id==='ovn'&&y+20>GAUGE.y-22&&y<GAUGE.y+26)R=min(R,GAUGE.x-66);if(z.id==='skrap'&&era()===5)R=min(R,CSG.dx-CSG.dw/2-8);/* Consteel off-gas duct */let t=txt0,fs=10.5;ctx.font=`800 ${fs}px ${FONT}`;
+ let R=z.x1-8;if(z.id==='ovn'&&y+20>GAUGE.y-22&&y<GAUGE.y+26)R=min(R,GAUGE.x-66);if(z.id==='skrap'&&CS())R=min(R,CSG.dx-CSG.dw/2-8);/* Consteel off-gas duct */let t=txt0,fs=10.5;ctx.font=`800 ${fs}px ${FONT}`;
  while(ctx.measureText(t).width+24>R-x&&fs>9){fs-=.5;ctx.font=`800 ${fs}px ${FONT}`}
- if(ctx.measureText(t).width+24>R-x){const uy=p.y+p.h+4,ux=p.x;let uR=z.x1-8;if(z.id==='ovn'&&uy+20>GAUGE.y-22&&uy<GAUGE.y+26)uR=min(uR,GAUGE.x-66);if(z.id==='skrap'&&era()===5)uR=min(uR,CSG.dx-CSG.dw/2-8);
+ if(ctx.measureText(t).width+24>R-x){const uy=p.y+p.h+4,ux=p.x;let uR=z.x1-8;if(z.id==='ovn'&&uy+20>GAUGE.y-22&&uy<GAUGE.y+26)uR=min(uR,GAUGE.x-66);if(z.id==='skrap'&&CS())uR=min(uR,CSG.dx-CSG.dw/2-8);
   const row=(UPROW[z.id]||{s:[]}).s,hp=HIREPOS[z.id],clear=!row.some(q=>q[1]-70<uy+20&&q[1]+26>uy&&q[0]+40>ux&&q[0]-40<uR)&&!(hp&&hp.y-70<uy+20&&hp.y+26>uy);
   if(clear){let f2=10.5;ctx.font=`800 ${f2}px ${FONT}`;while(ctx.measureText(t).width+24>uR-ux&&f2>9){f2-=.5;ctx.font=`800 ${f2}px ${FONT}`}if(ctx.measureText(t).width+24<=uR-ux)return{x:ux,y:uy,w:ctx.measureText(t).width+24,h:20,t,fs:f2};ctx.font=`800 ${fs}px ${FONT}`}
   t=t.replace(/ \(.*\)$/,'');while(t.length>6&&ctx.measureText(t+'…').width+24>R-x)t=t.slice(0,-1);if(t!==txt0&&!txt0.startsWith(t+' ('))t+='…'}
@@ -3570,7 +3802,7 @@ function draw(){
  if(B_('kob'))padRing(POS.kobIn.x,POS.kobIn.y,36,t_('STENGER'),0,1-nodeRoom('kob')/NODE.kob.cap,'#3a6ea8');
  drawMovers();
  for(const s of SRC){if(s.yard)drawYard(s);else if(s.store)drawStore(s)}
- drawRJ();drawTorps();drawMB();drawCR();drawTwin();
+ drawRJ();drawDRI();drawESF();drawTorps();drawMB();drawCR();drawTwin();
  drawKok();for(const k of PRK)drawPileK(k);
  for(const z of TG)drawCash(z);
  drawSupply();if(E_().ch!=='belt')dropRing();drawCharge();if(E_().ch==='belt')dropRing();drawPit();drawCaster();drawEndless();drawGjv();drawVV();drawTC();drawStel();drawNett();drawKob();drawQA();drawByp();drawRob();drawSort();drawOvnSide();
@@ -3598,7 +3830,7 @@ function draw(){
  if(inView(POS.pit.x,POS.pit.y,200)){const st=PIT.state;if(st==='pour'){const L=PIT.L;if(L){const w=PIT.fill<.08?PIT.fill/.08:PIT.fill>.94?(1-PIT.fill)/.06:1;stream(L.x,L.y+12,POS.pit.x,POS.pit.y-4,w)}glowC(POS.pit.x,POS.pit.y,160,C.molten,.35)}else if(st==='solid'||st==='strip'){glowC(POS.pit.x,POS.pit.y,140,C.molten,.2)}}
  if(B_('strang')&&inView(1500,830,260)){const k=CAST.tlev;if(k>.02)glowC(1450,830,150,C.molten,.14*k);if(CAST.pour)glowC(PBX,TUR.y,46,C.molten,.32);if(CAST.flow)glowC(1520,830,110,C.molten,.08)}
  if(LADLES.some(l=>l.state==='lf')&&inView(POS.lf.x,POS.lf.y,120)){const x=POS.lf.x,y=POS.lf.y;glowC(x,y,70,C.arc,.14);if(!RM){ctx.strokeStyle=rgba(C.arc,.9);ctx.lineWidth=2;for(let i=0;i<3;i++){const a=-PI/2+i*TAU/3;if(Math.random()<.6)bolt(x+Math.cos(a)*8,y+Math.sin(a)*8,rnd(6,14))}}}
- if(NODE.gjv.cur)glowC(POS.gjv.x,POS.gjv.y,130,C.molten,.16);if(NODE.vv.cur)glowC(2470,600,110,C.molten,.14);
+ glowP4();if(NODE.gjv.cur)glowC(POS.gjv.x,POS.gjv.y,130,C.molten,.16);if(NODE.vv.cur)glowC(2470,600,110,C.molten,.14);
  for(const p of parts){if(!inView(p.x,p.y,10))continue;const a=clamp(p.l/p.m,0,1);if(p.sq){ctx.globalCompositeOperation='source-over';ctx.fillStyle=p.c;ctx.globalAlpha=a;ctx.fillRect(p.x-3,p.y-3,6,6);ctx.globalAlpha=1;ctx.globalCompositeOperation='lighter'}else{ctx.strokeStyle=rgba(p.c.startsWith('#')?p.c:C.moltenhi,a);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*.04,p.y-p.vy*.04);ctx.stroke()}}
  ctx.globalCompositeOperation='source-over';
  drawStatus();drawSwitches();drawUpPads();drawGauge();drawLabels();
@@ -3649,7 +3881,9 @@ const csHeatC=tc=>tc<280?null:heat(clamp(.2+(tc-280)/600*.65,0,.7));
 /* the scrap layer between xa and xb, from the tonnes in each conveyor cell; every chunk travels with the conveyor */
 function csScrap(xa,xb,yc,w,lanes,dim){const sp=4.6,cap=csCap(),pos=CSB.pos,o=((pos%sp)+sp)%sp,k0=floor(pos/sp),n=Math.ceil((xb-xa)/sp)+2;
  for(let i=-1;i<n;i++){const x=xa+i*sp+o;if(x<xa-1||x>xb+1)continue;const ci=csI(x),d=clamp(CSB.m[ci]/cap,0,1);if(d<.015)continue;const key=i-k0,hc=csHeatC(CSB.tc[ci]);
+  const dq=CSB.m[ci]>1e-6?CSB.d[ci]/CSB.m[ci]:0;
   for(let l=0;l<lanes;l++){const h=hsh(key*3.17+l*11.31);if(h>d*1.12)continue;const a=hsh(key*5.13+l*2.37),b=hsh(key*1.7+l*7.9),yy=yc+((l+.5)/lanes-.5)*w*.88+(b-.5)*w*.16;
+   /* DRI pellets in the layer (era 6) */if(dq>.01&&hsh(key*7.7+l*3.1)<dq){let col=DRIC[floor(a*3.99)];if(dim)col=mix(col,'#101114',dim);if(hc&&b<.7)col=hc;g.fillStyle=col;SK.circ(g,x+(a-.5)*3,yy,1.8+a*1.2);g.fill();continue}
    const s=2+a*2.6+(d>.6?.8:0);let col=SK.SCRAPC[floor(a*4.99)%5];if(dim)col=mix(col,'#101114',dim);if(hc&&b<clamp((CSB.tc[ci]-280)/160,0,1)*.9+.1)col=heat(clamp(.2+(CSB.tc[ci]-280)/600*.65,0,.7)*(.8+.3*a));SK.chunk(g,x+(a-.5)*2,yy,s,a*2,col)}
   if(d>.55&&hsh(key*9.7)<d-.4){const a=hsh(key*2.9);let col=a>.5?'#8b8f96':'#9a6a45';if(hc)col=hc;SK.chunk(g,x,yc+(a-.5)*w*.5,3.2+a*2,a*1.6,col)}}}
 function drawBeltLine(){const C=CSG,y=C.y,w=C.w,hw=C.hw,osc=csOsc();
@@ -3780,7 +4014,7 @@ const TRK={park:[[850,698],-2.2],fetch:[[896,702],-.4],mount:[[896,702],-.4],go:
 function tRobPose(){const st=TROB.st,nx=TROBN[st],a=TRK[st],b=st==='park'?TRK.park:TRK[nx],d=TROBD[st]||1,k=st==='park'||st==='mount'?0:ease(clamp(TROB.t/d,0,1));
  const from=st==='in'?TRK.go:a,to=st==='in'?TRK.in:b,kk=st==='in'?(TROB.t<d*.25?ease(TROB.t/(d*.25)):TROB.t>d*.8?1-ease((TROB.t-d*.8)/(d*.2)):1):k;
  const A=st==='in'?from:a,B=st==='in'?to:b;return{x:lerp(A[0][0],B[0][0],kk),y:lerp(A[0][1],B[0][1],kk),a:lerp(A[1],B[1],kk),ext:st==='in'?kk:0,probe:st==='mount'?TROB.t/TROBD.mount:['go','in','out','eject'].indexOf(st)>=0?1:0,burnt:st==='out'||st==='eject'}}
-function drawTRob(){if(era()!==5)return;const b=TROBP;if(!inView(b.x,b.y,90))return;const p=tRobPose();
+function drawTRob(){if(!CS())return;const b=TROBP;if(!inView(b.x,b.y,90))return;const p=tRobPose();
  /* probe magazine (cardboard tubes) and bin */
  SK.box(g,884,688,26,22,'#3b4048','#15171a',3);for(let i=0;i<4;i++){g.fillStyle='#c9a36a';g.fillRect(887+i*5.6,692,4,14);g.fillStyle='#6b4a2a';g.fillRect(887+i*5.6,692,4,2)}
  SK.box(g,886,740,24,20,'#4a4440','#15171a',3);g.fillStyle='#211e1b';g.fillRect(889,743,18,14);for(let i=0;i<3;i++)SK.chunk(g,893+i*5,750,2.4,i*.4,'#3a2a20');
@@ -3795,6 +4029,79 @@ function drawTRob(){if(era()!==5)return;const b=TROBP;if(!inView(b.x,b.y,90))ret
  if(TROB.st==='in'&&TROB.t>TROBD.in*.2&&TROB.t<TROBD.in*.8){g.fillStyle=rgba('#ffb030',.5);SK.circ(g,POS.F.x+4,POS.F.y+92,7);g.fill()}
  /* the reading over the robot while it is fresh */
  if(TROB.show>0&&TROB.n>0){const s=TROB.val+' °C',a=clamp(TROB.show/.6,0,1);ctx.font=`800 11px ${FONT}`;const w=ctx.measureText(s).width+12;LBL.push({k:'trob',x:b.x+18,y:b.y-56,w,h:17,pr:0,ax:b.x,f:(lx,ly)=>{ctx.globalAlpha=a;ctx.fillStyle='rgba(14,17,23,.92)';rr(lx,ly,w,17,8);ctx.fill();ctx.strokeStyle=rgba(C.moltenhi,.8);ctx.lineWidth=1.2;rr(lx+.5,ly+.5,w-1,16,8);ctx.stroke();txt(s,lx+w/2,ly+9,11,C.moltenhi,800);ctx.globalAlpha=1}})}}
+/* ---------- Phase 4: the hydrogen DRI plant (era 6 on) and the electric smelting furnace (era 7) ---------- */
+const DRIC=['#5f646c','#6d727a','#555a61','#787d84'];
+/* DRI pellets riding a belt (local frame of SK.belt): k = how busy the belt is */
+const driItems=(k,hot)=>(g2,L,w2,tt)=>{if(k<.02)return;const nn=max(5,floor(L/11));for(let i=0;i<nn;i++){if(hsh(i*3.7)>k+.15)continue;const p=((RM?i/nn:tt*.12*(.5+k)*140/L+i/nn)%1)*L;g2.fillStyle=hot&&i%3===0?'#a5552c':DRIC[i%4];SK.circ(g2,p,(hsh(i)-.5)*w2*.55,2.3);g2.fill()}};
+function belts(path,w,k,hot,o){for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];SK.belt(g,a[0],a[1],b[0],b[1],w,T,Object.assign({speed:12+40*k,items:driItems(k,hot)},o||{}))}}
+function drawDRI(){if(!B_('h2'))return;const P_=P4G,D=S.dri,on=DRI.rate>.01,run=DRI.heat,hr=DRI.h2run;
+ /* pellet yard: the train on the siding tips its wagons, the pile grows with the stock */
+ if(inView(-1430,400,240)){const y=P_.rail,cyc=DRI.trainT%10,full=D.pel>=pelCap()-1,w=full?-1:floor(cyc/2.2),tipK=full?0:Math.sin(PI*clamp((cyc%2.2)/1.8,0,1));
+  for(let i=0;i<4;i++){const x=-1560+i*84,tip=i===w?tipK:0,empty=i<w&&!full;g.save();g.translate(x,y-tip*12);SK.box(g,-36,-14,72,28,'#5a4a42','#241a16',3);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-32,-10,64,20);
+   if(!empty&&tip<.9)for(let q=0;q<10;q++){g.fillStyle=q%3?'#8a4a3a':'#6b3d33';SK.circ(g,-27+(q%5)*13,-5+floor(q/5)*10-tip*4,4);g.fill()}g.restore();
+   if(tip>.2){SK.parts(8,2,i*5,T,(ff,a)=>{g.fillStyle=a>.5?'#8a4a3a':'#6b3d33';SK.circ(g,x+(a-.5)*40,lerp(y+16,P_.pile.y-20,ff),3);g.fill()})}}
+  SK.box(g,-1290,y-16,60,32,'#2f7a68','#173d34',5);g.fillStyle='#1d2026';g.fillRect(-1262,y-12,26,24);g.fillStyle='#9fd0ff';g.fillRect(-1258,y-8,18,7);
+  /* the pellet pile: a mound that grows with the stock, pellets on its surface */
+  {const k=clamp(D.pel/pelCap(),0,1),p=P_.pile,rx=26+110*Math.sqrt(k),ry=rx*.62;if(k>.01){SK.shadow(g,p.x+5,p.y+7,rx,ry,.3);const gr=g.createRadialGradient(p.x-rx*.3,p.y-ry*.4,2,p.x,p.y,rx);gr.addColorStop(0,'#9a5644');gr.addColorStop(.7,'#743f32');gr.addColorStop(1,'#4e2b23');g.fillStyle=gr;SK.ell(g,p.x,p.y,rx,ry);g.fill();
+   const n=floor(40+120*k);for(let i=0;i<n;i++){const a=hsh(i*1.3)*TAU,r=Math.sqrt(hsh(i*2.7))*.92;g.fillStyle=i%3?'#a05a46':'#5e342a';SK.circ(g,p.x+Math.cos(a)*r*rx,p.y+Math.sin(a)*r*ry,2.6);g.fill()}}}
+  /* hopper + inclined belt to the shaft top */
+  SK.box(g,-1306,388,34,34,'#3b4048','#15171a',4);const bk=clamp(DRI.rate/max(.01,shaftCap()),0,1);
+  SK.belt(g,P_.belt[0][0],P_.belt[0][1],P_.belt[1][0],P_.belt[1][1],12,T,{trestle:true,speed:12+40*bk,items:(g2,L,w2,tt)=>{if(bk<.02)return;const nn=floor(L/12);for(let i=0;i<nn;i++){const q=((RM?i/nn:tt*.1*(.5+bk)*140/L+i/nn)%1)*L;g2.fillStyle=i%2?'#8a4a3a':'#6b3d33';SK.circ(g2,q,(hsh(i)-.5)*w2*.5,2.4);g2.fill()}}})}
+ /* electrolyser hall: rows of stacks on busbars; a stack hums (green lamp) while hydrogen is made */
+ const h=P_.hall;if(inView((h.x0+h.x1)/2,(h.y0+h.y1)/2,240)){const W2=h.x1-h.x0,H2=h.y1-h.y0;SK.shadow(g,(h.x0+h.x1)/2+6,(h.y0+h.y1)/2+8,W2*.52,H2*.55,.3);
+  SK.box(g,h.x0,h.y0,W2,H2,'#2e333b','#14171c',8);g.strokeStyle='rgba(122,215,194,.35)';g.lineWidth=2;SK.rr(g,h.x0+6,h.y0+6,W2-12,H2-12,6);g.stroke();
+  const n=min(27,4+lv('elyz'));
+  for(let r=0;r<3;r++){const y=h.y0+34+r*58;g.fillStyle='#b8733a';g.fillRect(h.x0+16,y+26,W2-32,4);/* busbar */
+   for(let c=0;c<9;c++){const i=r*9+c,x=h.x0+22+c*34;if(i>=n){g.strokeStyle='rgba(244,241,234,.12)';g.setLineDash([3,3]);g.strokeRect(x,y,24,22);g.setLineDash([]);continue}
+    SK.box(g,x,y,24,22,'#4a5563','#1b1f25',3);g.fillStyle='#6f7d8e';for(let k=0;k<4;k++)g.fillRect(x+3,y+3+k*5,18,2);
+    const lamp=hr>.05&&(RM||hsh(i+floor(T*2))>.15);g.fillStyle=lamp?'#5fd38d':'#2a3a30';SK.circ(g,x+20,y+19,2.2);g.fill()}}}
+ /* H₂ pipes: hall → tanks → shaft furnace (flow when the shaft draws) */
+ const hk=clamp(DRI.rate/max(.01,shaftCap()),0,1);
+ SK.pipe(g,[[h.x1,140],[-1208,140],[-1208,236],[-1150,236],[-990,236]],5,'#cfd8e3',T,{flow:hr>.05?'#9fd8ff':null,speed:24});
+ if(inView(-1170,170,120)){const fk=clamp(D.h2/max(1e-6,h2Cap()),0,1);for(const t of P_.tank.slice(0,nTank())){SK.shadow(g,t.x+4,t.y+6,t.r+2,t.r*.8,.3);
+   const gr=g.createRadialGradient(t.x-t.r*.35,t.y-t.r*.4,2,t.x,t.y,t.r);gr.addColorStop(0,'#f4f6f8');gr.addColorStop(.6,'#c3cad3');gr.addColorStop(1,'#7d8590');g.fillStyle=gr;SK.circ(g,t.x,t.y,t.r);g.fill();
+   g.strokeStyle='#9fd8ff';g.lineWidth=3;g.beginPath();g.arc(t.x,t.y,t.r+4,-PI/2,-PI/2+TAU*fk);g.stroke();g.fillStyle='rgba(20,24,30,.55)';g.font=`800 9px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText('H₂',t.x,t.y)}
+  if(lv('h2st')>=3){const c=P_.cav;g.save();g.setLineDash([6,5]);g.strokeStyle='rgba(159,216,255,.55)';g.lineWidth=2;SK.rr(g,c.x,c.y,c.w,c.h,14);g.stroke();g.restore();
+   g.fillStyle='#15171c';g.beginPath();g.ellipse(c.x+c.w-16,c.y+c.h/2,10,12,0,0,TAU);g.fill();g.fillStyle='rgba(159,216,255,'+(.25+.5*fk)+')';g.fillRect(c.x+10,c.y+c.h/2-3,(c.w-40)*fk,6)}}
+ /* the shaft furnace: round shell, bustle ring for the hot reducing gas, charging hopper on top; the core glows while it runs */
+ const s=P_.shaft;if(inView(s.x,s.y,140)){const z=36;SK.shadow(g,s.x+8,s.y+10,s.R+10,s.R*.8,.35);SK2.cyl(g,s.x,s.y,s.R,0,z,'#4e535b','#8b939e',12);
+  const ty=s.y-z*OK;SK2.cap(g,s.x,ty,s.R,'#5b636d');g.strokeStyle='#b8733a';g.lineWidth=4;SK.circ(g,s.x,ty,s.R-6);g.stroke();/* bustle ring */
+  const hot=run;const gr=g.createRadialGradient(s.x,ty,4,s.x,ty,s.R-10);gr.addColorStop(0,heat(.35+.5*hot));gr.addColorStop(.7,heat(.15+.35*hot));gr.addColorStop(1,'#3a3f46');g.fillStyle=gr;SK.circ(g,s.x,ty,s.R-11);g.fill();
+  SK.box(g,s.x-16,ty-16,32,32,'#3b4048','#15171a',4);for(let q=0;q<6;q++){g.fillStyle=q%2?'#8a4a3a':'#6b3d33';SK.circ(g,s.x-8+(q%3)*8,ty-4+floor(q/3)*8,3);g.fill()}
+  /* top gas → scrubber → stack */SK.pipe(g,[[s.x+30,ty-24],[P_.stack.x-12,P_.stack.y+18]],6,'#7a8088',T)}
+ const st=P_.stack;if(inView(st.x,st.y-60,120)){SK2.cyl(g,st.x,st.y,13,0,96,'#6b7079','#c9ced6',30);SK2.cap(g,st.x,st.y-96*OK,13,'#3a3f46');
+  /* water vapour, not smoke: white puffs that drift and fade */
+  const sk=on?1:.15,top=st.y-96*OK;if(RM){g.fillStyle=`rgba(244,248,252,${.25*sk})`;SK.circ(g,st.x+10,top-26,16);g.fill()}else SK.parts(9,.45,77,T,(f,a,b)=>{g.fillStyle=`rgba(244,248,252,${(1-f)*.42*sk})`;SK.circ(g,st.x+f*36+(a-.5)*10,top-8-f*70,7+f*20);g.fill()})}
+ /* the shaft's DRI outlet → hot DRI bin */
+ const b=P_.bin;if(inView(b.x,b.y,100)){SK.pipe(g,[[s.x-30,s.y+30],[b.x+20,b.y-18]],8,'#5b616a',T,{flow:on?'#a5552c':null,speed:18});
+  SK2.cyl(g,b.x,b.y,b.r,0,40,'#4e535b','#8b939e',14);const fk=clamp(D.bin/binCap(),0,1);SK2.cap(g,b.x,b.y-40*OK,b.r,mix('#5b636d','#a5552c',fk*.6));
+  g.strokeStyle='#e0a050';g.lineWidth=3;g.beginPath();g.arc(b.x,b.y-40*OK,b.r+4,-PI/2,-PI/2+TAU*fk);g.stroke()}
+ /* era 6: the DRI gallery runs in the gaps between the old plots to the charging conveyor; era 7: down to the ESF bins */
+ if(era()===6){const k=clamp(DRI.beltOut/max(.01,driBelt()),0,1);belts(P_.gal,12,k,true,{trestle:true})}
+ else if(B_('esf')){const k=era()===7?clamp(ESF.rate/max(.01,esfRate()),0,1):0;belts(P_.feed,12,k,true,{trestle:true})}}
+function drawESF(){if(!B_('esf'))return;const E=ESFG,run=era()===7?ESF.heat:0,on=era()===7&&ESF.rate>.01,cx=(E.x0+E.x1)/2;if(!inView(cx-60,E.cy,340))return;
+ /* transformers south of the furnace, busbars up to the electrodes */
+ const T6=6,ex=i=>E.x0+(i+.5)*(E.x1-E.x0)/T6;
+ for(let i=0;i<3;i++){const x=E.trafo.x0+20+i*((E.trafo.x1-E.trafo.x0-40)/2);SK.box(g,x-30,E.trafo.y,60,E.trafo.h,'#8a8a84','rgba(0,0,0,.45)',4);for(let k=0;k<6;k++){g.fillStyle=k%2?'#5c5c56':'#a3a39c';g.fillRect(x-30+k*10.5,E.trafo.y+E.trafo.h-6,6,8)}
+  g.save();g.translate(x,E.trafo.y+12);g.fillStyle='#f5c518';g.beginPath();g.moveTo(0,-6);g.lineTo(5,4);g.lineTo(-5,4);g.closePath();g.fill();g.restore()}
+ g.strokeStyle='#b8733a';g.lineWidth=3;for(let i=0;i<T6;i++){g.beginPath();g.moveTo(ex(i),E.y1-6);g.lineTo(ex(i),E.trafo.y);g.stroke()}
+ /* the furnace: a long rectangular shell, refractory rim, roof panels; six electrodes in a row along the centre line */
+ SK.shadow(g,cx+8,E.cy+10,(E.x1-E.x0)*.52,(E.y1-E.y0)*.62,.35);SK.box(g,E.x0,E.y0,E.x1-E.x0,E.y1-E.y0,'#4e535b','#15171a',14);
+ g.fillStyle=run>.05?heat(.18+.25*run):'#3a3f46';SK.rr(g,E.x0+8,E.y0+8,E.x1-E.x0-16,E.y1-E.y0-16,10);g.fill();
+ g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1.2;for(let i=1;i<T6;i++){const x=(ex(i-1)+ex(i))/2;g.beginPath();g.moveTo(x,E.y0+8);g.lineTo(x,E.y1-8);g.stroke()}
+ for(let i=0;i<T6;i++){const x=ex(i),y=E.cy;if(run>0){const fl=RM?.8:.6+.4*Math.abs(Math.sin(T*15+i*1.7));const gr=g.createRadialGradient(x,y,0,x,y,26);gr.addColorStop(0,`rgba(255,220,150,${.75*run*fl})`);gr.addColorStop(1,'rgba(255,120,30,0)');g.fillStyle=gr;SK.circ(g,x,y,26);g.fill()}
+  g.fillStyle='#2a2d33';SK.circ(g,x,y,15);g.fill();const gr2=g.createRadialGradient(x-4,y-4,1,x,y,12);gr2.addColorStop(0,'#c9ced6');gr2.addColorStop(1,'#5b616a');g.fillStyle=gr2;SK.circ(g,x,y,12);g.fill();
+  g.strokeStyle='#c27a3e';g.lineWidth=2;SK.circ(g,x,y,15);g.stroke()}
+ /* DRI bins above the furnace with feed chutes */
+ for(const x of E.bins){SK.line(g,x,E.binY+14,x,E.y0+10,'#5b616a',5);SK2.cyl(g,x,E.binY,20,0,30,'#4e535b','#8b939e',12);SK2.cap(g,x,E.binY-30*OK,20,mix('#5b636d','#a5552c',clamp(S.dri.bin/binCap(),0,1)*.6))}
+ /* slag end (west): a runner into the slag pot; it flows all the time while the furnace runs */
+ const sp=E.slag;SK.box(g,sp.x+24,E.cy-6,E.x0-sp.x-24,12,'#3a3530','#15171a',3);SK.ladle(g,sp.x,sp.y,22,T,{fill:on?.6:.2,eye:false});
+ if(on){g.strokeStyle=rgba('#ffb030',.85);g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(E.x0,E.cy);g.lineTo(sp.x+10,sp.y-6);g.stroke();g.lineCap='butt'}
+ /* hot-metal end (east): the taphole and the runner up to the torpedo car on track A */
+ SK.box(g,E.x1-4,E.cy-34,22,40,'#3a3530','#15171a',3)}
+/* glow pass: shaft core, ESF arcs, slag and iron runners */
+function glowP4(){if(B_('h2')&&DRI.rate>.01){const s=P4G.shaft;glowC(s.x,s.y-36*OK,s.R+20,C.molten,.12*DRI.heat)}
+ if(B_('esf')&&era()===7&&ESF.rate>.01){const E=ESFG;for(let i=0;i<6;i++){const x=E.x0+(i+.5)*(E.x1-E.x0)/6;glowC(x,E.cy,46,C.arc,.12*ESF.heat)}glowC(E.slag.x,E.slag.y,50,C.molten,.2)}}
 
 /* ---------- tap-to-explain: a short tap on anything in the plant opens an explanation bubble ----------
    texts are [Norwegian, English]; titles reuse the game's names where they exist. */
@@ -4019,6 +4326,60 @@ const IX={
   mag:['Magnetkran som løfter emner fra kjølesenga til gjennomvarmingsovnen.','A magnet crane that lifts billets from the cooling bed to the reheating furnace.']}};
 /* every reserve plot shares one text */
 for(const z of ZONES)if(z.mbp)IX.zone[z.id]=['Reservetomt: her settes et gammelt anlegg når et nytt verk bygges. Lagt ned står det mørkt og koster litt vedlikehold, til du river det.','Reserve plot: an old plant is put here when a new one is built. Mothballed it stands dark and costs a little upkeep until you demolish it.'];
+/* ---- Phase 4 explanations (hydrogen DRI 2030, electric smelting 2035) ---- */
+Object.assign(IX.up,{
+ elyz:['Flere elektrolysestakker i hallen. Strøm og vann blir hydrogen og oksygen; hvert nivå gir mer hydrogen til sjaktovnen.','More electrolyser stacks in the hall. Power and water become hydrogen and oxygen; each level makes more hydrogen for the shaft furnace.'],
+ h2st:['Hydrogenlager: tanker først, så et foret fjellhall-lager. Lageret jevner ut produksjonen, og større lager gir mer hydrogen per minutt til sjaktovnen.','Hydrogen storage: tanks first, then a lined rock cavern. The store evens out production, and a bigger store delivers more hydrogen per minute to the shaft furnace.'],
+ shaft:['Større sjaktovn: pelletsene synker ned gjennom ovnen mens varmt hydrogen strømmer opp og tar oksygenet. Hvert nivå gir mer DRI per minutt.','A bigger shaft furnace: the pellets sink down through the furnace while hot hydrogen flows up and takes their oxygen. Each level makes more DRI per minute.'],
+ pellet:['Flere pelletstog per time til pelletlageret. Sjaktovnen trenger rundt 1,4 tonn pellets per tonn DRI.','More pellet trains per hour to the pellet yard. The shaft furnace needs about 1.4 tonnes of pellets per tonne of DRI.'],
+ dribelt:['Raskere galleribånd for varm DRI fra sjaktovnen til chargeringsbåndet ved lysbueovnen.','A faster gallery conveyor for hot DRI from the shaft furnace to the arc furnace’s charging conveyor.'],
+ esfmw:['Mer effekt i den elektriske smelteovnen: seks elektroder på rad smelter DRI til råjern. Mer MW gir mer råjern til konverteren.','More power for the electric smelting furnace: six electrodes in a row melt DRI into hot metal. More MW means more hot metal for the converter.'],
+ etorp:['Større og raskere torpedovogner mellom den elektriske smelteovnen og LD-konverteren.','Bigger and faster torpedo cars between the electric smelting furnace and the LD converter.'],
+ etorpn:['En torpedovogn til på linja, så råjernet aldri blir stående og vente på en tom vogn.','One more torpedo car on the line, so the hot metal never waits for an empty car.']});
+IX.op.dri=['DRI-operatører kjører elektrolysen, lageret og sjaktovnen fra pulten. Hver operatør gir litt mer hydrogen og DRI.','DRI operators run the electrolysis, the store and the shaft furnace from the desk. Each operator gives a little more hydrogen and DRI.'];
+IX.hire.dri=['DRI-operatører sitter ved pulten i DRI-anlegget – her bærer ingen noe.','DRI operators sit at the desk in the DRI plant – nobody carries anything here.'];
+Object.assign(IX.zone,{
+ dri:['Hydrogen-DRI: elektrolysører lager hydrogen, et lager jevner det ut, og sjaktovnen reduserer jernmalmpellets til jernsvamp (DRI). Pipa slipper ut vanndamp, ikke CO₂.','Hydrogen DRI: electrolysers make hydrogen, a store evens it out, and the shaft furnace reduces iron-ore pellets to sponge iron (DRI). The stack lets out water vapour, not CO₂.'],
+ esf:['Elektrisk smelteovn: en lang, rektangulær ovn med seks elektroder på rad. DRI smelter til grønt råjern som går med torpedovogn til LD-konverteren; slagget renner ut i den andre enden.','Electric smelting furnace: a long rectangular furnace with six electrodes in a row. DRI melts into green hot metal that goes by torpedo car to the LD converter; the slag runs out at the other end.']});
+IX.era[6]=['Hydrogen-DRI (rundt 2030): den samme båndchargerte lysbueovnen, men nå mates den også med varm DRI laget med hydrogen. Mer DRI gir renere stål og lavere CO₂, men krever mer strøm og kalk.','Hydrogen DRI (around 2030): the same conveyor-fed arc furnace, now also fed hot DRI made with hydrogen. More DRI gives cleaner steel and lower CO₂, but takes more power and lime.'];
+IX.era[7]=['Elektrisk smelteovn (rundt 2035): DRI smeltes til grønt råjern i en elektrisk ovn, og den gamle LD-konverteren er startet igjen for å blåse det til stål med litt skrap – som i LD-tida, bare uten koks.','Electric smelting (around 2035): DRI is melted into green hot metal in an electric furnace, and the old LD converter is restarted to blow it into steel with a little scrap – like in the LD days, only without coke.'];
+IX.sw.drimix=['Bryter: hvor stor del av chargen som er DRI – 30, 50 eller 70 %. Mer DRI gir renere stål og lavere CO₂, men trenger mer strøm og kalk. Stå på den for å bytte.','Switch: how much of the charge is DRI – 30, 50 or 70%. More DRI gives cleaner steel and lower CO₂, but needs more power and lime. Stand on it to flip.'];
+IX.sw.pgrade=['Bryter: DR-pellets (rene) eller billigere masovnspellets. Smelteovnen tåler mer gangart enn lysbueovnen: masovnspellets gir mer pellets per kontrakt, men mer slagg og strøm. Stå på den for å bytte.','Switch: DR-grade pellets (clean) or cheaper blast-furnace pellets. The smelting furnace takes more gangue than the arc furnace: blast-furnace pellets mean more pellets per contract, but more slag and power. Stand on it to flip.'];
+IX.misc.torp7=['Torpedovogn','Isolert jernbanevogn som frakter grønt råjern fra den elektriske smelteovnen til LD-konverteren.','Torpedo car','An insulated rail car that carries green hot metal from the electric smelting furnace to the LD converter.'];
+IX.misc.rebuild=['Bygg opp igjen','LD-konverteren ble revet. Den elektriske smelteovnen trenger en konverter – her bygges en ny i stålverket.','Rebuild','The LD converter was demolished. The electric smelting furnace needs a converter – a new one is built here in the melt shop.'];
+IX.p4={
+ hall:['Elektrolysehall','Rader med elektrolysestakker spalter vann til hydrogen og oksygen med strøm. Hydrogenet går til lageret.','Electrolyser hall','Rows of electrolyser stacks split water into hydrogen and oxygen with electricity. The hydrogen goes to the store.'],
+ tank:['Hydrogenlager','Trykktanker for hydrogen. Lageret tar unna når sjaktovnen bruker mindre, og gir mer når den bruker mer.','Hydrogen store','Pressure tanks for hydrogen. The store takes up the surplus when the shaft furnace uses less and gives more when it uses more.'],
+ cav:['Fjellhall','Et foret fjellrom under bakken: et mye større hydrogenlager enn tankene, med mer uttak til sjaktovnen.','Rock cavern','A lined cavern under the ground: a much bigger hydrogen store than the tanks, with more flow to the shaft furnace.'],
+ shaft:['Sjaktovn (DRI)','Pellets chargeres på toppen og synker ned. Varmt hydrogen blåses inn nederst og tar oksygenet fra malmen. Ut kommer jernsvamp (DRI) – og vanndamp i stedet for CO₂.','Shaft furnace (DRI)','Pellets are charged at the top and sink down. Hot hydrogen is blown in low down and takes the oxygen from the ore. Out comes sponge iron (DRI) – and water vapour instead of CO₂.'],
+ stack:['Damp-pipe','Toppgassen vaskes og kjøles; vannet kondenseres, og det som går ut av pipa er vanndamp. Ubrukt hydrogen går tilbake i ovnen.','Steam stack','The top gas is scrubbed and cooled; the water condenses, and what leaves the stack is water vapour. Unused hydrogen goes back into the furnace.'],
+ bin:['Varm DRI-silo','Silo for varm DRI rett fra sjaktovnen. Herfra går DRI-en til lysbueovnen eller den elektriske smelteovnen.','Hot DRI bin','A bin for hot DRI straight from the shaft furnace. From here the DRI goes to the arc furnace or the electric smelting furnace.'],
+ pyard:['Pelletlager','Jernmalmpellets kommer med tog og tippes her. Et bånd tar dem opp til toppen av sjaktovnen.','Pellet yard','Iron-ore pellets arrive by train and are tipped here. A conveyor takes them up to the top of the shaft furnace.'],
+ gal:['DRI-galleri','Et lukket, isolert galleribånd bærer varm DRI fra sjaktovnen til chargeringsbåndet. Der legges DRI-en under skrapet, opp til andelen du har valgt.','DRI gallery','A closed, insulated gallery conveyor carries hot DRI from the shaft furnace to the charging conveyor. There the DRI is laid under the scrap, up to the share you chose.'],
+ esf:['Elektrisk smelteovn','Lang, rektangulær ovn med seks Söderberg-elektroder på rad. DRI faller ned fra siloene over ovnen og smelter i slagget; råjernet tappes i østenden.','Electric smelting furnace','A long rectangular furnace with six Söderberg electrodes in a row. DRI drops from the bins above and melts in the slag; the hot metal is tapped at the east end.'],
+ esfbin:['DRI-siloer','Tre siloer over ovnen mater DRI jevnt inn langs hele ovnen.','DRI bins','Three bins above the furnace feed DRI evenly along the whole furnace.'],
+ esfslag:['Slaggtapping','Slagget renner kontinuerlig ut i vestenden. Det granuleres og selges til sementverket.','Slag tapping','The slag runs out continuously at the west end. It is granulated and sold to the cement works.'],
+ esftap:['Råjernstapping','Grønt råjern tappes i torpedovogna. Torpedovognene kjører det til LD-konverteren.','Hot-metal tapping','Green hot metal is tapped into the torpedo car. The torpedo cars take it to the LD converter.']};
+function p4Nums(id){const D=S.dri;switch(id){
+ case'hall':return t_('{0} MW · {1} t H₂/min',Math.round(elyMW()),tf(h2Rate()*60))+(DRI.h2run<.95?' · '+t_('lageret er fullt'):'');
+ case'tank':case'cav':return t_('{0}/{1} t H₂ · uttak {2} t/min',tf(D.h2),tf(h2Cap()),tf(h2Draw()*60));
+ case'shaft':case'stack':return t_('{0} av {1} t/min DRI',tf(DRI.rate*60),tf(shaftCap()*60));
+ case'bin':return t_('{0}/{1} t',tf(D.bin),tf(binCap()));
+ case'pyard':return t_('{0}/{1} t · {2} t/min inn',tf(D.pel),tf(pelCap()),tf(pelRate()*60));
+ case'gal':return t_('{0} t/min · maks {1} t/min',tf(rate('f:dri>ovn')),tf(driBelt()*60))+' · '+t_('DRI-andel {0} %',Math.round(DRI.sh*100));
+ case'esf':case'esfbin':return era()===7?t_('{0} MW · {1} t/min råjern',Math.round(esfMW()),tf(ESF.rate*60)):t_('Venter på LD-konverteren');
+ case'esfslag':return kr(rate('v:esf'),'/min');case'esftap':return t_('{0} t i ovnen',tf(S.rj.hearth))}return''}
+function p4Hit(wx,wy){const o=(id,x,y)=>({type:'p4',key:'p4:'+id,id,x,y}),g=P4G,E=ESFG;
+ if(B_('h2')){const h=g.hall;if(inR(wx,wy,h.x0,h.y0,h.x1-h.x0,h.y1-h.y0))return o('hall',(h.x0+h.x1)/2,(h.y0+h.y1)/2);
+  for(const t of g.tank.slice(0,nTank()))if(hyp(wx-t.x,wy-t.y)<t.r+6)return o('tank',t.x,t.y);
+  if(lv('h2st')>=3&&inR(wx,wy,g.cav.x,g.cav.y,g.cav.w,g.cav.h))return o('cav',g.cav.x+g.cav.w/2,g.cav.y+g.cav.h/2);
+  if(hyp(wx-g.shaft.x,wy-g.shaft.y)<g.shaft.R+10)return o('shaft',g.shaft.x,g.shaft.y);if(hyp(wx-g.stack.x,wy-g.stack.y)<26)return o('stack',g.stack.x,g.stack.y);
+  if(hyp(wx-g.bin.x,wy-g.bin.y)<g.bin.r+8)return o('bin',g.bin.x,g.bin.y);
+  if(inR(wx,wy,g.yard.x0,g.yard.y0,g.yard.x1-g.yard.x0,g.yard.y1-g.yard.y0))return o('pyard',g.pile.x,g.pile.y);
+  if(era()===6){const G2=g.gal;for(let i=1;i<G2.length;i++){const a=G2[i-1],b=G2[i];if(inR(wx,wy,min(a[0],b[0])-10,min(a[1],b[1])-10,Math.abs(b[0]-a[0])+20,Math.abs(b[1]-a[1])+20))return o('gal',wx,wy)}}}
+ if(B_('esf')){if(inR(wx,wy,E.x0,E.y0,E.x1-E.x0,E.y1-E.y0))return o('esf',(E.x0+E.x1)/2,E.cy);for(const x of E.bins)if(hyp(wx-x,wy-E.binY)<26)return o('esfbin',x,E.binY);
+  if(hyp(wx-E.slag.x,wy-E.slag.y)<34||inR(wx,wy,E.slag.x,E.cy-16,E.x0-E.slag.x,32))return o('esfslag',E.slag.x,E.slag.y);if(inR(wx,wy,E.x1,E.cy-60,ESFG.tapX-E.x1,80))return o('esftap',E.x1+10,E.cy)}
+ return null}
 /* ---- Phase 3 explanations: [Norwegian, English] (up/zone/kind) and [no title, no text, en title, en text] (p3 equipment) ---- */
 Object.assign(IX.up,{
  sort:['En sorteringslinje med kamera, laser og luftdyser plukker kobber og annet rask ut av skrapleveransene. Renere skrap gir bedre stål: høyere pris og færre overflatesprekker. Hvert nivå sorterer mer.','A sorting line with cameras, a laser and air jets picks copper and other tramp material out of the scrap deliveries. Cleaner scrap makes better steel: a higher price and fewer surface cracks. Each level sorts more.'],
@@ -4096,14 +4457,15 @@ function hitInfo(wx,wy){
   for(const s of SRC){if(!s.open())continue;cand(s.pile?'pile':'src',s.id,s,s.x,s.y,s.r)}
   if(best)return best}
  for(const L of LADLES){if(hyp(wx-L.x,wy-L.y)<34)return{type:'ladle',key:'ladle:'+L.i,L,x:L.x,y:L.y}}
- for(const t of TORPS){if(rjClosed()&&t.i>0)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;
+ for(const t of TORPS){if(rjClosed()&&era()!==7)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;
   if(Math.abs(wx-t.x)<70&&Math.abs(wy-y)<26)return{type:'torp',key:'torp:'+t.i,t,x:t.x,y}}
  for(const c of CRANES){if(c.built()&&hyp(wx-c.x,wy-c.y)<30)return{type:'crane',key:'crane:'+c.id,c,x:c.x,y:c.y}}
  for(const h of helpers){if(!inCab(h)&&hyp(wx-h.x,wy-(h.y-14))<(h.agv?22:18))return{type:h.agv?'agv':'helper',key:(h.agv?'agv:':'helper:')+h.gi,h,x:h.x,y:h.y}}
  for(const d of ctlDesks()){if(inR(wx,wy,d.x-24,d.y-16,48,40))return{type:'misc',key:'misc:ctl_'+d.id,id:'ctl_'+d.id,d,x:d.x,y:d.y}}
  for(const u of MBK){if(!mbOn(u)||u==='rj')continue;const g2=mbGeo(u);if(g2&&inR(wx,wy,g2.z.x0,g2.z.y0+30,330,g2.z.y1-g2.z.y0-40))return{type:'mb',key:'mb:'+u,u,x:g2.cx,y:g2.cy}}
  if(AUTO()&&inR(wx,wy,CRB.x0,CRB.y0,CRB.x1-CRB.x0,CRB.y1-CRB.y0))return{type:'misc',key:'misc:cr',id:'cr',x:(CRB.x0+CRB.x1)/2,y:CRB.y0+40};
- if(era()===5){const C=CSG,cs=(id,x,y)=>({type:'cs',key:'cs:'+id,id,x,y});
+ {const p4=p4Hit(wx,wy);if(p4)return p4}
+ if(CS()){const C=CSG,cs=(id,x,y)=>({type:'cs',key:'cs:'+id,id,x,y});
   if(hyp(wx-TROBP.x,wy-TROBP.y)<28||inR(wx,wy,882,686,30,76))return cs('robot',TROBP.x,TROBP.y);
   if(inR(wx,wy,POS.F.x-16,POS.F.y+84,32,SLAGP.y-SLAGP.h/2-POS.F.y-80))return cs('door',POS.F.x,POS.F.y+96);
   if(inR(wx,wy,C.xt,C.y-30,708-C.xt,60))return cs('car',C.xt+18,C.y);
@@ -4134,7 +4496,7 @@ function hitInfo(wx,wy){
   if(inR(wx,wy,1570,TD.y0-8,82,TD.y1-TD.y0+16))return c('cutter',CUTX(),TUR.y);
   if(inR(wx,wy,1652,668,110,326))return c('bed',1707,830)}
  if(!rjClosed()||PILE.pig.length){if(inR(wx,wy,-56,630,32,280))return{type:'misc',key:'misc:pigm',id:'pigm',x:-40,y:760}}
- if(!rjClosed()&&Math.abs(wy-POS.oreTrainY)<26&&wx>WX0+10&&wx<-150)return{type:'misc',key:'misc:train',id:'train',x:wx,y:POS.oreTrainY};
+ if(!rjClosed()&&Math.abs(wy-POS.oreTrainY)<26&&wx>WXL0+10&&wx<-150)return{type:'misc',key:'misc:train',id:'train',x:wx,y:POS.oreTrainY};
  if(inR(wx,wy,POS.truck1.x-48,POS.truck1.y-110,96,260))return{type:'ring',key:'ring:bil1',o:TGm.bil1,x:POS.truck1.x,y:POS.truck1.y};
  if(B_('tog')&&Math.abs(wy-POS.railY)<30&&wx>ZN.utlast.x0)return{type:'ring',key:'ring:tog',o:TGm.tog,x:wx,y:POS.railY};
  if(B_('kai')&&wx>QX&&wy>QY)return{type:'ring',key:'ring:kai',o:TGm.kai,x:wx,y:wy};
@@ -4151,7 +4513,7 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
    return{t:upName(u),d:ixs(IX.up[u.id]),n}}
   if(d.kind==='hire'){const l=lv(d.h.id),N=d.h.costs.length,au=AUTO()&&IX.op[d.st];return{t:hName(d.h),d:au?ixs(IX.op[d.st]):ixs(IX.hire[d.st])+' '+ixs(IX.hire.all),n:t_(au?'Operatører {0} av {1}':'Hjelpere {0} av {1}',l,N)+(l<N?' · '+kr(cost(d)-(S.paid[paidKey(d)]||0)):'')}}
   if(d.kind==='build'){const b=nextBuild();if(!b)return null;const[,tx]=ix4(IX.misc.build);return{t:t_('Bygg: {0}',t_(b.n)),d:t_(b.d)+' '+tx,n:kr(b.cost)+' · '+t_('betalt {0}',kr(S.paid['b:'+b.id]||0))}}
-  if(d.kind==='demol'||d.kind==='restart'){const M=MBU[d.u],dm=d.kind==='demol',[ti,tx]=ix4(IX.misc[dm?'dem':'rst']);return{t:ti+': '+mbName(d.u),d:tx,n:dm?kr(cost(d)-(S.paid[paidKey(d)]||0))+' · '+t_('+{0} t skrap',M.scrap)+' · '+t_('vedlikehold {0}',kr(M.up,'/min')):restartOK(d.u)?kr(cost(d)):t_('Låst · ingen ovn trenger den ennå')}}
+  if(d.kind==='demol'||d.kind==='restart'){const M=MBU[d.u],dm=d.kind==='demol',[ti,tx]=ix4(IX.misc[dm?'dem':rebuildLD(d)?'rebuild':'rst']);return{t:ti+': '+mbName(d.u),d:tx,n:dm?kr(cost(d)-(S.paid[paidKey(d)]||0))+' · '+t_('+{0} t skrap',M.scrap)+' · '+t_('vedlikehold {0}',kr(M.up,'/min')):restartOK(d.u)?kr(cost(d)):t_('Låst · ingen ovn trenger den ennå')}}
   if(d.kind==='prestige'){const[ti,tx]=ix4(IX.misc.prestige);return{t:ti,d:tx,n:presGain()>0?t_('+{0} ekspertise',presGain()):t_('Tjen {0} totalt',kr(PRES_NEED))+' · '+kr(S.earned)}}return null}
  case'sw':{const s=h.s;return{t:t_(s.lab),d:ixs(IX.sw[s.id]),n:t_('Nå: {0}',swTxt(s.id).replace(/^[^:]*: /,''))}}
  case'tap':{const[ti,tx]=ix4(IX.ring.tap);return{t:ti,d:tx+(lv('operator')?' '+ixs(IX.up.operator):''),n:furnNums()}}
@@ -4164,14 +4526,14 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
   else if(NODE[{gjvIn:'gjv',nettIn:'nett',kobIn:'kob'}[z.id]]){const N=NODE[{gjvIn:'gjv',nettIn:'nett',kobIn:'kob'}[z.id]];n=t_('Kø {0}/{1}',N.in.length+N.inc,N.cap)}
   else if(z.id==='slagp')n=t_('Slaggpotte {0}/{1}',S.pot,potMax());
   return{t:ti,d:tx,n}}
- case'src':{const s=h.o;if(s.id==='koklag')return infoFor({type:'ring',o:TGm.koklag});if(s.id==='pot'&&era()===5)return infoFor({type:'cs',id:'pit'});const[ti,tx]=ix4(IX.ring[s.id]);let n='';
+ case'src':{const s=h.o;if(s.id==='koklag')return infoFor({type:'ring',o:TGm.koklag});if(s.id==='pot'&&CS())return infoFor({type:'cs',id:'pit'});const[ti,tx]=ix4(IX.ring[s.id]);let n='';
   if(s.yard)n=tf(yardT(s))+'/'+(s.id==='ore'?oreYardCap():yardCap())+' t';else if(s.store)n=t_('{0} på lager',ST[s.store]|0);else if(s.id==='kokv')n=t_('{0} varme',S.kok.hot);else if(s.id==='pot')n=S.pot+'/'+potMax()+(lv('slaggbil')?' · '+t_('Slaggbil'):'');
   return{t:ti,d:tx,n}}
  case'pile':{const k=h.o.pile,a=PILE[k],top=a.length?a[a.length-1]:{k,t:1,q:qLF()},pr=val(top)*BASEP()*gm()/max(.001,top.t);return{t:t_(PR[k].n),d:ixs(IX.kind[k]),n:a.length+' '+t_('stk')+' · '+kr(pr,'/t')+(lv('pass')&&AUTO()?' · '+t_('CO₂ {0} t/t · grønn pris ×{1}',dsep(co2t().toFixed(2)),dsep(greenK().toFixed(2))):'')}}
  case'ladle':{const L=h.L,[ti,tx]=ix4(IX.misc.ladle),stx={park:'venter',filling:'fylles',await:'venter på kranen',carried:'løftes',lf:'i øseovnen',pit:'blokkstøping',tur:'på øsetårnet',cast:'støper'}[L.state]||'';
   return{t:ti,d:tx,n:(L.steel>.05?tf(L.steel)+' t · ':'')+t_(stx)+(L.q>1.001?' · '+t_('Kvalitet ×{0}',L1(L.q)):'')}}
- case'torp':{const t=h.t,[ti,tx]=ix4(IX.misc.torp);return{t:ti,d:tx,n:tf(t.load)+'/'+torpCap()+' t · '+t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())}}
- case'crane':{const c=h.c,u={skrap:'kran',malm:'malmkran',ose:'osekran',mag:'magkran'}[c.id];if(c.id==='skrap'&&era()===5){const[ti,tx]=ix4(IX.cs.crane);return{t:ti,d:tx,n:t_('Løft {0} t',tf(craneLift()))+' · '+upNums(UPm.kran)}}return{t:cap1(t_(c.n)),d:ixs(IX.crane[c.id]),n:upNums(UPm[u])}}
+ case'torp':{const t=h.t,[ti,tx]=ix4(IX.misc[era()===7?'torp7':'torp']);return{t:ti,d:tx,n:tf(t.load)+'/'+torpCap()+' t · '+t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())}}
+ case'crane':{const c=h.c,u={skrap:'kran',malm:'malmkran',ose:'osekran',mag:'magkran'}[c.id];if(c.id==='skrap'&&CS()){const[ti,tx]=ix4(IX.cs.crane);return{t:ti,d:tx,n:t_('Løft {0} t',tf(craneLift()))+' · '+upNums(UPm.kran)}}return{t:cap1(t_(c.n)),d:ixs(IX.crane[c.id]),n:upNums(UPm[u])}}
  case'cs':{const[ti,tx]=ix4(IX.cs[h.id]);const fd=t_('{0} t/min inn i ovnen',tf(CSB.feed*60));
   const n={charge:()=>t_('Fylt {0}/{1} t',tf(S.chg),tf(chgCap())),conveyor:()=>fd+' · '+upNums(UPm.charge),seal:()=>t_('Avgass ved uttaket: ca. {0} °C',Math.round(csGasT(CSG.xs+6))),
    tunnel:()=>t_('Skrapet inn i ovnen: {0} °C',Math.round(CSB.pre))+' · '+kwh()+' kWh/t',inj:()=>t_('Avgass ved ovnen: ca. {0} °C',Math.round(csGasT(CSG.xf))),duct:()=>t_('Avgass ved uttaket: ca. {0} °C',Math.round(csGasT(CSG.xs+6))),
@@ -4181,9 +4543,10 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'helper':{const r=h.h.r,hi=HIRE[r];if(AUTO()&&IX.op[r])return{t:hName(hi),d:ixs(IX.op[r]),n:t_('Operatører {0} av {1}',lv(hi.id),hi.costs.length)};return{t:hName(hi),d:ixs(IX.hire[r])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}}
  case'agv':{const r=h.h.r,[ti,tx]=ix4(IX.misc.agv);return{t:ti,d:tx,n:t_('{0} vogner ved {1}',nAGV(r),t_(PR[AGVK[r]].n))+' · '+t_('last {0} stk',hcap())}}
  case'mb':{const u=h.u,M=MBU[u],[,tx]=ix4(IX.misc.mb),[,tr]=ix4(IX.misc.mbre);return{t:mbName(u)+' · '+M.yr,d:tx+(M.re?' '+tr:''),n:t_('LAGT NED')+' · '+t_('vedlikehold {0}',kr(M.up,'/min'))}}
- case'furnace':{const E=E_();return{t:t_(E.n)+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
+ case'furnace':{const E=E_();return{t:(era()===7?t_('LD-konverter')+' · '+t_(E.n):t_(E.n))+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
  case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed),[,tm]=ix4(IX.misc.mb);return{t:t_(RJE[rjEra()].n),d:tx+' '+tm,n:t_('NEDLAGT')+(mbOn('rj')?' · '+t_('vedlikehold {0}',kr(MBU.rj.up,'/min')):'')}}const st=status('rj');return{t:t_(RJE[rjEra()].n)+' · '+RJE[rjEra()].yr,d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
  case'up':{const u=h.u;return infoFor({type:'pad',d:PAD['u_'+u.id]})}
+ case'p4':{const[ti,tx]=ix4(IX.p4[h.id]);return{t:ti,d:tx,n:p4Nums(h.id)}}
  case'p3':{const id=h.id;if(IX.p3[id]){const[ti,tx]=ix4(IX.p3[id]);return{t:ti,d:tx,n:p3Nums(id)}}const u=UPm[id];if(!u)return null;return{t:upName(u),d:ixs(IX.up[id]),n:p3Nums(id)+' · '+upNums(u)}}
  case'cast':{const[ti,tx]=ix4(IX.cast[h.id]);const n={turret:()=>upNums(UPm.turret),shroud:()=>t_(CAST.pour?'Skjermrør på':'Skjermrør parkert'),tundish:()=>t_('Stålnivå {0} %',Math.round(CAST.tlev*100)),
    mould:()=>t_('{0} av {1} strenger i bruk',CAST.on?min(nStr(),CAST.nOn):nStr(),8)+' · '+upNums(UPm.strands),spray:()=>upNums(UPm.caster),
@@ -4283,7 +4646,7 @@ function save(){S.t=Date.now();
  const nodes={};for(const id in NODE){const n=NODE[id];nodes[id]=(n.cur?[n.cur]:[]).concat(n.in).map(packIt)}for(const m of movers)nodes[m.to].push(packIt(m.it));
  const cash={};for(const z of TG)if(z.cash)cash[z.id]=z.cash;
  /* liquid råjern in torpedo cars goes back to the hearth; whatever does not fit is cast to pigs */
- let hearth=S.rj.hearth+RJ.pigAcc;for(const c of TORPS)hearth+=c.load;const hc=rjClosed()?0:hearthCap();while(hearth>hc+PIG_T*.5){hearth-=PIG_T;piles.pig.push(packIt({k:'pig',t:PIG_T,q:1}))}
+ let hearth=S.rj.hearth+RJ.pigAcc;for(const c of TORPS)hearth+=c.load;const hc=rjClosed()&&era()!==7?0:hearthCap();while(hearth>hc+PIG_T*.5){hearth-=PIG_T;piles.pig.push(packIt({k:'pig',t:PIG_T,q:1}))}
  const fch=F.ch?(F.ch.hm!=null?F.ch.s+F.ch.hm:F.ch.done?0:F.ch.amt):0;
  const out=Object.assign({},S,{pp:{x:Math.round(P.x),y:Math.round(P.y),stack:P.stack.map(packS)},piles,nodes,store,cash,kok,F:{bath:(F.state==='tapping'?max(0,F.bath-F.tapAmt):F.bath)+(F.hmCh?F.hmCh.amt:0),solid:F.solid+fch,scIn:F.state==='tapping'?0:F.scIn+(F.ch&&F.ch.hm!=null?F.ch.s:0),hmIn:F.state==='tapping'?0:F.hmIn+(F.ch&&F.ch.hm!=null?F.ch.hm:0)+(F.hmCh?F.hmCh.amt:0)}/* a save during tapping stores the bath after the tap, so the new heat starts with nothing charged */,rj:{ore:S.rj.ore,hearth:max(0,hearth)},torp:[]});
  try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
@@ -4310,7 +4673,9 @@ window.__smelt={get S(){return S},t_,setLang,get LANG(){return LANG},I18N_MISS,E
  build:id=>{const i=BUILDS.findIndex(b=>b.id===id);for(let k=S.ph;k<=i;k++){S.b[BUILDS[k].id]=1;S.ph=k+1;onBuild(BUILDS[k])}},
  hire:(st,n)=>{S.lv[HIRE[st].id]=n;syncHelpers()},setLv:(id,n)=>{S.lv[id]=n;syncHelpers();syncLadles();if(id==='yard2'||id==='magkran'||id==='varm')bakeFloor()},
  collide,SOLIDS:()=>SOLIDS,blockedPt,field,rebuildNav,rebuildSolids,bakeFloor,POS,WW,QX,QY,START:POS.start,SUPN,PR,PRK,ROUTES,startTap,tapLadle,potMax,slotsMax,cam,setZoom:z=>{zoom=z},padLab,zonePlate,plateW,B_,lv,CY,cashAt,prodOn,ROLL,get zoom(){return zoom},ws,nextBuild,nodeRoom,yardT,PADPOS,inZone,SY,layoutPads,padShown,padMaks,padUrgent,upOpen,upAvail,routeWork,POSTS,inCab,postCrane,TAPDESK,UPROW,HIREPOS,padTitle,TUR,armPt,setUZ,CSB,CSG,CSN,TROB:()=>TROB,csSum,csLim,csCap,csX,csI,CSI1,csGasT,craneLift,beltRate,kwh,eraLayout,LAY5,TROBP,CS:()=>({chg:+S.chg.toFixed(1),cap:+chgCap().toFixed(1),v:+CSB.v.toFixed(1),vmax:+CSB.vmax.toFixed(1),feed:+CSB.feed.toFixed(2),pre:Math.round(CSB.pre),lim:csLim(),rob:TROB.n,crane:CRm.skrap.state}),pause:v=>{G.dbgPause=!!v},get RM(){return RM},setRM:v=>{RM=!!v}};
- Object.defineProperties(window.__smelt,{P:{get:()=>P,configurable:true},G:{get:()=>G,configurable:true},WH:{get:()=>WH,configurable:true}});Object.assign(window.__smelt,{goTo,planPath,nStrands:nStr,strandRate,billetT,tdCap,castMpm,nextSteelETA,CASTVMIN,lfTime,oseSpd,gjvRate,vvRate,tcRate,stelRate,nettRate,kobRate,stOn,refineT,tapDur,yardRate,yardCap,AUTO,MBU,MBK,mbOn,mbGeo,mbSolids,mbSync,demolish,restartUnit,restartOK,mbUpkeep,ctlDesks,deskTap,setCtl,CRDESK,CRB,AGVK,nAGV,postOf,payable,eraCard,hideEraCard,opN,kranLoad,closeRJ:closeRJ,MBPLOTS,WHMAX,WH0,mbPadPos,zoneBuilt,zoneShown,
+ Object.defineProperties(window.__smelt,{P:{get:()=>P,configurable:true},G:{get:()=>G,configurable:true},WH:{get:()=>WH,configurable:true},WXL:{get:()=>WXL,configurable:true}});Object.assign(window.__smelt,{goTo,planPath,nStrands:nStr,strandRate,billetT,tdCap,castMpm,nextSteelETA,CASTVMIN,lfTime,oseSpd,gjvRate,vvRate,tcRate,stelRate,nettRate,kobRate,stOn,refineT,tapDur,yardRate,yardCap,AUTO,MBU,MBK,mbOn,mbGeo,mbSolids,mbSync,demolish,restartUnit,restartOK,mbUpkeep,ctlDesks,deskTap,setCtl,CRDESK,CRB,AGVK,nAGV,postOf,payable,eraCard,hideEraCard,opN,kranLoad,closeRJ:closeRJ,MBPLOTS,WHMAX,WH0,mbPadPos,zoneBuilt,zoneShown,
+ /* Phase 4 */DRI,ESF,P4G,ESFG,CS,ldRun,eraOpen,startESF,rebuildLD,updDRI,updESF,driJoin,driLim,esfLim,elyMW,h2Rate,h2Cap,h2Draw,shaftCap,pelRate,pelCap,binCap,driBelt,driKwhK,esfMW,esfRate,esfKwh,esfDriPer,pelGrade,p4K,torpCap,nTorp,P4_PH,PRES_PH,WXL0,p4Hit,P4SOL,ESFSOL,rsGoal,phaseGoal,eraLayout,
+ toEra:e=>{/* test helper: build up to an era (6 = hydrogen DRI, 7 = electric smelting with the LD restarted) */const id=e>=7?'esf':e===6?'h2':['','sm','ld','eaf1','uhp','consteel'][e];if(id){const i=BUILDS.findIndex(b=>b.id===id);for(let k=S.ph;k<=i;k++){S.b[BUILDS[k].id]=1;S.ph=k+1;onBuild(BUILDS[k])}}if(e>=7&&!ldRun()){if(!mbOn('ld')&&mbSt('ld')!=='gone')mbSync();startESF()}},
  /* Phase 3 */shK,defRate,shState,co2t,greenK,cuPct,cuK,twinK,p3K,EL,P3,elRate,bufCap,elDiv,elOn,newOrder,updOrders,ordSold,OCK,ordOn,dhInc,slagK,mkBil,itemVal,hssK,robRate,p3Hit,ordCard});
 }
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});

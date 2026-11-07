@@ -1,14 +1,17 @@
 // Endgame balance (node): with every upgrade of an era maxed the steel furnace must be the bottleneck — it never waits for
 // ladles, the ladle crane, the ladle furnace, the caster, slag or scrap, and the caster's tundish never runs dry during a
 // ladle change while a full ladle is on its way. Also reports per-stage utilisation and capacity vs the furnace's output.
-// usage: node endgame.js [simMinutes=10] [mode-ignored] [file]      env: ERAS=0,1,…  (default 1,2,3,4,5; era 0 is report-only)
+// Phase 4: era 6 (hydrogen DRI) – "the furnace" is still the conveyor-fed arc furnace: the DRI chain (electrolysis, H₂ store,
+// shaft furnace, pellets, DRI conveyor) must deliver the set DRI share with headroom. Era 7 (electric smelting) – "the furnace" is
+// the restarted LD converter: the ESF, the DRI chain and the torpedo cars must keep it supplied with hot metal (no hot-metal wait).
+// usage: node endgame.js [simMinutes=10] [mode-ignored] [file]      env: ERAS=0,1,…  (default 1…7; era 0 is report-only)
 const H=require('./harness6.js');const DT=1/30;
 const MIN=+process.argv[2]||10;
 let bad=0;const ok=(c,m)=>{console.log((c?'ok  ':'FAIL')+' '+m);if(!c)bad++};
 /* the last build of each era (all its stations exist); upgrades open in that era are maxed */
 function setup(eraIx,helpers,cast){for(const k of[...H.store.keys()])if(k.startsWith('smelteverket'))H.store.delete(k);const W=H.boot(),S=W.S;S.heats=99;S.st.slagT=999;
- const b=[null,'lf','tog','eaf1','nett','kai'][eraIx];
- if(b)W.build(b);
+ const b=[null,'lf','tog','eaf1','nett','kai','h2','esf'][eraIx];
+ if(b)W.build(b);if(eraIx===7)W.toEra(7);
  for(const u of W.UP)if(W.upOpen(u))W.setLv(u.id,u.max);
  for(const u of W.UP)if(W.upOpen(u))W.setLv(u.id,u.max);/* gates that open after the first pass */
  for(const st in W.HIRE)W.hire(st,helpers&&(W.stOn?W.stOn(st):(z=>(!z.b||W.B_(z.b))&&!(z.rj&&W.rjClosed()))(W.ZN[st]))&&(!W.HIRE[st].req||W.HIRE[st].req())?W.HIRE[st].costs.length:0);
@@ -50,6 +53,7 @@ function report(eraIx,helpers,cast,min){const W=setup(eraIx,helpers,cast);if(!W.
  console.log(`ladle crane busy ${pct(r.crBusy)}, ladle furnace busy ${pct(r.lfBusy)}, ladles ${W.LADLES.length}, scrap yard min ${r.yardMin} lifts`);
  const nn=Object.entries(r.nodes).map(([k,n])=>`${k} ${n.rate.toFixed(1)} t/s util ${pct(n.util)} q ${n.q}/${n.cap}`).join(' · ');if(nn)console.log('nodes: '+nn);
  const pl=Object.entries(r.piles).filter(([k,v])=>Math.abs(v)>1).map(([k,v])=>k+' '+(v>0?'+':'')+v.toFixed(0)+' t').join(' · ');if(pl)console.log('pile growth: '+pl);
+ if(W.era()>=6){const D=W.S.dri;console.log(`DRI: shaft ${(W.DRI.rate*60).toFixed(0)} of ${(W.shaftCap()*60).toFixed(0)} t/min, share ${(W.DRI.sh*100).toFixed(0)} % (set ${W.S.drimix*100} %), bin ${D.bin.toFixed(0)}/${W.binCap()}, H₂ ${D.h2.toFixed(1)}/${W.h2Cap().toFixed(0)}, pellets ${D.pel.toFixed(0)}, short ${W.DRI.short.toFixed(2)} beltLim ${W.DRI.beltLim.toFixed(2)} lim ${W.driLim()} · ESF ${(W.ESF.rate*60).toFixed(0)} of ${(W.esfRate()*60).toFixed(0)} t/min lim ${W.esfLim()} · CO₂ ${W.co2t().toFixed(2)} green ×${W.greenK().toFixed(2)} p4 ×${W.p4K().toFixed(2)}`)}
  const st=W.bottlenecks().map(b=>b[0]+':'+b[1]).join(' | ');console.log('bottlenecks now: '+(st||'-')+' · ovn: '+W.status('ovn').t+' · strang: '+(W.status('strang')||{}).t);
  return{W,r,wait,fOut}}
 module.exports={setup,run,report};
@@ -57,10 +61,10 @@ if(require.main!==module)return;
 /* regression test (default): the final era with everything maxed, with and without helpers, auto and caster-only routing;
    plus each earlier era's fully upgraded state (helpers max) from the open hearth on. The Bessemer era is reported only:
    its ladle crane cannot be upgraded before the ladle furnace is built (the next build, minutes into the game). */
-const eras=(process.env.ERAS||'1,2,3,4,5').split(',').map(Number);
+const eras=(process.env.ERAS||'1,2,3,4,5,6,7').split(',').map(Number);
 for(const e of eras){
- const cfg=e===5?[[true,'auto'],[true,'strang'],[false,'auto'],[false,'strang']]:e===0?[[true,'auto']]:[[true,'auto']];
- for(const[helpers,cast]of cfg){const{W,r,wait,fOut}=report(e,helpers,cast,e===5?MIN:Math.min(MIN,6));const tag=`era ${e} helpers=${helpers?'max':0} cast=${cast}`;
+ const cfg=e>=5?[[true,'auto'],[true,'strang'],[false,'auto'],[false,'strang']]:e===0?[[true,'auto']]:[[true,'auto']];
+ for(const[helpers,cast]of cfg){const{W,r,wait,fOut}=report(e,helpers,cast,e>=5?MIN:Math.min(MIN,6));const tag=`era ${e} helpers=${helpers?'max':0} cast=${cast}`;
   if(e===0)continue;
   ok(wait<.02,`${tag}: furnace waits ${pct(wait)} (< 2 %)`);
   if(e<5)continue;
@@ -71,5 +75,8 @@ for(const e of eras){
   const hr=(c,n)=>ok(c/fOut-1>=.15,`${tag}: ${n} ${c.toFixed(1)} t/s vs furnace ${fOut.toFixed(1)} t/s → headroom ${pct(c/fOut-1)} (≥ 15 %)`);
   hr(W.nStrands()*W.strandRate(),'caster');for(const id in r.nodes)hr(r.nodes[id].rate,'node '+id);
   ok(r.crBusy<.87,`${tag}: ladle crane busy ${pct(r.crBusy)} (< 87 %)`);
+  if(e===6)ok(W.DRI.sh>=W.S.drimix*.85&&W.DRI.short<.3,`${tag}: the DRI chain delivers the set share (${(W.DRI.sh*100).toFixed(0)} % of ${W.S.drimix*100} %)`);
+  if(e===7)ok(r.acc.hm/r.T<.005,`${tag}: the converter never waits for hot metal (${pct(r.acc.hm/r.T)})`);
+  if(e>=6){const lim=W.era()===6?W.rate('dri')/60/W.shaftCap():W.rate('esfmelt')/60/W.esfRate();ok(lim<.92,`${tag}: the ${e===6?'shaft furnace':'ESF'} has headroom (runs at ${pct(lim)} of max)`)}
   ok(r.acc.starve/r.T<.005&&r.acc.slag/r.T<.005,`${tag}: no scrap starvation (${pct(r.acc.starve/r.T)}) and no slag stops (${pct(r.acc.slag/r.T)})`)}}
 console.log(bad?'FAIL '+bad:'PASS');process.exitCode=bad?1:0;

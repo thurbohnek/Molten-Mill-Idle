@@ -401,8 +401,9 @@ function plateW(p,g){g=g||ctx;g.font=`800 11px ${FONT}`;return g.measureText(p.t
 const ROLLS=[];/* [path, built()] static roller tables / conveyors */
 function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0,0,FS,-WX0*FS,0);
  f.fillStyle='#373c44';f.fillRect(WX0,0,WW-WX0,WH);
- f.strokeStyle='rgba(0,0,0,.2)';f.lineWidth=1;f.beginPath();for(let x=24-48*16;x<WW;x+=48){f.moveTo(x+.5,0);f.lineTo(x+.5,WH)}for(let y=24;y<WH;y+=48){f.moveTo(0,y+.5);f.lineTo(WW,y+.5)}f.stroke();
- for(let i=0;i<620;i++){const x=WX0+r()*(WW-WX0),y=r()*WH,rad=3+r()*18;f.fillStyle=r()>.5?'rgba(0,0,0,.06)':'rgba(255,255,255,.025)';f.beginPath();f.arc(x,y,rad,0,TAU);f.fill()}
+ f.strokeStyle='rgba(0,0,0,.2)';f.lineWidth=1;f.beginPath();for(let x=24-48*34;x<WW;x+=48){f.moveTo(x+.5,0);f.lineTo(x+.5,WH)}for(let y=24;y<WH;y+=48){f.moveTo(0,y+.5);f.lineTo(WW,y+.5)}f.stroke();
+ for(let i=0;i<620;i++){const x=WXL0+r()*(WW-WXL0),y=r()*WH,rad=3+r()*18;f.fillStyle=r()>.5?'rgba(0,0,0,.06)':'rgba(255,255,255,.025)';f.beginPath();f.arc(x,y,rad,0,TAU);f.fill()}
+ if(WXL<WXL0){const r2=seeded(11);for(let i=0;i<110;i++){const x=WX0+r2()*(WXL0-WX0),y=r2()*WH,rad=3+r2()*18;f.fillStyle=r2()>.5?'rgba(0,0,0,.06)':'rgba(255,255,255,.025)';f.beginPath();f.arc(x,y,rad,0,TAU);f.fill()}}
  /* zones: tinted floor + dashed border (plates are drawn on top later) */
  for(const z of ZONES){if(!zoneShown(z))continue;const built=zoneBuilt(z),w=z.x1-z.x0,h=z.y1-z.y0;
   f.fillStyle=z.rj&&rjClosed()?'rgba(0,0,0,.16)':built?rgba(z.col,z.sup?.08:.075):'rgba(0,0,0,.12)';SK.rr(f,z.x0,z.y0,w,h,16);f.fill();
@@ -412,13 +413,20 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   if(!on){f.font=`800 12px ${FONT}`;f.textAlign='center';f.fillStyle='rgba(244,241,234,.3)';f.fillText(t_('SKRAPHAUG 2'),p.x,p.y)}}
  /* råjernsverk floor: ore bay, ore-train track, cast house, skip pit, torpedo tracks to the steel plant */
  {const cl=rjClosed(),p=POS.ore,gn=rjGone();if(!gn){f.fillStyle=cl?'rgba(46,50,56,.55)':'#2e3238';SK.rr(f,p.x-96,p.y-122,192,244,10);f.fill();f.strokeStyle='#1b1e23';f.lineWidth=5;f.strokeRect(p.x-96,p.y-122,192,244);
-  const ty=POS.oreTrainY;f.fillStyle='#2b2826';f.fillRect(WX0+10,ty-20,640,40);for(let x=WX0+14;x<WX0+650;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=cl?'#5a4a40':C.rail;f.fillRect(WX0+10,ty-11,640,4);f.fillRect(WX0+10,ty+7,640,4);
+  const ty=POS.oreTrainY;f.fillStyle='#2b2826';f.fillRect(WXL0+10,ty-20,640,40);for(let x=WXL0+14;x<WXL0+650;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=cl?'#5a4a40':C.rail;f.fillRect(WXL0+10,ty-11,640,4);f.fillRect(WXL0+10,ty+7,640,4);
   f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,-236,590,200,70,8);f.fill();f.fillStyle='rgba(0,0,0,.25)';SK.rr(f,POS.skip.x-54,POS.skip.y-48,108,96,10);f.fill()}
   const rail=(y,x0,x1)=>{f.fillStyle='#2b2620';for(let x=x0;x<x1;x+=8)f.fillRect(x,y-13,3.4,26);f.fillStyle=cl?'#5a4e44':'#7d7064';f.fillRect(x0,y-9,x1-x0,2.6);f.fillRect(x0,y+7,x1-x0,2.6)};
   /* Consteel: the old torpedo tracks are gone, the line's foundation runs through the yard */
-  if(era()<5){if(!gn){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
+  /* Phase 4 (era 7): the torpedo line runs again, from the electric smelting furnace's taphole across the old ironworks */
+  if(era()===7){rail(POS.torpA,ESFG.tapX-80,POS.torpX1+70);rail(POS.torpB,ESFG.tapX+60,POS.torpX1-60)}
+  else if(era()<5){if(!gn){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
   if(cl){f.fillStyle='rgba(55,60,68,.55)';f.fillRect(-340,POS.torpA-16,POS.torpX1+410,54)}}}
   else{f.fillStyle='rgba(0,0,0,.22)';f.fillRect(20,CSG.y-34,CSG.xf-20,68);f.fillStyle='rgba(0,0,0,.18)';SK.rr(f,SLAGP.x-60,SLAGP.y-50,120,104,10);f.fill()}}
+ /* Phase 4: pellet yard bed, the siding the pellet trains come in on, the furnace platform and slag bay of the ESF */
+ if(B_('h2')){const Y=P4G.yard;f.fillStyle='#2e3238';SK.rr(f,Y.x0,Y.y0+40,Y.x1-Y.x0,Y.y1-Y.y0-40,10);f.fill();f.strokeStyle='#1b1e23';f.lineWidth=5;f.strokeRect(Y.x0,Y.y0+40,Y.x1-Y.x0,Y.y1-Y.y0-40);
+  const ty=P4G.rail;f.fillStyle='#2b2826';f.fillRect(WX0+10,ty-20,-1270-WX0,40);for(let x=WX0+14;x<-1272;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=C.rail;f.fillRect(WX0+10,ty-11,-1270-WX0,4);f.fillRect(WX0+10,ty+7,-1270-WX0,4);
+  f.fillStyle='rgba(0,0,0,.18)';f.beginPath();f.arc(P4G.shaft.x,P4G.shaft.y,P4G.shaft.R+30,0,TAU);f.fill()}
+ if(B_('esf')){const E=ESFG;f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,E.x0-110,E.y0-30,E.x1-E.x0+150,E.trafo.y+E.trafo.h+16-(E.y0-30),14);f.fill()}
  /* crane rails */
  f.fillStyle='#22252b';{const c=CRN.skrap;f.fillRect(c.x0-6,c.y0-8,c.x1-c.x0+12,6);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,6)}
  {const c=CRN.ose;f.fillRect(c.x0-6,c.y0-10,c.x1-c.x0+12,5);f.fillRect(c.x0-6,c.y1+4,c.x1-c.x0+12,5)}
@@ -440,7 +448,7 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   f.fillStyle=hazPat(f);f.fillRect(QX,qy-8,WW-QX,8);f.fillStyle='#22262c';for(let x=QX+50;x<WW;x+=140){f.fillRect(x,qy-20,14,12)}
   f.strokeStyle='rgba(255,255,255,.08)';f.lineWidth=2;for(let i=0;i<22;i++){const x=QX+10+r()*(WW-QX-40),y=qy+20+r()*(WH-qy-30);f.beginPath();f.moveTo(x,y);f.quadraticCurveTo(x+12,y-4,x+24,y);f.stroke()}}
  /* border */
- f.fillStyle='#1d2026';f.fillRect(WX0,0,WW-WX0,10);f.fillRect(WX0,0,10,WH);f.fillRect(WX0,WH-10,QX-WX0,10);f.fillRect(WW-10,0,10,QY);
+ f.fillStyle='#1d2026';if(WXL>WX0)f.fillRect(WX0,0,WXL-WX0,WH);f.fillRect(WXL,0,WW-WXL,10);f.fillRect(WXL,0,10,WH);f.fillRect(WXL,WH-10,QX-WXL,10);f.fillRect(WW-10,0,10,QY);
  /* zone name plates */
  f.textBaseline='middle';for(const z of ZONES){if(!zoneShown(z))continue;const p=zonePlate(z),w=plateW(p,f);SK.box(f,p.x,p.y,w,p.h,p.col,null,10);f.font=`800 11px ${FONT}`;f.textAlign='center';f.fillStyle='#111';f.fillText(p.t,p.x+w/2,p.y+p.h/2+.5)}
 }

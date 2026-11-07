@@ -25,7 +25,7 @@ global.ResizeObserver=class{observe(){}};global.performance=global.performance||
 Object.defineProperty(global,'navigator',{value:{vibrate(){}},configurable:true});
 global.AudioContext=undefined;
 let errors=0;const origErr=console.error;console.error=(...a)=>{errors++;if(errors<5)origErr('[console.error]',...a)};
-if(process.env.SEED){let sd=+process.env.SEED;Math.random=()=>(sd=(sd*16807)%2147483647)/2147483647}
+if(process.env.SEED){let sd=+process.env.SEED;global.__sdGet=()=>sd;global.__sdSet=v=>{sd=v};Math.random=()=>(sd=(sd*16807)%2147483647)/2147483647}
 function boot(){delete global.__smeltOn;els={};store.set('molten.lang',GLANG);new Function(code)();const W=global.__smelt;W.endIntro();return W}
 module.exports={boot,store,TW,DT,errorsRef:()=>errors};
 if(require.main!==module)return;
@@ -77,14 +77,20 @@ function layoutCheck(W,tag){const R=worldRects(W),out=[];
  for(const d of W.PADS)if(W.vis(d)&&d.kind!=='build'&&W.blockedPt(d.x,d.y,4))out.push(tag+' pad in solid: '+d.id);
  return out}
 {const seen=new Set();const B=boot().BUILDS.length;delete global.__smeltOn;
- for(let ph=0;ph<=B;ph++)for(const late of[0,1]){const W=boot();W.S.heats=99;W.S.st.slagT=999;if(ph)W.build(W.BUILDS[ph-1].id);
+ /* ph = B+1: everything built and the LD converter restarted (Phase 4, era 7) */
+ /* the Phase 4 passes (h2, esf, era 7) come after the older ones; the random stream is restored after them, so a SEED run
+    starts exactly as it did before Phase 4 (comparable era timings) */
+ const OLDB=B-2;let rs=null;
+ for(let ph=0;ph<=B+1;ph++)for(const late of[0,1]){if(ph===OLDB+1&&!late&&global.__sdGet)rs=global.__sdGet();const W=boot();W.S.heats=99;W.S.st.slagT=999;if(ph)W.build(W.BUILDS[Math.min(ph,B)-1].id);if(ph>B)W.toEra(7);
   if(late){for(const u of W.UP)if(['malmkran','torpn','koks','cowper','sinter','kran','magkran','varm','rullkob','ktrans','kalk','o2','kull','lans','kanal','hette','yard2','elekkran','slaggbil'].includes(u.id))W.S.lv[u.id]=Math.max(W.S.lv[u.id]||0,u.max>2?3:1);W.setLv('ladle',2);W.setLv('strands',7);W.bakeFloor();W.rebuildSolids()}
   /* one pad per upgrade: every available upgrade must have a visible pad in its station row (no row overflow) */
   const o=layoutCheck(W,'ph'+ph+(late?'L':''));W.layoutPads();
   for(const u of W.UP){const d=W.PAD['u_'+u.id];if(W.upAvail(u)&&!W.vis(d))o.push('ph'+ph+(late?'L':'')+' layout: available upgrade without a pad: '+u.id);if(!W.upOpen(u)&&W.vis(d))o.push('ph'+ph+' layout: era-locked upgrade shown: '+u.id)}
   /* fully maxed station rows (MAKS tiles) must fit too */
   {const keep=JSON.stringify(W.S.lv);for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=u.max;for(const m of layoutCheck(W,'ph'+ph+(late?'L':'')+'max'))if(/padlab:u_|pad:u_/.test(m))o.push(m);W.S.lv=JSON.parse(keep);W.layoutPads()}
-  for(const m of o){const key=m.replace(/^\S+ /,'');if(!seen.has(key)){seen.add(key);(m.indexOf('label')>=0||m.indexOf('lab')>=0?labelIssues:layoutIssues).push(m)}}delete global.__smeltOn}}
+  for(const m of o){const key=m.replace(/^\S+ /,'');if(!seen.has(key)){seen.add(key);(m.indexOf('label')>=0||m.indexOf('lab')>=0?labelIssues:layoutIssues).push(m)}}delete global.__smeltOn}if(rs!=null)global.__sdSet(rs)}
+/* the layout passes must not leave a save behind (the era-7 pass saves on the restart) */
+for(const k of[...store.keys()])if(k.startsWith('smelteverket'))store.delete(k);
 if(process.env.LAYOUT){console.log(labelIssues.length+' label issues\n '+labelIssues.join('\n '));console.log(layoutIssues.length+' layout issues\n '+layoutIssues.join('\n '));process.exit(0)}
 if(process.env.V4SAVE)store.set('smelteverket.v4',JSON.stringify({v:4,money:1234,earned:2.5e6,life:3e6,heats:90}));
 if(process.env.V5SAVE)store.set('smelteverket.v5',JSON.stringify({v:5,money:99999,earned:4e8,life:6e8,heats:900,b:{lf:1,eaf1:1}}));
@@ -137,7 +143,7 @@ while(t<sim){try{if(MODE!=='idle')botStep();
  if(process.env.TRACE&&t>=+process.env.TRACE*60&&Math.abs((t%20))<DT){console.log('T',(t/60).toFixed(1),W.F.state,W.LADLES.map(l=>l.state+'/'+l.next+':'+l.steel.toFixed(1)).join(' '),'cast',S.cast,'run',W.CAST.run.length,'bed',W.CAST.bed.length,'gap',W.CAST.gap.toFixed(1),'crane',W.CRm.ose.state,'hm',S.hm.toFixed(0),JSON.stringify(W.TORPS.map(t=>[t.st,Math.round(t.x),+t.load.toFixed(1),+t.wait.toFixed(1)])),'rj',W.RJ.rate.toFixed(2),S.rj.hearth.toFixed(1),S.rj.ore.toFixed(0),'tg',S.tg.rj,'F',W.F.bath.toFixed(1),W.F.solid.toFixed(1),S.chg.toFixed(1),W.F.scIn.toFixed(1),'need',W.hmNeed().toFixed(1),'smin',W.scrapMin().toFixed(1),'smax',W.scrapMax().toFixed(1),W.fcap())}
  if(process.env.DIAGAT&&t>=+process.env.DIAGAT*60){const F=W.F;const ks=['F:'+F.state+(F.state==='melt'?(F.solid>0?'+melt':'+empty')+(F.lim?'(lim '+F.lim+')':''):'')+(F.state==='ready'&&!W.tapLadle()?'+noLadle':''),'crane:'+W.CRm.ose.state,'pit:'+W.PIT.state,'task:'+(task?task.k:'none')];for(const k of ks)DG[k]=(DG[k]||0)+DT}if(!isFinite(S.money)||!isFinite(S.earned)||!isFinite(W.F.bath)||!isFinite(W.F.solid)||!isFinite(S.chg))nanHits++;
  if(firstUp==null&&Object.keys(S.lv).some(k=>S.lv[k]>0))firstUp=t;
- if(global.__presT==null&&W.presGain()>=1&&S.ph>=W.BUILDS.length)global.__presT=t;
+ if(global.__presT==null&&W.presGain()>=1&&W.vis(W.PAD.prestige))global.__presT=t;
  if(S.ph!==lastPh){const key=(S.pres.n?'r'+(S.pres.n+1)+':':'')+S.ph;if(phT[key]==null)phT[key]=t;lastPh=S.ph}
  if(eraT[W.era()]==null&&!S.pres.n)eraT[W.era()]=t;
  if(CHEAT){const m=t/60;
@@ -152,7 +158,7 @@ while(t<sim){try{if(MODE!=='idle')botStep();
 const S=W.S;
 if(process.env.DUMP){const F=W.F;console.log('TORPS',JSON.stringify(W.TORPS),'RJ',JSON.stringify({r:W.RJ.rate,h:S.rj.hearth,ore:S.rj.ore,tg:S.tg.rj,ov:W.RJ.overflow,need:W.hmNeed(),hmCap:W.hmCap(),cap:W.fcap(),scrapMin:W.scrapMin()}));console.log('RATE',W.furnRate(),W.Rpow(),JSON.stringify(W.F.sup),W.F.rate,W.F.state,JSON.stringify(W.F.ch),W.F.hmCh,W.supCap('o2'),JSON.stringify(S.lv.o2));console.log('DUMP F scIn',F.scIn,'hmIn',F.hmIn,'S.hm',S.hm,'scrapMax',W.scrapMax(),F.state,F.bath.toFixed(1),F.solid.toFixed(1),'chg',S.chg,'chgCap',W.chgCap(),'ch',JSON.stringify(F.ch),'stop',F.stop,'pot',S.pot,'elek',S.elek,'lim',F.lim);console.log('ladles',JSON.stringify(W.LADLES.map(l=>({s:l.state,n:l.next,st:+l.steel.toFixed(1),x:Math.round(l.x),y:Math.round(l.y),slot:l.slot,atTap:l.atTap}))));const c=W.CRm.ose;console.log('crane',c.state,Math.round(c.x),Math.round(c.y),'man',c.man,'job',c.job&&JSON.stringify({f:c.job.from,t:c.job.to}),'G.crane',W.G.crane);console.log('goal',JSON.stringify(W.goal()),'task',JSON.stringify(task),'P',Math.round(P.x),Math.round(P.y),'stack',P.stack.map(i=>i.k).join(','));console.log('pit',W.PIT.state,'cast',JSON.stringify({gap:W.CAST.gap}),'tapLadle',!!W.tapLadle(),'cast mode',S.cast,'kok',JSON.stringify(S.kok))}
 console.log(log.join('\n'));if(process.env.DIAGAT)console.log('DIAG',Object.entries(DG).sort((a,b)=>b[1]-a[1]).map(e=>e[0]+'='+e[1].toFixed(0)).join(' '),'\nfcap',W.fcap(),'Rpow',W.Rpow().toFixed(2),'chgCap',W.chgCap(),'yard',W.yardT(W.SRCm.y0).toFixed(0));
-console.log('Nytt verk ready at (min):',global.__presT!=null?(global.__presT/60).toFixed(1):'-');console.log('phase times (min):',Object.entries(phT).map(([c,v])=>c+':'+(v/60).toFixed(1)).join(' '),' firstUpgrade(s):',firstUp&&firstUp.toFixed(0));console.log('era times (min, first run):',Object.entries(eraT).map(([c,v])=>['Bessemer','SM','LD','EAF','UHP','Consteel'][c]+':'+(v/60).toFixed(1)).join(' '));
+console.log('Nytt verk ready at (min):',global.__presT!=null?(global.__presT/60).toFixed(1):'-');console.log('phase times (min):',Object.entries(phT).map(([c,v])=>c+':'+(v/60).toFixed(1)).join(' '),' firstUpgrade(s):',firstUp&&firstUp.toFixed(0));console.log('era times (min, first run):',Object.entries(eraT).map(([c,v])=>['Bessemer','SM','LD','EAF','UHP','Consteel','H2-DRI','ESF+LD'][c]+':'+(v/60).toFixed(1)).join(' '));
 console.log('prod',JSON.stringify(S.st.prod),'\nsoldK',JSON.stringify(S.st.soldK),'\ncastB',S.st.castB,'castS',S.st.castS,'slagStops',S.st.slagStops,'recovered',W.G.slagRecover,'stopNow',W.F.stop,'craneManSec',craneManT.toFixed(0));
 console.log('ladles',W.LADLES.map(l=>l.state+':'+l.steel.toFixed(1)).join(' '),'nodes',Object.values(W.NODE).map(n=>n.id+':'+n.in.length+(n.cur?'*':'')).join(' '),'piles',W.PRK.map(k=>k+':'+W.PILE[k].length).join(' '));
 console.log('routeTrips',JSON.stringify(routeTrips));
@@ -171,6 +177,8 @@ if(S.st.slagStops>W.G.slagRecover+(W.F.stop?1:0)){okay=false;console.log('FAIL: 
 if(CHEAT){const miss=[...W.PRK,'slag'].filter(k=>k!=='pig'||!W.rjClosed()||W.S.st.prod.pig>0).filter(k=>!(S.st.soldK[k]>0)||(k!=='slag'&&!(S.st.prod[k]>0)));if(miss.length){okay=false;console.log('FAIL: not produced+sold:',miss.join(','))}
  if(!(S.st.castB>0&&S.st.castS>0)){okay=false;console.log('FAIL: both casting routes not used')}if(!(S.st.slagStops>0)){okay=false;console.log('FAIL: slag stop not exercised')}if(!(craneManT>10)){okay=false;console.log('FAIL: manual crane not exercised')}}
 if(MODE==='bot'&&res.idlePct>8){okay=false;console.log('FAIL: idle too high')}
+/* Phase 4: a long bot run (720 min and more) must reach the hydrogen DRI era and the electric smelting era */
+if(MODE==='bot'&&MIN>=720&&!presDone&&!(eraT[6]!=null&&eraT[7]!=null)){okay=false;console.log('FAIL: the bot did not reach eras 6 and 7 in',MIN,'min')}
 if(process.env.ERAS&&W.era()<5&&!presDone){okay=false;console.log('FAIL: not every furnace era reached')}
 /* every visible string had a translation (English runs) */
 if(W.I18N_MISS.size){okay=false;console.log('FAIL: untranslated:',JSON.stringify([...W.I18N_MISS].slice(0,30)))}

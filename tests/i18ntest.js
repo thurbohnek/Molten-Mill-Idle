@@ -19,7 +19,7 @@ for(const m of code.matchAll(/t_\('((?:[^'\\]|\\.)+)'/g))add(m[1].replace(/\\u00
 for(const m of code.matchAll(/t_\((?:[^()]|\([^()]*\))*?\?'([^']+)':'([^']+)'/g)){add(m[1]);add(m[2])}
 for(const m of html.matchAll(/data-ia?="([^"]+)"/g))add(m[1]);
 // upgrade names and pad titles in every furnace era / iron era / lance level
-const S=W.S;for(let e=0;e<6;e++){const ids=['sm','ld','eaf1','uhp','consteel'];S.b={};for(let i=0;i<e;i++)S.b[ids[i]]=1;if(e>=3)S.b.elrj=0;
+const S=W.S;for(let e=0;e<8;e++){const ids=['sm','ld','eaf1','uhp','consteel','h2','esf'];S.b={};S.mb={};for(let i=0;i<e;i++)S.b[ids[i]]=1;if(e>=3)S.b.elrj=0;if(e===7)S.mb.ld={st:'run'};
  for(const rj of[0,1]){S.b.elrj=rj;for(const l of[0,1]){S.lv.lans=l;S.lv.sinter=l;for(const u of W.UP){const n=typeof u.n==='function'?u.n():u.n;add(n.replace(/­/g,''));
   const pt=W.padTitle(u);ok(!/[æøåÆØÅ]/.test(pt),'pad title still Norwegian: '+pt)}}}}
 S.b={};S.lv={};
@@ -48,12 +48,13 @@ for(const lang of['en','no']){W.setLang(lang);for(const L of['up','hire','zone']
  const hs=[];for(const d of W.PADS)hs.push({type:'pad',d});for(const s of W.SW)hs.push({type:'sw',s});for(const z of W.TG)hs.push({type:z.id==='drop'?'drop':'ring',o:z});
  for(const s of W.SRC)hs.push({type:s.pile?'pile':'src',o:s});hs.push({type:'tap'},{type:'furnace'},{type:'rjf'});for(const z of W.ZONES)hs.push({type:'zone',z});
  for(const c of W.CRANES)hs.push({type:'crane',c});for(const L of W.LADLES)for(const st of['park','filling','await','carried','lf','pit','tur','cast'])hs.push({type:'ladle',L:Object.assign({},L,{state:st,steel:5,q:1.1})});for(const tp of W.TORPS)hs.push({type:'torp',t:tp});for(const k of['hmL','pigm','train'])hs.push({type:'misc',id:k});hs.push({type:'misc',id:'desk',r:'skrap'});
+ /* Phase 4 equipment bubbles */for(const k of Object.keys(W.IX.p4))hs.push({type:'p4',id:k});
  /* Phase 3 equipment bubbles */for(const k of Object.keys(W.IX.p3).concat(['tdheat','slagdet','ems','hss','insp','sort','slagmill','dheat','co2','robot','twin','pass','endless']))hs.push({type:'p3',id:k});
- for(let e=0;e<6;e++){S.b={};const ids=['sm','ld','eaf1','uhp','consteel'];for(let i=0;i<e;i++)S.b[ids[i]]=1;for(const h of hs){if(h.type==='pad'&&h.d.kind==='build'&&!W.nextBuild())continue;let r;try{r=W.infoFor(h)}catch(err){ok(false,lang+' infoFor threw '+JSON.stringify(h.type)+' '+err.message);continue}
+ for(let e=0;e<8;e++){S.b={};S.mb={};const ids=['sm','ld','eaf1','uhp','consteel','h2','esf'];for(let i=0;i<e;i++)S.b[ids[i]]=1;if(e===7)S.mb.ld={st:'run'};for(const h of hs){if(h.type==='pad'&&h.d.kind==='build'&&!W.nextBuild())continue;let r;try{r=W.infoFor(h)}catch(err){ok(false,lang+' infoFor threw '+JSON.stringify(h.type)+' '+err.message);continue}
   if(h.type==='pad'&&h.d.kind==='prestige'||r)ok(r&&r.t&&r.d,lang+' empty bubble '+h.type+' '+(h.d?h.d.id:h.o?h.o.id:h.z?h.z.id:h.c?h.c.id:h.id||''));
   if(r&&lang==='en')ok(!/[æøåÆØÅ]/.test(r.t+r.d+r.n),'Norwegian in English bubble: '+r.t+' | '+r.d+' | '+r.n)}}S.b={}}
 // map, map panel, menu and HUD in both languages, with a live bottleneck (LD on 1 lime level), before and after the conversion
-for(const stage of['ld','kai']){const W2=H.boot();W2.S.heats=99;W2.build(stage);W2.setLv('kalk',1);W2.setLv('o2',1);W2.setLv('koks',1);W2.setLv('cowper',1);
+for(const stage of['ld','kai','h2','e7']){const W2=H.boot();W2.S.heats=99;if(stage==='e7')W2.toEra(7);else W2.build(stage);W2.setLv('kalk',1);W2.setLv('o2',1);W2.setLv('koks',1);W2.setLv('cowper',1);
  for(let i=0;i<30*60;i++){W2.S.chg=W2.chgCap();W2.update(1/30)}
  for(const lang of['en','no']){W2.setLang(lang);try{W2.openMap(true);for(const m of['prod','money']){W2.mapMode(m);for(const id in W2.MN){W2.mapSel(id);W2.renderMap()}}W2.openMap(false);W2.syncMenu();W2.hud();W2.draw();
    if(stage==='ld')ok(W2.bottlenecks().length>0,'map test has a bottleneck')}catch(err){ok(false,stage+' '+lang+' map/menu threw: '+err.message)}}
@@ -61,6 +62,6 @@ for(const stage of['ld','kai']){const W2=H.boot();W2.S.heats=99;W2.build(stage);
 W.setLang('en');ok(W.I18N_MISS.size===0,'runtime misses: '+JSON.stringify([...W.I18N_MISS]));
 // no towns, countries, companies or the developer anywhere in the game
 /* forbidden real-world names (places, people, companies) are kept encoded so they don't appear in the repo */
-for(const re of Buffer.from('TW8gaSBSYW5hClxiUmFuYVxiCk5vcmdlfE5vcndheXxOb3J3ZWdpYW4oPyEgYm9rbcOlbCkKQ2Vsc2EKNy0/c3RlZWwKTm9yc2sgSmVybnZlcmsKVGVub3ZhCkRhbmllbGkKw5hyamFuCkVsa2VtClN0ZWluYmFra2VuCj1UZW1wY29yZQo9VEVNUENPUkUKPVN0ZWxtb3IKPUNvbnN0ZWVsCj1DT05TVEVFTA==','base64').toString('utf8').split('\n').map(w=>w[0]==='='?new RegExp(w.slice(1)):new RegExp(w,'i')) /* '=' = case-sensitive (trademark in visible text; lowercase internal ids are fine) */){
+for(const re of Buffer.from('TW8gaSBSYW5hClxiUmFuYVxiCk5vcmdlfE5vcndheXxOb3J3ZWdpYW4oPyEgYm9rbcOlbCkKQ2Vsc2EKNy0/c3RlZWwKTm9yc2sgSmVybnZlcmsKVGVub3ZhCkRhbmllbGkKw5hyamFuCkVsa2VtClN0ZWluYmFra2VuCj1UZW1wY29yZQo9VEVNUENPUkUKPVN0ZWxtb3IKPUNvbnN0ZWVsCj1DT05TVEVFTApIWUJSSVQKU3RlZ3JhCkgyID9HcmVlbiA/U3RlZWwKXGJTU0FCXGIKXGJMS0FCXGIKTWlkcmV4CkVuZXJnaXJvbgp0aHlzc2Vua3J1cHAKU2FsemdpdHRlcgpCbHVlU2NvcGUKUmlvIFRpbnRv','base64').toString('utf8').split('\n').map(w=>w[0]==='='?new RegExp(w.slice(1)):new RegExp(w,'i')) /* '=' = case-sensitive (trademark in visible text; lowercase internal ids are fine) */){
  const m=html.replace(/\/\*[\s\S]*?\*\//g,'').match(re);ok(!m,'forbidden name in build: '+re+' → '+(m&&m[0]))}
 console.log(bad?'FAIL '+bad:'PASS');process.exitCode=bad?1:0;
