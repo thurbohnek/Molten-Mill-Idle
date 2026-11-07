@@ -14,7 +14,10 @@ function setWorldH(){const h=AUTO()||MBK.some(u=>S.mb&&S.mb[u])?WHMAX:WH0;if(h!=
 const FURN_SOL=()=>ET()==='sm'?[{x:688,y:416,w:226,h:370}]:ET()==='conv'?[{x:POS.F.x,y:POS.F.y+6,r:90},{x:POS.F.x-50,y:POS.F.y-136,w:100,h:70}]:[{x:POS.F.x,y:POS.F.y,r:98}];
 function rebuildSolids(){eraLayout();SOLIDS=FURN_SOL().slice();
  /* the ladle car track (tap position + the two parking spots) and the hot-metal transfer ladle are not walked across */
- SOLIDS.push({x:POS.tap.x-28,y:POS.tap.y-32,w:56,h:POS.park[1].y+30-(POS.tap.y-32)});if(usesHM())SOLIDS.push({x:POS.hmL.x,y:POS.hmL.y,r:30});
+ SOLIDS.push({x:POS.tap.x-28,y:POS.tap.y-32,w:56,h:POS.park[1].y+30-(POS.tap.y-32)});
+ /* with the ladle furnace: the ladle-car track (a fenced trench with hazard edges) from the tap past the ladle furnace; the
+    walkway crossing between the tap and the ladle furnace stays open (as the gap between the tap and the ladle furnace was) */
+ if(carOn())SOLIDS.push({x:POS.rail.w1,y:POS.tap.y-30,w:POS.rail.x1-POS.rail.w1,h:60});if(usesHM())SOLIDS.push({x:POS.hmL.x,y:POS.hmL.y,r:30});
  /* råjernsverk: furnace, cowpers / transformers, coke plant, dust catcher (they stay standing after the Omlegging) */
  /* tall equipment is drawn rising up the screen, so its solid covers the whole drawn body (no walking "behind" it) */
  if(!rjGone()){SOLIDS.push({x:POS.rjF.x,y:POS.rjF.y,r:86},rjEra()?{x:POS.rjF.x-44,y:POS.rjF.y-158,w:88,h:90}:{x:POS.rjF.x-62,y:POS.rjF.y-196,w:124,h:130},{x:-150,y:426,r:28},{x:-174,y:330,w:48,h:100});
@@ -400,10 +403,11 @@ function updFurnace(dt){const E=E_(),cap=fcap(),typ=E.type;
   if(F.bath>=cap-.01&&F.solid<=1e-6&&!F.hmCh){F.state='refine';F.refT=refineT()}}
  else if(F.state==='refine'){F.arc=typ==='eaf'?.7:0;if(typ==='conv')F.lance=lerp(F.lance,0,dt*4);if(!F.stop)F.refT-=dt;F.temp=lerp(F.temp,1625,dt*.8);
   if(F.refT<=0){F.state='ready';F.temp=1625;if(near(P,F.x,F.y,700)){sfx('ready');buzz(40)}spark(F.x,F.y-10,26,200,C.moltenhi,.7);ftext(t_('1625 °C – KLAR!'),F.x,F.y-120,C.moltenhi);if(!lv('operator')&&S.heats<3)toast(t_('Klar for tapping! Gå på TAPP'))}}
- else if(F.state==='ready'){F.arc=0;F.lance=0;F.temp=1625+Math.sin(T*3)*2;const L=tapLadle();F.waitLadle=L?0:F.waitLadle+dt;if(!L)G.lwAcc=(G.lwAcc||0)+dt;if((lv('operator')||G.ctl==='furnace')&&L){F.opT=(F.opT||0)+dt;if(F.opT>(G.ctl==='furnace'?.2:.8))startTap()}}
- else if(F.state==='tapping'){F.tapT+=dt;const t=F.tapT,L=F.L,D=tapDur();F.arc=0;
-  const tiltMax=typ==='conv'?1.45:E.tap==='spout'?.45:E.tap==='ebt'?.18:0;F.tilt=t<.6?ease(t/.6)*tiltMax:t<D-.6?tiltMax:max(0,tiltMax*(1-(t-(D-.6))/.6));
-  if(t>.6&&t<D-.4){L.steel=min(L.sm,L.steel+L.sm*dt/(D-1));if(Math.random()<.9)spark(L.x,L.y-14,3,170,C.moltenhi,.6,-PI/2)}
+ else if(F.state==='ready'){F.arc=0;F.lance=0;F.temp=1625+Math.sin(T*3)*2;const L=tapLadle();F.waitLadle=L?0:F.waitLadle+dt;if(!L){G.lwAcc=(G.lwAcc||0)+dt;if(carOn()){const w=carWhy();if(w!=='øsevogn'||F.waitLadle<.05)G.lwWhy=w}}if((lv('operator')||G.ctl==='furnace')&&L){F.opT=(F.opT||0)+dt;if(F.opT>tapReact())startTap()}}
+ else if(F.state==='tapping'){F.tapT+=dt;const t=F.tapT,L=F.L,D=tapDur(),a=tapA(D);F.arc=0;
+  /* tilt in (a s), pour, tilt back; a = .6 s for a normal tap, shorter when automated tapping makes the whole tap shorter */
+  const tiltMax=typ==='conv'?1.45:E.tap==='spout'?.45:E.tap==='ebt'?.18:0;F.tilt=t<a?ease(t/a)*tiltMax:t<D-a?tiltMax:max(0,tiltMax*(1-(t-(D-a))/a));
+  if(t>a&&t<D-a*2/3){L.steel=min(L.sm,L.steel+L.sm*dt/(D-a*5/3));if(Math.random()<.9)spark(L.x,L.y-14,3,170,C.moltenhi,.6,-PI/2)}
   if(t>=D)finishTap()}
  F.flick=F.arc>0?(RM?.95:.72+Math.random()*.38*F.arc):1;
  updTRob(dt);
@@ -419,11 +423,12 @@ function updConvCharge(dt,cap){
   if(c.t>=c.dur){F.solid+=c.s+c.hm;F.scIn+=c.s;F.hmIn+=c.hm;F.ch=null;F.tilt=0}return}
  if(F.state!=='melt'||F.solid>1e-6)return;const need=cap-F.bath;if(need<=.01)return;
  const s=max(0,min(S.chg,scrapMax()-F.scIn,need));if(F.scIn+s<scrapMin()-1e-6)return;const hm=need-s;if(S.hm<hm-1e-6)return;
- S.chg-=s;S.hm-=hm;rec('hmuse',hm);F.ch={t:0,dur:2.6,s,hm};F.chT=0}
-function finishTap(){const L=F.L;F.state='melt';F.tilt=0;F.bath=max(0,F.bath-F.tapAmt);F.temp=ET()==='conv'?1300:1555;F.L=null;F.scIn=0;F.hmIn=0;if(!L)return;L.steel=L.sm;S.heats++;S.st.heats++;rec('tap',L.sm);
+ S.chg-=s;S.hm-=hm;rec('hmuse',hm);F.ch={t:0,dur:2.6*(.5+.5*tapK()),s,hm};F.chT=0}
+function finishTap(){const L=F.L;F.state='melt';if(G.lastTapT!=null){const iv=T-G.lastTapT;G.tapIv=G.tapIv?G.tapIv*.7+iv*.3:iv}G.lastTapT=T;F.tilt=0;F.bath=max(0,F.bath-F.tapAmt);F.temp=ET()==='conv'?1300:1555;F.L=null;F.scIn=0;F.hmIn=0;if(!L)return;L.steel=L.sm;S.heats++;S.st.heats++;rec('tap',L.sm);
  if(near(P,F.x,F.y,700))sfx('level');ftext(t_('Charge {0}: {1} t stål',S.heats,tf(L.sm)),F.x,F.y-140,C.ui);
- /* superheat only matters in the modern eras (no extra random draws before them) */if(shOn())L.sh=44+rnd(-6,10);L.state='await';L.next=B_('lf')?'lf':castDest();L.from='ovn';save()}
-const tapDur=()=>{const E=E_();return E.type==='conv'?3:E.tap==='spout'?3.4:E.tap==='hole'?2.8:2.4};
+ /* superheat only matters in the modern eras (no extra random draws before them) */if(shOn())L.sh=44+rnd(-6,10);L.state='await';L.next=B_('lf')?'lf':castDest(L);L.from='ovn';save()}
+const tapDur=()=>{const E=E_();return(E.type==='conv'?3:E.tap==='spout'?3.4:E.tap==='hole'?2.8:2.4)*tapK()};
+const tapA=D=>min(.6,D*.25);
 function startTap(){const L=tapLadle();if(!L||F.state!=='ready')return;const E=E_();F.state='tapping';F.tapT=0;F.opT=0;F.tapAmt=F.bath*(1-E.heel);F.L=L;
  L.state='filling';L.steel=0;L.sm=F.tapAmt;L.q=1;
  if(near(P,F.x,F.y,500)){shake=RM?0:6;sfx('tap');buzz([30,40,60])}spark(F.x+80,F.y,30,240,C.moltenhi,.8)}
@@ -492,8 +497,16 @@ const CRANES=[
   find(c){if(skipCap()-S.rj.ore<1)return null;const y=SRCm.ore;if(count(y)<=0)return null;return{from:{x:y.x,y:y.y},to:{x:POS.skip.x-10,y:POS.skip.y},y}},
   pick(c,j){const want=malmLoad()*(c.man?2:1),amt=min(want,yardT(j.y));if(amt<1)return false;S.yard.ore=yardT(j.y)-amt;c.load=amt;return true},
   drop(c){const r=min(c.load,skipCap()-S.rj.ore);if(r<=0)return false;S.rj.ore+=r;S.st.ore+=r;c.load-=r;rec('f:malm>rj',r);return c.load<=.01}}),
- mkCrane('ose',{n:'øsekran',built:()=>true,man_ok:()=>lv('osekran')>0,spd:()=>oseSpd()*(1+.6*0),bonus:'raskere',
-  find(c){let best=null;for(const L of LADLES){if(L.state!=='await'||L.arm!=null&&CAST.rf<1)continue;const to=ladleDest(L);if(!to)continue;const pr=L.steel>0?2:1;if(!best||pr>best.pr)best={L,to,from:{x:L.x,y:L.y},pr}}return best},
+ mkCrane('ose',{n:'øsekran',built:()=>true,man_ok:()=>lv('osekran')>0,spd:()=>oseSpd()*(1+.6*0),ht:()=>oseHt(),bonus:'raskere',
+  find(c){let best=null;
+   /* with the ladle car: a ladle about to leave the ladle furnace comes first – an empty ladle that blocks nothing waits */
+   const soon=carOn()&&LADLES.some(l=>l.state==='lf'&&l.lfT-l.wait<4*oseHt()+1.2),armsFull=LADLES.filter(l=>l.arm!=null&&l.state!=='carried').length>=(lv('turret')?2:1);
+   for(const L of LADLES){if(L.state!=='await'||L.arm!=null&&CAST.rf<1)continue;if(carOn()&&L.next==='lf')continue;/* the ladle car takes it to the ladle furnace */
+    if(soon&&L.steel<=0&&(L.arm==null||!armsFull))continue;
+    const to=ladleDest(L);if(!to)continue;const pr=L.steel>0?2:1;if(!best||pr>best.pr)best={L,to,from:{x:L.x,y:L.y},pr}}
+   /* an empty ladle on a spare stand by the tap moves to the free empty-ladle stand, where the car can pick it up */
+   if(!best&&carOn()&&!LADLES.some(l=>l.state!=='carried'&&hyp(l.x-POS.stand.x,l.y-POS.stand.y)<24)){const o=LADLES.find(l=>l.state==='park'&&!onCar(l)&&!atStand(l));if(o){o.state='await';o.next='park';best={L:o,to:POS.stand,from:{x:o.x,y:o.y},pr:.5}}}
+   return best},
   pick(c,j){if(j.L.state!=='await')return false;const to=ladleDest(j.L);if(!to)return false;j.to=to;j.L.state='carried';c.pay=j.L;return true},
   drop(c,j){const L=c.pay;if(!L)return true;L.x=j.to.x;L.y=j.to.y;arriveLadle(L,j.to);c.pay=null;return true}}),
  mkCrane('mag',{n:'magnetkran',built:()=>B_('vv')&&(lv('magkran')>0||AUTO()),spd:()=>150*(1+.08*lv('magkran')),bonus:'dobbel last',
@@ -508,7 +521,7 @@ function updCrane(c,dt,ix,iy){if(!c.built()){c.man=false;return}const sp=c.spd()
  if(c.id==='ose'){const q=LADLES.filter(l=>l.state==='await'&&ladleDest(l)).length-(c.state==='toPick'?1:0);G.oseQ=q>0?(G.oseQ||0)+dt:max(0,(G.oseQ||0)-dt*2);G.lwT=(G.lwT||0)+dt;if(G.lwT>8){G.ladleWait=(G.ladleWait||0)*.6+((G.lwAcc||0)/G.lwT)*.4;G.lwAcc=0;G.lwT=0}}
  if(c.man){c.x=clamp(c.x+ix*sp*dt,c.d.x0,c.d.x1);c.y=clamp(c.y+iy*sp*dt,c.d.y0,c.d.y1)}
  switch(c.state){
- case'idle':{c.job=c.find(c);if(c.job){c.state='toPick';c.t=0}else if(!c.man)craneMove(c,c.d.park.x,c.d.park.y,dt,sp*.5);break}
+ case'idle':{c.job=c.find(c);if(c.job){c.state='toPick';c.t=0}else if(!c.man){const w=c.id==='ose'&&carOn()&&LADLES.some(l=>l.state==='lf')?POS.lf:c.d.park;craneMove(c,w.x,w.y,dt,sp*.5)}break}
  case'toPick':{const j=c.job,f=j.from;if(c.id==='ose'){if(j.L.state!=='await'){c.state='idle';break}f.x=j.L.x;f.y=j.L.y}
   const d=c.man?hyp(f.x-c.x,f.y-c.y):craneMove(c,f.x,f.y,dt,sp);if(d<(c.man?30:2)&&!(c.id==='ose'&&j.L.arm!=null&&CAST.rf<1)){c.state='down';c.t=0}break}
  case'down':{c.h=max(0,1-c.t/ht);if(c.t>=ht){if(c.pick(c,c.job)){c.state='up';c.t=0}else{c.state='up2';c.t=0}}break}
@@ -518,25 +531,67 @@ function updCrane(c,dt,ix,iy){if(!c.built()){c.man=false;return}const sp=c.spd()
  case'lower':{c.h=max(0,1-c.t/ht);if(c.id==='ose'&&c.pay){c.pay.x=c.x;c.pay.y=c.y}if(c.t>=ht){const r=c.drop(c,c.job);if(r==='move'){c.state='toDrop';c.t=0;c.h=.4}else if(r){c.state='rise';c.t=0}}break}
  case'rise':{c.h=min(1,c.t/ht);if(c.t>=ht){c.state='idle';c.job=null}break}}}
 
-/* ---------- støpeøser (ladles): the ladle car brings an empty ladle under the tap, the ladle crane does the rest ---------- */
+/* ---------- støpeøser (ladles). Before the automated melt shop a short car brings an empty ladle from the parking spots under
+   the tap and the ladle crane does the rest. From the arc-furnace conversion on (with the ladle furnace), the ladle car runs on rails from under the tap to the
+   ladle furnace (the ladle is treated on the car) and on to the empty-ladle stand at the east end. The ladle crane only lifts the
+   treated ladle to the caster turret / ingot pit and brings the empty one back to the stand (or a spare stand by the tap), where
+   the car picks it up and rolls it under the tap. ---------- */
 const LADLES=[];
 function mkLadle(i){return{i,state:'park',x:POS.park[0].x,y:POS.park[0].y+80*i,t:0,steel:0,sm:1,q:1,s:1,next:null,wait:0,slot:-1,lfT:0,from:''}}
 function syncLadles(){const want=1+lv('ladle');while(LADLES.length<want)LADLES.push(mkLadle(LADLES.length))}
-const PARKS=()=>[POS.tap,POS.park[0],POS.park[1]];
+/* the ladle car comes with the automated melt shop (the arc-furnace conversion), when the ladle furnace stands */
+const carOn=()=>B_('lf')&&AUTO();
+/* st: tap (under the tap) → toLF → lf (treated on the car) → toStand → stand (lifts an empty) → toTap */
+const CAR={x:990,st:'tap',L:null,t:0,v:0,lift:0,rot:0,init:false};
+const carSpd=()=>380*(1+.05*lv('lft')),CARACC=1600,CARLIFT=.28;
+const onCar=l=>CAR.L===l;
+const atStand=l=>l.state==='park'&&!onCar(l)&&hyp(l.x-POS.stand.x,l.y-POS.stand.y)<8;
+const PARKS=()=>carOn()?[POS.stand,POS.park[0],POS.park[1]]:[POS.tap,POS.park[0],POS.park[1]];
 const occupied=(p,self)=>LADLES.some(l=>l!==self&&l.state!=='carried'&&hyp(l.x-p.x,l.y-p.y)<20&&(l.state!=='park'||l.atTap!=null));
-/* the parked ladle nearest the tap moves under it when the tap position is free */
-function updParked(dt){const ps=PARKS(),parked=LADLES.filter(l=>l.state==='park');const blocked=LADLES.some(l=>l.state!=='park'&&l.state!=='filling'&&l.state!=='carried'&&hyp(l.x-POS.tap.x,l.y-POS.tap.y)<20);
+/* the ladle car: put the ladle that stands under the tap (or any empty one) on it when the ladle furnace is built / after loading */
+function carInit(){const C=CAR;C.init=true;C.x=POS.tap.x;C.st='tap';C.v=0;C.t=0;C.lift=0;C.L=null;
+ const L=LADLES.find(l=>(l.state==='park'||l.state==='filling'||l.state==='await')&&hyp(l.x-POS.tap.x,l.y-POS.tap.y)<30)||LADLES.find(l=>l.state==='park');
+ if(L){C.L=L;if(L.state==='park')L.atTap=1;L.x=POS.tap.x;L.y=POS.tap.y;C.lift=1}
+ /* the other empty ladles: on the empty-ladle stand and the spare stands (a ladle no stand has room for waits on a spare stand
+    until the crane moves one on) */
+ let k=0;for(const l of LADLES){if(l===L||l.state!=='park')continue;const p=PARKS()[min(k,PARKS().length-1)];l.x=p.x;l.y=p.y;l.atTap=null;k++}}
+const carT=dx=>Math.abs(dx)/carSpd()+.4;
+function updCar(dt){if(!carOn())return;const C=CAR;if(!C.init)carInit();
+ if(C.L&&['car','park','filling','await','lf'].indexOf(C.L.state)<0)C.L=null;/* the crane has lifted it off */
+ const go=tx=>{const d=tx-C.x,ad=Math.abs(d);if(ad<.5){C.x=tx;C.v=0;return true}C.v=min(carSpd(),Math.sqrt(2*CARACC*ad)+20,C.v+CARACC*dt);const s=min(ad,C.v*dt);C.x+=Math.sign(d)*s;C.rot+=Math.sign(d)*s;return ad-s<.5};
+ C.busy=(C.busy||0)*(1-min(1,dt*.2))+(C.st==='tap'&&C.L&&C.L.state==='park'?0:min(1,dt*.2));
+ switch(C.st){
+ case'tap':{const l=C.L;if(!l){C.st='toStand';break}if(l.state==='await'&&l.steel>.01){l.state='car';l.next='lf';C.st='toLF'}break}
+ case'toLF':if(go(POS.lf.x)){const l=C.L;if(l){l.state='lf';l.lfT=lfTime();l.wait=0;rec('f:'+(l.from||'ovn')+'>lf',l.steel);l.from='lf'}C.st='lf'}break;
+ case'lf':if(!C.L)C.st='toStand';break;
+ case'toStand':C.lift=max(0,C.lift-dt*4);if(go(POS.stand.x)){C.st='stand';C.t=0}break;
+ /* under the stand: the car's hydraulic table lifts the empty ladle off its supports */
+ case'stand':{const s=C.L?null:LADLES.find(atStand);if(C.L){C.st='toTap';break}if(s){C.t+=dt;C.lift=min(1,C.t/CARLIFT);if(C.t>=CARLIFT){C.L=s;s.state='car';s.next=null;s.steel=0;s.atTap=null;C.st='toTap'}}else{C.t=0;C.lift=0}break}
+ case'toTap':if(go(POS.tap.x)){const l=C.L;if(l){l.state='park';l.atTap=1}C.st='tap'}break}
+ if(C.L){C.L.x=C.x;C.L.y=POS.tap.y;if(C.st!=='stand')C.lift=1}}
+/* the parked ladle nearest the tap moves under it when the tap position is free (before the ladle car) */
+function updParked(dt){if(carOn())return;const ps=PARKS(),parked=LADLES.filter(l=>l.state==='park');const blocked=LADLES.some(l=>l.state!=='park'&&l.state!=='filling'&&l.state!=='carried'&&hyp(l.x-POS.tap.x,l.y-POS.tap.y)<20);
  const fill=LADLES.some(l=>l.state==='filling');let k=blocked||fill?1:0;
  for(const L of parked){let p=ps[min(k,ps.length-1)];L.atTap=k===0?1:null;L.x=lerp(L.x,p.x,min(1,dt*4));L.y=lerp(L.y,p.y,min(1,dt*4));k++}}
-const tapLadle=()=>LADLES.find(l=>l.state==='park'&&l.atTap&&hyp(l.x-POS.tap.x,l.y-POS.tap.y)<6);
+const tapLadle=()=>carOn()?(CAR.st==='tap'&&CAR.L&&CAR.L.state==='park'&&CAR.L.steel<=.01&&Math.abs(CAR.x-POS.tap.x)<2?CAR.L:undefined):LADLES.find(l=>l.state==='park'&&l.atTap&&hyp(l.x-POS.tap.x,l.y-POS.tap.y)<6);
 const goingTo=st=>LADLES.filter(l=>l.state===st||((l.state==='await'||l.state==='carried')&&l.next===st)).length;
-function castDest(){if(!B_('strang'))return'pit';const m=S.cast;if(m==='blokk')return'pit';if(m==='strang')return'tur';
- /* auto: the caster takes the bulk; the ingot pit gets a heat only when the caster is already busy (spesialstål, small volume) */
- const tur=goingTo('tur')+goingTo('cast');if(tur<1+(lv('turret')?1:0))return'tur';if(goingTo('pit')===0)return'pit';return'tur'}
+/* steel capacity of the caster (t/s of ladle steel) at full speed; the ingot pit's is measured (tests/endgame.js) */
+const casterCap=()=>B_('strang')?nStr()*strandRate()*shK():0;
+/* auto: the caster takes the steel first; the ingot pit takes a heat when it is free and the caster already has steel enough to
+   reach the following heat at full speed (or both turret arms are taken). So the caster never runs dry while a ladle is coming,
+   and when the furnace makes more than the caster can cast, the surplus goes to the pit. */
+function castDest(Ld){if(!B_('strang'))return'pit';const m=S.cast;if(m==='blokk')return'pit';if(m==='strang')return'tur';
+ const arms=lv('turret')?2:1,onC=LADLES.filter(l=>l!==Ld&&l.steel>.01&&(l.state==='cast'||l.state==='tur'||((l.state==='await'||l.state==='carried')&&l.next==='tur')));
+ if(LADLES.some(l=>l!==Ld&&(l.state==='pit'||((l.state==='await'||l.state==='carried')&&l.next==='pit'))))return'tur';
+ if(onC.length>=arms)return'pit';
+ /* by choice only when the pit has (nearly) a plate of moulds ready */
+ const K=S.kok;if(K.ready+K.slots+K.cool.filter(t=>t<3).length<slotsMax())return'tur';
+ const cap=casterCap(),stock=CAST.tm+onC.reduce((a,l)=>a+l.steel,0),eta=nextSteelETA(null,Ld);
+ return eta!=null&&cap>0&&stock>=cap*(eta+1)?'pit':'tur'}
 /* where the crane should take this ladle right now (null = destination busy, keep waiting) */
 function ladleDest(L){const busy=st=>LADLES.some(l=>l!==L&&(l.state===st||(l.state==='carried'&&l.next===st)));
  switch(L.next){
- case'lf':return busy('lf')?null:POS.lf;
+ case'lf':return carOn()||busy('lf')?null:POS.lf;
  case'pit':return busy('pit')?null:POS.pitL;
  case'tur':{/* the turret: an arm is taken while a ladle sits on it (full, casting or empty) or is on its way to it.
    With the turret upgrade the crane sets the ladle on the back (standby) arm; without it there is only the casting arm. */
@@ -550,16 +605,18 @@ function arriveLadle(L,p){const nx=L.next;L.wait=0;
  else{L.state='park';L.steel=0;L.atTap=null}}
 function updLadle(L,dt){
  switch(L.state){
- case'filling':if(F.state!=='tapping'||F.L!==L){/* watchdog: never leave a ladle half-filled under the tap */if(L.steel>.1){L.state='await';L.next=B_('lf')?'lf':castDest();L.from='ovn'}else{L.state='park';L.steel=0}return}
-  L.x=lerp(L.x,POS.tap.x,min(1,dt*6));L.y=lerp(L.y,POS.tap.y,min(1,dt*6));return;
+ case'filling':if(F.state!=='tapping'||F.L!==L){/* watchdog: never leave a ladle half-filled under the tap */if(L.steel>.1){L.state='await';L.next=B_('lf')?'lf':castDest(L);L.from='ovn'}else{L.state='park';L.steel=0}return}
+  if(!carOn()){L.x=lerp(L.x,POS.tap.x,min(1,dt*6));L.y=lerp(L.y,POS.tap.y,min(1,dt*6))}return;
  case'lf':{L.wait+=dt;if(Math.random()<dt*25)spark(L.x+rnd(-20,20),L.y-14,2,110,C.arc,.3);
-  if(L.wait>=L.lfT){L.q=qLF();if(shOn())L.sh=40+rnd(-3,6);if(near(P,L.x,L.y,600))ftext(t_('Kvalitet ×{0}',L1(L.q)),L.x,L.y-80,C.prem);L.state='await';L.next=castDest()}return}
+  if(L.wait>=L.lfT){L.q=qLF();if(shOn())L.sh=40+rnd(-3,6);if(near(P,L.x,L.y,600))ftext(t_('Kvalitet ×{0}',L1(L.q)),L.x,L.y-80,C.prem);L.state='await';L.next=castDest(L)}return}
  case'tur':if(!LADLES.some(l=>l.state==='cast')&&CAST.gap<=0){L.state='cast';CAST.rot=1}return}}
 
 /* ---------- blokkstøping: bottom pouring (stigstøping) ---------- */
 const PIT={state:'idle',t:0,n:0,fill:0,hette:false,wait:0,L:null,pourTot:0,s0:0,ingT:0,dur:1,kanal:false};
 let kcT=0;
-function updPit(dt){const K=S.kok;
+/* in the automated eras the mould store keeps a set of spare moulds, so the next pour need not wait for the last ones to cool */
+const kokSpare=()=>AUTO()?slotsMax():0;
+function updPit(dt){const K=S.kok;if(kokSpare()&&K.slots+K.hot+K.ready+K.cool.length+PIT.n<slotsMax()+kokSpare())K.ready++;
  for(let i=K.cool.length-1;i>=0;i--){K.cool[i]-=dt;if(K.cool[i]<=0){K.cool.splice(i,1);K.ready++}}
  const Lw=LADLES.find(l=>l.state==='pit'&&l.steel>.01);
  kcT+=dt;if(kcT>=kcraneIv()){kcT=0;if(AUTO())for(const k of['kanal','hette'])if(lv(k)&&(S[k]|0)<HOPK&&ST[k]>0){ST[k]--;S[k]=(S[k]|0)+1}/* the old mould crane works at base speed; carrying moulds yourself is faster */
@@ -568,7 +625,7 @@ function updPit(dt){const K=S.kok;
  switch(PIT.state){
  case'idle':{if(!Lw){PIT.wait=0;break}PIT.wait+=dt;const need=max(1,Math.ceil(Lw.steel/(IT()*(1+RUNNER))-1e-6)),want=min(slotsMax(),need);
   if(K.slots>=want||(K.slots>0&&PIT.wait>3.5)){const n=min(K.slots,need);K.slots-=n;PIT.n=n;PIT.L=Lw;PIT.kanal=(S.kanal|0)>0;if(PIT.kanal)S.kanal--;
-   PIT.hette=(S.hette|0)>0;if(PIT.hette)S.hette--;PIT.dur=PIT.kanal?1.2:3.6;PIT.state='prep';PIT.t=0;PIT.fill=0}break}
+   PIT.hette=(S.hette|0)>0;if(PIT.hette)S.hette--;PIT.dur=PIT.kanal?1.2:3.6;PIT.state='prep';PIT.t=0;PIT.fill=0;if(AUTO())PIT.wait=0/* the next pour of the same ladle waits for a full plate again */}break}
  case'prep':PIT.t+=dt;if(PIT.t>=PIT.dur){PIT.state='pour';PIT.t=0;PIT.s0=PIT.L.steel;PIT.pourTot=min(PIT.L.steel,PIT.n*IT()*(1+RUNNER));if(near(P,POS.pit.x,POS.pit.y,450))sfx('tap')}break;
  case'pour':{PIT.t+=dt;const f=min(1,PIT.t/pt.pour);PIT.fill=f;PIT.L.steel=max(0,PIT.s0-PIT.pourTot*f);
   if(f>=1){PIT.ingT=PIT.pourTot/(1+RUNNER)/PIT.n;S.st.castB++;if(near(P,POS.pit.x,POS.pit.y,450)&&T-(G.benT||-99)>20){G.benT=T;ftext(t_('Ben i kanalene: −{0} %',Math.round(RUNNER*100)),POS.pit.x,POS.pit.y+60,C.uidim)}PIT.state='solid';PIT.t=0;const L=PIT.L;if(L.steel<.02){L.steel=0;L.state='await';L.next='park'}}break}
@@ -582,11 +639,14 @@ function updPit(dt){const K=S.kok;
 const CAST={rot:0,gap:0,acc:[0,0,0,0,0,0,0,0],run:[],bed:[],cut:[],arm:0,ang:0,a0:0,rf:1,tlev:0,flow:false,pour:false,tm:0,on:false,spd:1,u:1,nOn:8,tgt:1,v:0,pos:0,q:1,sh:30};
 /* butterfly ladle turret: two arms 180° apart on one slewing ring. Arm s points at angle ang+s·π; angle 0 = over the tundish.
    CAST.arm = the arm at (or slewing to) the casting position; rf = slewing progress 0…1. */
-const TUR={x:1366,y:823,R:40},ROTDUR=2.2;
+const TUR={x:1366,y:823,R:40};
+/* slewing time of the turret; with the automated tapping of the conveyor-fed furnace (and the restarted converter) the whole
+   ladle change is automated too: faster slewing and a shorter changeover */
+const rotDur=()=>CS()||era()===7?1.2:2.2,chgGap=()=>lv('turret')?(CS()||era()===7?.5:.8):3.5;
 const armA=s=>CAST.ang+s*PI,armPt=s=>({x:TUR.x+Math.cos(armA(s))*TUR.R,y:TUR.y+Math.sin(armA(s))*TUR.R});
 function updTurret(dt){const Lc=LADLES.find(l=>l.state==='cast');
  if(Lc&&Lc.arm!=null&&Lc.arm!==CAST.arm&&CAST.rf>=1){CAST.arm=Lc.arm;CAST.a0=CAST.ang;CAST.rf=0}
- if(CAST.rf<1){CAST.rf=RM?1:min(1,CAST.rf+dt/ROTDUR);const k=CAST.rf,e=k*k*(3-2*k);CAST.ang=CAST.a0+PI*e;if(CAST.rf>=1)CAST.ang=(CAST.a0+PI)%TAU}
+ if(CAST.rf<1){CAST.rf=RM?1:min(1,CAST.rf+dt/rotDur());const k=CAST.rf,e=k*k*(3-2*k);CAST.ang=CAST.a0+PI*e;if(CAST.rf>=1)CAST.ang=(CAST.a0+PI)%TAU}
  /* ladles on the turret ride on the arm ends */
  for(const L of LADLES){if(L.arm==null)continue;if(L.state!=='tur'&&L.state!=='cast'&&L.state!=='await'){L.arm=null;continue}const p=armPt(L.arm);L.x=p.x;L.y=p.y}
  /* the shroud pours while the casting ladle sits over the tundish (the tundish itself is simulated in updCaster) */
@@ -602,32 +662,39 @@ const tdCap=()=>max(3,nStr()*strandRate()*3);
    steel in the casting ladle + tundish lasts until the next ladle can pour. They stop (a sequence break) only when the tundish
    really runs dry. castMpm = withdrawal speed in m/min at full speed. */
 const CASTVMIN=.42,castMpm=()=>(1.8+.1*lv('caster'))*hssK();
-const castHt=.35;
-/* seconds until the next ladle with steel for the caster can sit on a turret arm, ready to cast (null = nothing is coming) */
-function nextSteelETA(Lc){const c=CRm.ose,sp=max(1,oseSpd()),TP=armPt(lv('turret')?1-CAST.arm:CAST.arm),lift=2*castHt;
+const castHt=.35;/* (the ladle crane's hoist time is oseHt(): a newer crane also hoists faster) */
+/* seconds until the next ladle with steel for the caster can sit on a turret arm, ready to cast (null = nothing is coming).
+   excl (routing): count only steel not yet sent to the caster, leaving out that ladle (the one being routed) */
+function nextSteelETA(Lc,excl){const c=CRm.ose,sp=max(1,oseSpd()),TP=armPt(lv('turret')?1-CAST.arm:CAST.arm),lift=2*oseHt();
  const d=(a,b)=>hyp(a.x-b.x,a.y-b.y)/sp,cBusy=l=>c.state==='idle'||(c.job&&c.job.L===l)?0:1.6;
- const toCaster=S.cast!=='blokk',viaLF=B_('lf');let best=null;const put=t=>{if(best==null||t<best)best=t};
+ const toCaster=S.cast!=='blokk',viaLF=B_('lf'),viaCar=carOn();let best=null;const put=t=>{if(best==null||t<best)best=t};
  /* from a ladle standing at p (crane must fetch it) to the turret, optionally through the ladle furnace */
  const leg=(l,p,lfLeft)=>{let t=cBusy(l)+d(c,p)+lift;if(lfLeft!=null){t+=d(p,POS.lf)+lift+lfLeft+lift+d(POS.lf,TP)+lift}else t+=d(p,TP)+lift;return t};
- for(const l of LADLES){if(l===Lc||l.state==='park')continue;
-  if(l.state==='tur'){if(l.steel>.01)put(0);continue}
-  if(l.next==='tur'&&l.steel>.01){if(l.state==='carried')put(d(c,TP)+lift);else if(l.state==='await')put(leg(l,l,null));continue}
+ /* with the ladle car: the crane lifts the treated ladle off the car at the ladle furnace */
+ const fromLF=l=>cBusy(l)+d(c,POS.lf)+lift+d(POS.lf,TP)+lift;
+ for(const l of LADLES){if(l===Lc||l===excl||l.state==='park')continue;
+  if(!excl){if(l.state==='tur'){if(l.steel>.01)put(0);continue}
+   if(l.next==='tur'&&l.steel>.01){if(l.state==='carried')put(d(c,TP)+lift);else if(l.state==='await')put(leg(l,l,null));continue}}
+  else if(l.state==='tur'||l.state==='cast'||l.next==='tur'||l.next==='pit'||l.state==='pit')continue;
   if(!toCaster)continue;
+  if(viaCar){if(l.state==='lf')put(max(0,l.lfT-l.wait)+fromLF(l));
+   else if((l.state==='car'||l.state==='await'&&l.next==='lf')&&l.steel>.01)put(carT(POS.lf.x-l.x)+lfTime()+fromLF(l));
+   else if(l.state==='filling')put(max(0,tapDur()-F.tapT)+carT(POS.lf.x-POS.tap.x)+lfTime()+fromLF(l));continue}
   if(l.state==='lf')put(max(0,l.lfT-l.wait)+lift+d(c,POS.lf)+lift+d(POS.lf,TP)+lift);
   else if(l.next==='lf'&&l.steel>.01){if(l.state==='carried')put(d(c,POS.lf)+lift+lfTime()+lift+d(POS.lf,TP)+lift);else if(l.state==='await')put(leg(l,l,lfTime()))}
   else if(l.state==='filling')put(max(0,tapDur()-F.tapT)+leg(l,POS.tap,viaLF?lfTime():null))}
  if(best==null&&toCaster&&!F.stop&&F.starve<2&&F.waitHM<2&&(F.state==='melt'||F.state==='refine'||F.state==='ready')){
   const r=max(.05,furnRate()),melt=F.state==='melt'?max(0,fcap()-F.bath)/r+refineT():F.state==='refine'?max(0,F.refT):0;
-  put(melt+(lv('operator')?.8:2)+tapDur()+leg(null,POS.tap,viaLF?lfTime():null))}
+  put(melt+(lv('operator')?tapReact():2)+tapDur()+(viaCar?carT(POS.lf.x-POS.tap.x)+lfTime()+fromLF(null):leg(null,POS.tap,viaLF?lfTime():null)))}
  return best}
 function castTarget(L,cap,tc){if(!B_('strang'))return 1;
+ /* the turret is slewing a full ladle in: make the tundish last until the shroud pours (even when steel is plentiful) */
+ if(L&&!CAST.pour)return CAST.tm/(cap*((1-CAST.rf)*rotDur()+.4));
  /* steel is plentiful: the furnace waits for an empty ladle, or a full ladle queues for a free turret arm → full speed */
  if(F.state==='ready'&&!tapLadle())return 1;
  if(LADLES.some(l=>l!==L&&l.steel>.01&&(l.state==='await'||l.state==='carried')&&l.next==='tur'&&LADLES.filter(o=>o.arm!=null&&o.state!=='carried').length>=(lv('turret')?2:1)))return 1;
- /* the turret is slewing a full ladle in: make the tundish last until the shroud pours */
- if(L&&!CAST.pour)return CAST.tm/(cap*((1-CAST.rf)*ROTDUR+.4));
  const eta=nextSteelETA(L);if(eta==null)return 1;/* nothing coming: cast out at full speed */
- const gapc=lv('turret')?.8:3.5,rot=lv('turret')?ROTDUR:0,m=.8,stock=(L?L.steel:0)+CAST.tm;
+ const gapc=chgGap(),rot=lv('turret')?rotDur():0,m=.8,stock=(L?L.steel:0)+CAST.tm;
  if(!L)return CAST.tm/(cap*(max(eta,CAST.gap)+rot+m));
  const tE=L.steel/(max(.05,CAST.u)*cap);
  /* the next ladle is the limit: stretch what we have until it pours */
@@ -652,7 +719,11 @@ function updCaster(dt){updTurret(dt);CAST.rot=max(0,CAST.rot-dt);CAST.gap=max(0,
  /* the casting ladle refills the tundish through the shroud */
  if(L&&CAST.pour){const a=min(L.steel,max(0,tc-CAST.tm),max(cap*2,tc)*dt);if(a>0){if(CAST.tm<.01)CAST.q=L.q;else CAST.q=((CAST.q||1)*CAST.tm+(L.q||1)*a)/(CAST.tm+a);
   /* superheat: the incoming steel mixes with what is in the tundish */const m0=CAST.tm,ls=L.sh==null?40:L.sh;CAST.sh=m0>.05?(m0*CAST.sh+a*ls)/(m0+a):ls;L.steel-=a;CAST.tm+=a}}
- if(L&&L.steel<=.01&&CAST.rf>=1){L.steel=0;S.st.castS++;L.state='await';L.next='park';CAST.gap=lv('turret')?.8:3.5}
+ if(L&&L.steel<=.01&&CAST.rf>=1){L.steel=0;S.st.castS++;L.state='await';L.next='park';CAST.gap=chgGap()}
+ /* the caster is the limit when a full ladle keeps waiting for it while every strand runs at full speed (a moment's queue at a
+    ladle change is just the rhythm of the shop) */
+ {const q=LADLES.some(l=>l.state==='await'&&l.next==='tur'&&steelIn(l))&&LADLES.some(l=>l.state==='cast')&&CAST.on&&CAST.spd>.95&&CAST.nOn>=n;G.strQ=q?min(6,(G.strQ||0)+dt):max(0,(G.strQ||0)-dt*.3);
+  const qp=LADLES.some(l=>l.state==='await'&&l.next==='pit'&&steelIn(l));G.pitQ=qp?min(6,(G.pitQ||0)+dt):max(0,(G.pitQ||0)-dt*.3)}
  CAST.flow=CAST.on;CAST.tlev=min(1,CAST.tm/tc);const vs=CAST.on?CAST.spd:0;CAST.v=vs;CAST.pos=(CAST.pos||0)+vs*dt;
  const v=110*(1+.1*lv('caster'));
  for(let i=CAST.run.length-1;i>=0;i--){const r=CAST.run[i];r.x+=(r.x<CUTX()?v*(CAST.on?max(.2,CAST.spd):1):v)*dt;if(r.x>=CUTX()&&!r.cut){r.cut=1;CAST.cut.push({lane:r.lane,t:0});if(near(P,1600,SY(r.lane),420)&&!lv('torch')&&Math.random()<.3)sfx('clank')}
@@ -811,7 +882,7 @@ function urgentIds(st){switch(st){
  case'sup':{const o=[];if(F.lim)o.push(F.lim);for(const s of E_().req)if(!lv(s))o.push(s);if(F.elekOut)o.push('elekkran');return o}
  case'skrap':{const l=csLim();if(l==='band')return['charge'];if(l==='kran')return['kran','magnet'];if(l==='yard')return['yard','yard2'];return F.starve>1.5?['kran','charge','yard','yard2']:[]}
  case'ovn':return F.waitLadle>2?['ladle']:F.stop?['slaggbil','slagcap']:(G.chgFull||0)>.6&&!F.lim?['furnace','power','refine']:[];
- case'lf':return oseLim()?['osekran']:LADLES.some(l=>l.state==='await'&&l.next==='lf')?['lft']:[];
+ case'lf':return oseLim()?['osekran']:carOn()?(F.state==='ready'&&!tapLadle()&&CAR.L&&CAR.L.state==='lf'?['lft']:[]):LADLES.some(l=>l.state==='await'&&l.next==='lf')?['lft']:[];
  case'blokk':return LADLES.some(l=>l.state==='await'&&l.next==='pit'&&l.steel>.01)?['kokup','solid','kokbig']:[];
  case'strang':return LADLES.some(l=>l.state==='await'&&l.next==='tur'&&l.steel>.01)&&LADLES.some(l=>l.state==='cast')?['caster','strands','turret']:[];
  case'endl':return elOn()&&elDiv()>.08?(EL.rc>0||EL.feedE<=elRate()*1.02?['loop']:['elspd','loop']):[];
@@ -927,9 +998,9 @@ function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>
  case'skrap':{const l=csLim();if(l==='band')return{lv:2,t:t_('Flaskehals: chargeringsbåndet')};if(l==='kran')return{lv:2,t:t_('Flaskehals: chargeringskranen')};if(l==='yard')return{lv:2,t:t_('Flaskehals: skraptilførsel')};
   if(F.starve>1.5)return{lv:2,t:t_('Flaskehals: skrap til ovnen')};if(S.chg>=chgCap()-1)return{lv:1,t:era()===0?t_('Skrapkassa er full (litt kjøleskrap)'):t_('Chargering full')};return{lv:0,t:tf(flow('skrap','ovn'))+' t/min'}}
  case'ovn':{if(F.stop)return{lv:2,t:t_('Slaggpotta er full – ovnen står!')};
-  if(F.state==='ready'){if(!tapLadle()){const L=LADLES.find(l=>l.atTap)||LADLES[0],w=L?{pit:'blokkstøping',cast:'streng',lf:'øseovn',await:'kø',carried:'kran'}[L.state]:'';return{lv:2,t:w?t_('Flaskehals: øse ({0})',t_(w)):t_('Flaskehals: øse')}}if(!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')}}if(F.lim&&F.solid>0)return{lv:2,t:lv(F.lim)?t_('Flaskehals: {0}',sn(F.lim)):t_('Flaskehals: {0} mangler',sn(F.lim))};
+  if(F.state==='ready'){if(!tapLadle()){const w=carOn()?carWhy():(L=>L?{pit:'blokkstøping',cast:'streng',lf:'øseovn',await:'kø',carried:'kran'}[L.state]:'')(LADLES.find(l=>l.atTap)||LADLES[0]);return{lv:2,t:w?t_('Flaskehals: øse ({0})',t_(w)):t_('Flaskehals: øse')}}if(!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')}}if(F.lim&&F.solid>0)return{lv:2,t:lv(F.lim)?t_('Flaskehals: {0}',sn(F.lim)):t_('Flaskehals: {0} mangler',sn(F.lim))};
   if(F.elekOut)return{lv:1,t:t_('Venter på elektroder')};if(F.waitHM>1.5)return{lv:1,t:!S.tg.rj?t_('Råjernet går til salg (bryter)'):t_('Venter på råjern')};if((G.chgFull||0)>.6&&!F.lim)return{lv:2,t:t_('Flaskehals: ovnen')};if(F.starve>1.5)return{lv:1,t:t_('Venter på skrap')};if(F.state==='ready'&&!tapLadle())return{lv:1,t:t_('Venter på tom øse')};
-  if(F.state==='ready'&&!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')};if(F.waitLadle>2||G.ladleWait>.3)return{lv:2,t:t_('Flaskehals: venter på øse')};if(F.ch&&ET()==='conv')return{lv:0,t:t_('Chargerer')};return{lv:0,t:F.state==='refine'?(ET()==='sm'?t_('Raffinerer'):t_('Tapper snart')):F.state==='tapping'?t_('v§Tapper'):ET()==='conv'&&F.solid>0?t_('Blåser'):tf(F.rate*60)+' t/min'}}
+  if(F.state==='ready'&&!lv('operator'))return{lv:1,t:t_('Klar – gå på TAPP')};if(F.waitLadle>2||G.ladleWait>.3)return{lv:2,t:carOn()&&G.lwWhy?t_('Flaskehals: øse ({0})',t_(G.lwWhy)):t_('Flaskehals: venter på øse')};if(F.ch&&ET()==='conv')return{lv:0,t:t_('Chargerer')};return{lv:0,t:F.state==='refine'?(ET()==='sm'?t_('Raffinerer'):t_('Tapper snart')):F.state==='tapping'?t_('v§Tapper'):ET()==='conv'&&F.solid>0?t_('Blåser'):tf(F.rate*60)+' t/min'}}
  case'rj':{const tc=castTorp(),torpShort=(!tc&&S.rj.hearth>=hearthCap()*.6)||RJ.stopT>1.5;
   if(!S.tg.rj)return{lv:1,t:t_('Bryter: råjern til salg')};
   if(F.waitHM>1.5){if(RJ.starve>1.5)return{lv:2,t:t_('Flaskehals: malm til ovnen')};if(torpShort)return{lv:2,t:t_('Flaskehals: torpedovogner')};if(RJ.lim)return{lv:2,t:t_('Flaskehals: {0}',sn(RJ.lim))};return{lv:2,t:rjEra()?t_('Flaskehals: ovnseffekt (MVA)'):t_('Flaskehals: masovnen')}}
@@ -940,13 +1011,14 @@ function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>
  case'sup':{const E=E_();for(const s of E.req){if(!lv(s))return{lv:2,t:t_('Mangler {0}anlegg',sn(s))}}if(F.lim)return{lv:2,t:t_('Flaskehals: {0}',sn(F.lim))};return{lv:0,t:t_('Nok forsyning')}}
  case'lf':{if(oseLim())return{lv:2,t:t_('Flaskehals: øsekranen')};const L=LADLES.find(l=>l.state==='lf'),q=LADLES.some(l=>l.state==='await'&&l.next==='lf');
   /* the ladle furnace limits only when a full ladle has to wait for it while it is busy */
-  if(L&&q)return{lv:2,t:t_('Flaskehals: øseovn')};if(L)return{lv:0,t:t_('Behandler')};if(q)return{lv:1,t:t_('Venter på øsekranen')};return{lv:1,t:t_('Venter på stål')}}
+  if(L&&q)return{lv:2,t:t_('Flaskehals: øseovn')};if(L)return{lv:0,t:t_('Behandler')};if(q||carOn()&&CAR.L&&CAR.L.state==='await'&&steelIn(CAR.L))return{lv:1,t:t_('Venter på øsekranen')};
+  if(carOn()&&CAR.L&&steelIn(CAR.L))return{lv:0,t:t_('Øsevogna kommer')};return{lv:1,t:t_('Venter på stål')}}
  case'blokk':{const Lw=LADLES.find(l=>l.state==='pit');if(Lw&&PIT.state==='idle'&&S.kok.slots<1)return{lv:2,t:t_('Mangler kokiller!')};
-  if(LADLES.some(l=>l.state==='await'&&l.next==='pit'&&steelIn(l)))return{lv:2,t:t_('Flaskehals: blokkstøping')};if(Lw||PIT.state!=='idle')return{lv:0,t:PIT.state==='pour'?t_('Stigstøper'):t_('Støper')};
-  if(B_('strang')&&S.cast==='strang')return{lv:1,t:t_('Bryteren står på Streng')};if(B_('strang')&&S.cast==='auto')return{lv:1,t:t_('Auto: stålet går til strengen')};return{lv:1,t:t_('Venter på stål')}}
+  if((G.pitQ||0)>2||!carOn()&&LADLES.some(l=>l.state==='await'&&l.next==='pit'&&steelIn(l)))return{lv:2,t:t_('Flaskehals: blokkstøping')};if(Lw||PIT.state!=='idle')return{lv:0,t:PIT.state==='pour'?t_('Stigstøper'):t_('Støper')};
+  if(B_('strang')&&S.cast==='strang')return{lv:1,t:t_('Bryteren står på Streng')};if(B_('strang')&&S.cast==='auto')return{lv:1,t:t_('Auto: tar overskuddet')};return{lv:1,t:t_('Venter på stål')}}
  case'strang':{const c=LADLES.find(l=>l.state==='cast'),n=nStr(),mpm=L1(castMpm()*CAST.spd);
   /* a bottleneck only when full ladles queue while every strand already runs at full speed */
-  if(LADLES.some(l=>l.state==='await'&&l.next==='tur'&&steelIn(l))&&c&&CAST.on&&CAST.spd>.95&&CAST.nOn>=n)return{lv:2,t:t_('Flaskehals: strenger')};
+  if((G.strQ||0)>2)return{lv:2,t:t_('Flaskehals: strenger')};
   if(CAST.on||c)return{lv:0,t:CAST.on&&CAST.nOn<n?t_('{0} av {1} strenger · {2} m/min',CAST.nOn,n,mpm):t_('Støper · {0} strenger · {1} m/min',n,mpm)};
   if(S.cast==='blokk')return{lv:1,t:t_('Bryteren står på Blokk')};return{lv:1,t:t_('Venter på stål')}}
  case'salg1':case'salg2':case'utlast':return{lv:0,t:''}
@@ -968,6 +1040,9 @@ function status(id){const z=ZN[id];if(!z||!zoneBuilt(z))return null;const sn=x=>
   if(id==='stel'&&S.mix==='arm')return{lv:1,t:t_('Valseprogram: Armering')};if(id==='tc'&&B_('stel')&&S.mix==='vals')return{lv:1,t:t_('Valseprogram: Valstråd')};if(id==='gjv'&&!S.tg.strang)return{lv:1,t:t_('Emner går til salg (meny)')};
   return{lv:1,t:hand?t_('Bær {0} hit',t_(need)):t_('Venter på {0}',t_(need))}}}}
 const steelIn=l=>l.steel>.01;
+/* why the ladle car is not under the tap with an empty ladle: the line that holds its full ladle, the crane, or too few ladles */
+function carWhy(){const l=CAR.L;if(l&&l.steel>.01){if(l.state==='lf')return'øseovn';if(l.state==='await')return l.next==='tur'?'streng':l.next==='pit'?'blokkstøping':'kran';return'øsevogn'}
+ if(CAR.st==='stand'&&!l)return LADLES.some(o=>o.state==='await'&&o.next==='park'||o.state==='carried'&&o.next==='park')?'kran':'';return'øsevogn'}
 /* the ladle crane limits when ladles keep queueing for it. Once it is fully upgraded a short queue is just the rhythm of the
    shop, so then it is flagged only when it is (almost) always busy. */
 const oseLim=()=>G.oseQ>3&&(lv('osekran')<UPm.osekran.max||CRm.ose.busy>.88);
@@ -1058,7 +1133,7 @@ const packIt=it=>[it.k,Math.round(it.t*1000)/1000,Math.round((it.q||1)*1000)/100
 const packS=it=>({k:it.k,t:it.t,q:it.q,wc:it.wc?1:0,tc:it.tc?1:0,kk:it.kk|0,hot:it.hot?1:0});
 const unpackS=o=>o&&typeof o==='object'&&KNAME[o.k]&&o.k!=='slag'?Object.assign({k:o.k,kk:o.kk|0,age:0},isFinite(o.t)&&o.t>0?{t:+o.t}:{},isFinite(o.q)&&o.q>0?{q:+o.q}:{},o.wc?{wc:true}:{},o.tc?{tc:true}:{},o.hot?{hot:1}:{}):null;
 const unpackIt=a=>Array.isArray(a)&&PR[a[0]]&&a[0]!=='slag'&&isFinite(a[1])&&a[1]>0?{k:a[0],t:+a[1],q:isFinite(a[2])&&a[2]>0?+a[2]:1,wc:!!a[3],tc:!!a[4]}:null;
-function initRun(){LADLES.length=0;syncLadles();
+function initRun(){LADLES.length=0;syncLadles();Object.assign(CAR,{init:false,L:null,x:POS.tap.x,st:'tap',v:0,t:0,lift:0,busy:0});
  for(const k of PRK){PILE[k]=(Array.isArray(S.piles[k])?S.piles[k]:[]).map(unpackIt).filter(Boolean).slice(-999)}
  for(const id in NODE){const n=NODE[id];n.cur=null;n.p=0;n.inc=0;n.in=(Array.isArray(S.nodes[id])?S.nodes[id]:[]).map(unpackIt).filter(Boolean).slice(0,n.cap)}
  movers.length=0;CAST.run.length=0;CAST.bed.length=0;CAST.cut.length=0;CAST.acc.fill(0);CAST.gap=0;Object.assign(CAST,{arm:0,ang:0,a0:0,rf:1,tlev:0,flow:false,pour:false,tm:0,on:false,spd:1,u:1,nOn:8,tgt:1,v:0,pos:0,q:1,sh:30});

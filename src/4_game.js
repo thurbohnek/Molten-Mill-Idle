@@ -47,7 +47,7 @@ function update(dt){
  /* the furnace / caster desk: leaving the desk hands control back */
  if(G.ctl&&!near(P,ctlDesk(G.ctl).x,ctlDesk(G.ctl).y+STAND,70)){G.ctl=null;hudT=0}
  G.stT=(G.stT||0)+dt;if(G.stT>storeIv()){G.stT=0;for(const k in ST)if(ST[k]<storeMax())ST[k]++}
- updDRI(dt);updRJ(dt);updFurnace(dt);updParked(dt);for(const L of LADLES)updLadle(L,dt);
+ updDRI(dt);updRJ(dt);updFurnace(dt);updParked(dt);updCar(dt);for(const L of LADLES)updLadle(L,dt);
  for(const c of CRANES)updCrane(c,dt,c===cr?ix:0,c===cr?iy:0);
  updPit(dt);updCaster(dt);updEndless(dt);updFlow(dt);updP3(dt);updRates(dt);
  updVeh(VEH.bil1,dt,520);updVeh(VEH.bil2,dt,900);updVeh(VEH.tog,dt,1200);updVeh(VEH.kai,dt,1100);

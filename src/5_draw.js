@@ -121,12 +121,28 @@ function drawStore(s){if(!s.open()||!inView(s.x,s.y,100))return;const x=s.x,y=s.
  const n=ST[s.store]|0;for(let i=0;i<min(n,16);i++){const lay=floor(i/8),c=i%8,cx=x-W2/2+16+(c%4)*((W2-32)/3),cy=y-14+floor(c/4)*22-lay*5;drawItem({k:s.kind,kk:i%2},cx,cy,1.05)}
  labFix('st'+s.id,t_(({elek:'ELEKTRODER',kanal:'KANALSTEIN',hette:'HETTEPULVER'})[s.store])+' · '+n,x,y-40,9.5,C.ui)}
 /* ---- ladles on the ladle car / under the crane ---- */
-function drawLadle(L){if(!inView(L.x,L.y,60))return;const f=L.sm>0?clamp(L.steel/L.sm,0,1):0,car=L.state==='park'||L.state==='filling'||(L.state==='await'&&hyp(L.x-POS.tap.x,L.y-POS.tap.y)<30);
+function drawLadle(L){if(!inView(L.x,L.y,60))return;const f=L.sm>0?clamp(L.steel/L.sm,0,1):0,car=!carOn()&&(L.state==='park'||L.state==='filling'||(L.state==='await'&&hyp(L.x-POS.tap.x,L.y-POS.tap.y)<30));
  if(car)SK.car(g,L.x,L.y,66,52);
  const sc=L.state==='carried'?1.12:1;SK.ladle(g,L.x,L.y,26*sc,T,{fill:L.steel>.01?max(.15,f):0,eye:L.state==='lf'||L.state==='cast',rot:L.arm!=null&&L.state!=='carried'?armA(L.arm)-PI/2:0});
  if(L.steel>.05&&L.state!=='filling'){const t=tf(L.steel)+' t';ctx.font=`800 11px ${FONT}`;const w=ctx.measureText(t).width+8;LBL.push({k:'L'+L.i,x:L.x-w/2,y:L.y-50,w,h:16,pr:0,f:(lx,ly)=>txt(t,lx+w/2,ly+8,11,C.moltenhi,800,'center',3)})}}
+/* ---- the ladle car: a low rail car with a hydraulic table, four wheels on the 40 px gauge, a cable reel and a beacon ---- */
+function drawLadleCar(){if(!carOn())return;const x=CAR.x,y=POS.tap.y,mv=Math.abs(CAR.v)>4,rot=CAR.rot/7,on=mv&&(RM||Math.sin(T*14)>0);
+ /* warning lights at the walkway crossing flash while the car moves */
+ if(inView(POS.rail.w1,y,60))for(const wy of[y-36,y+36]){const wx=POS.rail.w1+6;g.fillStyle='#22252b';SK.circ(g,wx,wy,5);g.fill();g.fillStyle=on?'#ff4a2a':'#5a2018';SK.circ(g,wx,wy,3.2);g.fill()}
+ if(!inView(x,y,90))return;
+ /* trailing cable from the reel to the feed point at the west end of the track */
+ g.strokeStyle='#0d0e10';g.lineWidth=2.4;g.beginPath();g.moveTo(POS.rail.x0+12,y+18);g.lineTo(x-38,y+18);g.stroke();
+ SK.shadow(g,x+3,y+5,46,24,.35);
+ /* four wheels on the rails (gauge 40), with a spoke mark that turns as the car rolls */
+ for(const[a,b]of[[-1,-1],[1,-1],[-1,1],[1,1]]){const wx=x+a*31,wy=y+b*20;g.fillStyle='#0f1013';SK.rr(g,wx-8,wy-4.5,16,9,2);g.fill();const c=Math.cos(rot);g.strokeStyle='#9aa3ae';g.lineWidth=1.6;g.beginPath();g.moveTo(wx-6*c,wy-3);g.lineTo(wx-6*c,wy+3);g.stroke()}
+ SK.box(g,x-42,y-17,84,34,'#4a515c','#1b1e22',4);SK.hazardBar(g,x-42,y-17,9,34);SK.hazardBar(g,x+33,y-17,9,34);
+ /* the hydraulic table that carries the ladle (it rises under the stand to lift an empty ladle) */
+ const lift=CAR.lift||0;g.fillStyle='#2a2e34';SK.circ(g,x,y,22);g.fill();g.strokeStyle=mix('#5d6570','#c9a24a',lift);g.lineWidth=3;SK.circ(g,x,y,19+2*lift);g.stroke();
+ /* cable reel on the west end, beacon on the east end (flashes while the car moves) */
+ g.fillStyle='#22252b';SK.circ(g,x-37,y+10,5.5);g.fill();g.strokeStyle='#e0a83a';g.lineWidth=1.4;SK.circ(g,x-37,y+10,3.6);g.stroke();
+ g.fillStyle=on?'#ffb020':'#6a4a12';SK.circ(g,x+37,y-10,3.6);g.fill();if(on&&!RM){g.fillStyle='rgba(255,176,32,.25)';SK.circ(g,x+37,y-10,8);g.fill()}}
 function drawLF(){if(!B_('lf')||!inView(POS.lf.x,POS.lf.y,200))return;const cx=POS.lf.x,cy=POS.lf.y,L=LADLES.find(l=>l.state==='lf'),R=44;
- SK.rail(g,cx-70,cx+70,cy,40);
+ if(!carOn())SK.rail(g,cx-70,cx+70,cy,40);
  /* alloy bins → weigh hopper → chute into the roof */
  const bins=['#8a8f99','#c9ced6','#6f747c','#2b2b2e','#dfe3e8','#b8b0a0'];const nb=2+min(4,floor(lv('lfq')/3));for(let i=0;i<nb;i++)SK.box(g,cx-70+i*24,POS.bins.y-26,20,20,bins[i],'rgba(0,0,0,.5)',2);
  SK.box(g,cx-12,POS.bins.y+6,24,14,'#3b4048','#17191c',2);SK.pipe(g,[[cx,POS.bins.y+20],[cx,cy-R*.62-10],[cx-8,cy-R*.62]],5,'#8a8f96',T);
@@ -137,7 +153,7 @@ function drawLF(){if(!B_('lf')||!inView(POS.lf.x,POS.lf.y,200))return;const cx=P
  if(L){const fl=RM?.7:.5+.5*Math.abs(Math.sin(T*17));const gr=g.createRadialGradient(cx,cy,0,cx,cy,R*.4);gr.addColorStop(0,`rgba(240,244,255,${.6+.35*fl})`);gr.addColorStop(.6,'rgba(255,140,40,.3)');gr.addColorStop(1,'rgba(255,120,30,0)');g.fillStyle=gr;SK.circ(g,cx,cy,R*.42);g.fill()}
  const E=[[cx-R*.15,cy],[cx+R*.08,cy-R*.13],[cx+R*.08,cy+R*.13]];E.forEach(e=>{g.fillStyle='#c27a3e';SK.circ(g,e[0],e[1],4.6);g.fill();g.fillStyle='#1d1e22';SK.circ(g,e[0],e[1],3.4);g.fill()});
  /* wire feeder spools */
- for(let i=0;i<2;i++){const x=cx+R+22,y=cy-18+i*36;g.fillStyle='#2a2d33';SK.circ(g,x,y,11);g.fill();g.strokeStyle='#8b939e';g.lineWidth=1;for(let k=1;k<3;k++){SK.circ(g,x,y,k*4);g.stroke()}const a=RM?0:T*(L?3:0)+i;SK.line(g,x,y,x+Math.cos(a)*10,y+Math.sin(a)*10,'#f5c518',1.5)}}
+ for(let i=0;i<2;i++){const x=cx+R+14+i*26,y=cy-R-8;g.fillStyle='#2a2d33';SK.circ(g,x,y,11);g.fill();g.strokeStyle='#8b939e';g.lineWidth=1;for(let k=1;k<3;k++){SK.circ(g,x,y,k*4);g.stroke()}const a=RM?0:T*(L?3:0)+i;SK.line(g,x,y,x+Math.cos(a)*10,y+Math.sin(a)*10,'#f5c518',1.5)}}
 /* ---- blokkstøping: bottom plate with up to 12 moulds around the trumpet, runners under the plate ---- */
 const MOULD=[];{const xs=[-88,-50,50,88],ys=[-52,0,52];for(const y of ys)for(const x of xs)MOULD.push([x,y])}MOULD.sort((a,b)=>hyp(a[0],a[1])-hyp(b[0],b[1]));
 function drawPit(){const p=POS.pit;if(!inView(p.x,p.y,200))return;const PW_=240,PH=168,x0=p.x-PW_/2,y0=p.y-PH/2;
@@ -540,7 +556,7 @@ function drawDesks(){const au=AUTO();
  for(const r in POSTS){const p=postOf(r);if(!(lv(HIRE[r].id)||au&&r!=='rj')||!stOn(r==='rj'?'rj':r)||!inView(p.x,p.y,80))continue;const at=helpers.filter(h=>h.r===r&&!h.agv&&h.state==='post'&&!inCab(h));
   if(!(au&&CRPOST[r]))desk(p.x,p.y,t_(au?(r==='skrap'?'KRANPULT':'PULT'):postCrane(r)&&helpers.some(h=>h.r===r&&inCab(h))?'KRANFØRER':'OPERATØR'),at.length>0||(au&&r==='skrap'&&G.crane==='skrap'),au&&r==='skrap'&&G.crane==='skrap'?1:null,seatsAt(r));
   }
- if(lv('operator')&&stOn('ovn')){const k=F.state==='tapping'?1:F.state==='ready'&&tapLadle()?clamp((F.opT||0)/.8,0,1):0;desk(TAPDESK.x,TAPDESK.y,t_('TAPPER'),F.state==='ready'||F.state==='tapping',k)}}
+ if(lv('operator')&&stOn('ovn')){const k=F.state==='tapping'?1:F.state==='ready'&&tapLadle()?clamp((F.opT||0)/tapReact(),0,1):0;desk(TAPDESK.x,TAPDESK.y,t_('TAPPER'),F.state==='ready'||F.state==='tapping',k)}}
 function drawSwitches(){for(const s of SW){if(!s.on()||!inView(s.x,s.y,60))continue;LOBS.push({x:s.x-38,y:s.y-24,w:76,h:44});const t=s.id==='drimix'?Math.round(S.drimix*100)+' %':t_(s.id==='pgrade'?(S.pgrade==='bf'?'sw§Masovn':'sw§DR-grad'):s.id==='cast'?CASTN[S.cast]:s.id==='rjsw'?(S.tg.rj?'Stålverk':'Salg'):MIXN[S.mix]);
  ctx.fillStyle='rgba(0,0,0,.35)';rr(s.x-36,s.y-20,74,44,10);ctx.fill();ctx.fillStyle='#173826';rr(s.x-38,s.y-24,76,44,10);ctx.fill();ctx.strokeStyle=C.good;ctx.lineWidth=2.5;rr(s.x-38,s.y-24,76,44,10);ctx.stroke();
  txt(t_(s.lab).toUpperCase(),s.x,s.y-12,8,C.uidim,800);txt(t,s.x,s.y+5,12,C.good,800)}}
@@ -780,7 +796,7 @@ function draw(){
  if(inView(POS.truck1.x,POS.truck1.y,300))drawTruckV(POS.truck1.x,POS.truck1.y,VEH.bil1);if(B_('stel')&&inView(POS.truck2.x+200,POS.truck2.y,400))drawTruckH(POS.truck2.x,POS.truck2.y,VEH.bil2);
  drawTrain();drawShip();
  drawHMStation();drawTRob();drawFurnace();drawBucketFlight();drawHMPour();
- for(const L of LADLES)if(L.state!=='lf'&&L.state!=='carried')drawLadle(L);drawShroud();
+ drawLadleCar();for(const L of LADLES)if(L.state!=='lf'&&L.state!=='carried')drawLadle(L);drawShroud();
  drawLF();
  drawDesks();
  const ents=[[P,C.vest,C.helmet,capCarry()]];for(const h of helpers)if(inView(h.x,h.y,60)&&!inCab(h))ents.push([h,ROUTES[h.r].col,'#f8f6ee',0,h.agv?1:seated(h)?2:0]);/* the MAX marker is for the player only */
@@ -796,7 +812,7 @@ function draw(){
  ctx.globalCompositeOperation='lighter';
  {const heatK=F.state==='melt'?.15+.6*min(1,F.bath/fcap()):1;glowC(F.x,F.y,170*F.flick,C.molten,.22*heatK);
   if(F.arc>0&&isEAF()&&inView(F.x,F.y,120)&&!F.roof){glowC(F.x,F.y,60,C.arc,.2*F.arc*F.flick)}
-  if(F.state==='tapping'&&F.tapT>.6&&F.L&&inView(F.x,F.y,240)){const D=tapDur(),w=F.tapT<.9?(F.tapT-.6)/.3:F.tapT>D-.7?max(0,(D-.4-F.tapT)/.3):1;glowC(F.L.x,F.L.y,110,C.molten,.4*w);{const sp=ET()==='conv'?convMouth():ET()==='sm'?[F.x+100,F.y]:[F.x+86,F.y];stream(sp[0],sp[1],F.L.x,F.L.y-6,max(0,w))}}}
+  if(F.state==='tapping'&&F.L&&inView(F.x,F.y,240)&&F.tapT>tapA(tapDur())){const D=tapDur(),a=tapA(D),r=a*.5,w=F.tapT<a+r?(F.tapT-a)/r:F.tapT>D-a*7/6?max(0,(D-a*2/3-F.tapT)/r):1;glowC(F.L.x,F.L.y,110,C.molten,.4*w);{const sp=ET()==='conv'?convMouth():ET()==='sm'?[F.x+100,F.y]:[F.x+86,F.y];stream(sp[0],sp[1],F.L.x,F.L.y-6,max(0,w))}}}
  for(const L of LADLES)if(L.steel>0)glowC(L.x,L.y,90,C.molten,(L.state==='lf'?.1:.26)*(L.steel/max(1,L.sm))+.05);
  if(inView(POS.pit.x,POS.pit.y,200)){const st=PIT.state;if(st==='pour'){const L=PIT.L;if(L){const w=PIT.fill<.08?PIT.fill/.08:PIT.fill>.94?(1-PIT.fill)/.06:1;stream(L.x,L.y+12,POS.pit.x,POS.pit.y-4,w)}glowC(POS.pit.x,POS.pit.y,160,C.molten,.35)}else if(st==='solid'||st==='strip'){glowC(POS.pit.x,POS.pit.y,140,C.molten,.2)}}
  if(B_('strang')&&inView(1500,830,260)){const k=CAST.tlev;if(k>.02)glowC(1450,830,150,C.molten,.14*k);if(CAST.pour)glowC(PBX,TUR.y,46,C.molten,.32);if(CAST.flow)glowC(1520,830,110,C.molten,.08)}

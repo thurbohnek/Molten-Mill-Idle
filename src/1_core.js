@@ -83,6 +83,8 @@ const POS={
  F:{x:800,y:600},tap:{x:990,y:600},tapPad:{x:990,y:448},park:[{x:990,y:704},{x:990,y:800}],
  pot:{x:800,y:812},rack:{x:648,y:812},slagp:{x:690,y:1036},elek:{x:870,y:1046},valve:{x:880,y:236},
  lf:{x:1180,y:600},bins:{x:1180,y:420},
+ /* ladle car (from the ladle furnace on): rails along y 600 from under the tap past the ladle furnace to the empty-ladle stand */
+ stand:{x:1262,y:600},rail:{x0:954,x1:1296,w0:1024,w1:1112},/* w0…w1: the pedestrian crossing over the track */
  pit:{x:1535,y:300},pitL:{x:1535,y:214},koklag:{x:1400,y:104},kokv:{x:1724,y:104},plate:{x:1366,y:300},kanal:{x:1528,y:108},hette:{x:1630,y:108},
  tur:[{x:1385,y:770},{x:1385,y:930}],strang:{x:1440,y:690},bed:{x:1705,y:830},
  bil1:{x:1898,y:452},truck1:{x:1898,y:690},
@@ -206,9 +208,11 @@ const UP=[
  {id:'power',st:'ovn',n:()=>['Sterkere blåsemaskin','Sterkere brennere','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt','Mer effekt','Kraftigere O₂-lanse'][era()],max:20,base:160,m:1.5},
  {id:'refine',st:'ovn',n:()=>ET()==='sm'?'Raskere raffinering':'Raskere tapping',max:8,base:300,m:1.9},
  {id:'operator',st:'ovn',n:'Tapper',max:1,costs:[1500],person:1},
- {id:'ladle',st:'ovn',n:'Ekstra øse',max:2,costs:[450,2.5e4]},
+ {id:'ladle',st:'ovn',n:'Ekstra øse',max:4,costs:[450,2.5e4,1.5e6,1.5e7]},
  {id:'slagcap',st:'ovn',n:'Større slaggpotte',max:10,base:1500,m:1.7,req:()=>slagOn()},
  {id:'slaggbil',st:'ovn',n:'Slaggbil',max:1,costs:[6e4],req:()=>slagOn()},
+ /* v7.6: automated tapping for the conveyor-fed furnace and the restarted converter – shorter tapping and tilting */
+ {id:'tapauto',st:'ovn',n:'Tappeautomatikk',max:8,base:2e8,m:1.7,req:()=>CS()||era()===7},
  {id:'kalk',st:'sup',n:'Kalk og dolo',max:23,base:60,m:1.5,sup:1,req:()=>E_().req.indexOf('kalk')>=0||lv('kalk')>0},
  {id:'o2',st:'sup',n:'Oksygenanlegg',max:21,base:500,m:1.5,sup:1,req:()=>E_().req.indexOf('o2')>=0||lv('o2')>0},
  {id:'lans',st:'sup',n:()=>lv('lans')?'Veggmonterte injektorer':'Dørlansemanipulator',max:2,costs:[2e4,6e5],req:()=>isEAF()&&lv('o2')>0&&(lv('lans')<1||era()>=4)},
@@ -233,7 +237,7 @@ const UP=[
  {id:'kanal',st:'blokk',n:'Kanalsteinlager',max:1,costs:[350]},
  {id:'hette',st:'blokk',n:'Varmholdsmasse',max:1,costs:[1500]},
  {id:'strands',st:'strang',n:'Flere strenger',max:7,costs:[2.5e4,8e4,2.5e5,7e5,2e6,5e6,1.2e7]},
- {id:'caster',st:'strang',n:'Støpefart',max:22,base:1.5e4,m:1.5},
+ {id:'caster',st:'strang',n:'Støpefart',max:13,base:1.5e4,m:1.5},
  {id:'torch',st:'strang',n:'Skjærebrenner',max:1,costs:[2e5]},
  {id:'turret',st:'strang',n:'Øsetårn (sekvens)',max:1,costs:[1e5]},
  {id:'truck',st:'salg1',n:'Salgsavtale',max:30,base:200,m:1.5},
@@ -282,6 +286,8 @@ const UP=[
  {id:'etorpn',st:'esf',n:'Ekstra torpedovogn',max:3,costs:[1e9,4e9,1.5e10]}];
 const UPm=Object.fromEntries(UP.map(u=>[u.id,u]));
 UP.forEach(u=>{if(u.costs)u.max=u.costs.length});
+/* the 4th and 5th ladle come with the automated melt shop (the ladle car and both casting lines need them) */
+Object.defineProperty(UPm.ladle,'max',{get:()=>{try{return AUTO()?4:2}catch(e){return 4/* while a save loads */}}});
 const HIRE={
  rj:{id:'h_rj',n:'Malmhjelper',costs:[70,900,9000],col:'#ff9a6a'},
  skrap:{id:'h_skrap',n:'Skraphjelper',op:'Kranfører',costs:[90,900,9000],col:'#ffd23f',req:()=>scrapUse()},
@@ -302,7 +308,7 @@ const UPROW={
  rjsup:{s:R_(-196,250,3,78),lw:74},
  skrap:{s:[...R_(296,414,3,78),...R_(296,506,3,78),[382,930]],lw:74},
  sup:{s:[[612,250],[690,250],[768,250],[934,250],[1010,250]],lw:72},
- ovn:{s:[[600,413],[600,504],[682,930],[838,930],[916,930],[994,930],[676,413]],lw:74},
+ ovn:{s:[[600,413],[600,504],[682,930],[838,930],[916,930],[994,930],[676,413],[760,930]],lw:74},
  lf:{s:R_(1102,880,3,78),lw:74},
  blokk:{s:R_(1418,484,6,66),lw:62},
  strang:{s:R_(1346,1056,4,78),lw:74},
@@ -453,6 +459,12 @@ const chgCap=()=>{const e=E_().ch;return e==='conv'?max(2*SCRAP_T,Math.ceil(scra
 const boxIv=()=>2.4/(1+.2*lv('charge'));
 const beltRate=()=>3*Math.pow(1.2,lv('charge'));
 const refineT=()=>E_().ref*Math.pow(.86,lv('refine'));
+/* tap automation (conveyor-fed furnace, restarted converter): tap-hole filling, tilt control and the sampling robot shorten the
+   tapping itself and the converter's charging tilt */
+const tapK=()=>CS()||era()===7?Math.pow(.85,lv('tapauto')):1;
+/* how long a ready furnace waits before it is tapped: the tapper (.8 s), control-room operators in the automated eras, or the
+   player at the furnace desk */
+const tapReact=()=>G.ctl==='furnace'?.2:AUTO()?.8/(1+opN('ovn')):.8;
 /* råjernsverk */
 const ORE_T=4,PIG_T=3;
 const feY=()=>[.5,.58,.64][lv('sinter')];                       /* tonnes iron per tonne ore: raw concentrate → sinter → pellets */
@@ -474,11 +486,13 @@ const IT=()=>2*(1+.25*lv('kokbig')),RUNNER=.06;               /* ingot tonnes; s
 const slotsMax=()=>6+lv('kokup');
 const pitTimes=()=>({pour:2.8,solid:2.8/(1+.25*lv('solid')),strip:1.4});
 const crop=h=>h?.04:.12;                    /* pipe crop on ingots; hot-top powder reduces it */
-const kcraneIv=()=>4.5/(1+.28*lv('kran2'))/(1+.5*opN('blokk'));
+/* in the automated eras the mould handling is automated: faster, and the block operators speed it up a little more */
+const kcraneIv=()=>4.5/(1+.28*lv('kran2'))/(AUTO()?2.75+.2*opN('blokk'):1+.5*opN('blokk'));
 const coolT=()=>6;
-const lfTime=()=>5/(1+.2*lv('lft'));
+/* (from the automated melt shop on the ladle furnace is a newer, stronger one) */
+const lfTime=()=>5/(1+(AUTO()?.25:.2)*lv('lft'));
 const qLF=()=>B_('lf')?1.08+.03*lv('lfq'):1;
-const oseSpd=()=>230*(1+.25*lv('osekran'));
+const oseSpd=()=>230*(1+.25*lv('osekran')),oseHt=()=>AUTO()?.35/(1+.1*lv('osekran')):.35;/* the automated shop's ladle crane also hoists faster per upgrade */
 const nStr=()=>1+lv('strands');
 /* the player at the caster desk pushes the casting speed: +15 % */
 const strandRate=()=>.6*Math.pow(1.11,lv('caster'))*(G.ctl==='caster'?1.15:1)*hssK();
@@ -547,7 +561,7 @@ function upCost(u){const l=lv(u.id);if(u.costs)return u.costs[min(l,u.costs.leng
 const helpersHired=()=>Object.values(HIRE).some(h=>lv(h.id)>0);
 const upRaw=u=>typeof u.n==='function'?u.n():u.n;
 /* pad title: long compounds get soft hyphens so they can wrap inside the compact label */
-const PN={elyz:'Elektro\u00ADlysører',pellet:'Pellet\u00ADtilførsel',etorp:'Større torpedo\u00ADvogner',etorpn:'Ekstra torpedo\u00ADvogn',esfmw:'Mer effekt (MW)',yard:'Skrap\u00ADtilførsel',forvarm:'Kurv\u00ADforvarming',elekkran:'Elektrode\u00ADkran',o2:'Oksygen\u00ADanlegg',kull:'Kull\u00ADinjeksjon',malmtog:'Malm\u00ADtilførsel',
+const PN={tapauto:'Tappe\u00ADautomatikk',elyz:'Elektro\u00ADlysører',pellet:'Pellet\u00ADtilførsel',etorp:'Større torpedo\u00ADvogner',etorpn:'Ekstra torpedo\u00ADvogn',esfmw:'Mer effekt (MW)',yard:'Skrap\u00ADtilførsel',forvarm:'Kurv\u00ADforvarming',elekkran:'Elektrode\u00ADkran',o2:'Oksygen\u00ADanlegg',kull:'Kull\u00ADinjeksjon',malmtog:'Malm\u00ADtilførsel',
  kanal:'Kanalstein\u00ADlager',hette:'Varmholds\u00ADmasse',torch:'Skjære\u00ADbrenner',varm:'Varm\u00ADinnsetting',hcap:'Hjelper\u00ADkapasitet',gjvup:'Ovns\u00ADkapasitet',
  splitt:'Splitt\u00ADvalsing',stelup:'Finverks\u00ADfart',ktrans:'Kveile\u00ADtransport',hspeed:'Hjelper\u00ADfart',slagcap:'Større slagg\u00ADpotte',kokup:'Flere kokiller',
  operator:'Tapper',sort:'Skrap\u00ADsortering',tdheat:'Fordeler\u00ADvarme',hss:'Hurtig\u00ADstreng',insp:'Inspeksjons\u00ADbue',loop:'Sløyfe\u00ADbuffer',slagmill:'Slagg til sement',dheat:'Fjern\u00ADvarme',twin:'Digital tvilling'};
@@ -566,7 +580,7 @@ function upSub(u){const l=lv(u.id),nx=l+1,ar=(a,b,un)=>a+' → '+b+(un?' '+un:''
  case'charge':return era()===1?ar(nBox(),nBox()+1,t_('kasser')):CS()?fa(20):ET()==='conv'?t_('+{0} % kasse',15):t_('+{0} % kurv',6);
  case'furnace':return ar(fcap(),Math.round(E_().cap*(1+.18*nx)),'t');
  case'power':return ET()==='conv'?ar(L1(blowT()),L1(E_().blow/(1+.15*nx)),t_('s blåsing')):ar(Math.round(MW()),Math.round(E_().P*(1+.15*nx)),t_(E_().pu));
- case'refine':return t_('−{0} % tid',14);case'operator':return t_('Tapper ovnen for deg');
+ case'refine':return t_('−{0} % tid',14);case'tapauto':return t_('−{0} % tid',15);case'operator':return t_('Tapper ovnen for deg');
  case'ladle':return ar(1+l,2+l,t_('øser'));case'slagcap':return ar(potMax(),potMax()+2);
  case'slaggbil':return t_('Tømmer selv');case'elekkran':return t_('Fyller selv');
  case'kalk':case'o2':case'kull':return l?ka(24):t_('Bygg anlegget');

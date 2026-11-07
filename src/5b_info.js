@@ -14,8 +14,9 @@ const IX={
   furnace:['Større ovn eller konverter: mer stål per charge. Den trenger også mer skrap, råjern og forsyning.','A bigger furnace or converter: more steel per heat. It also needs more scrap, hot metal and supplies.'],
   power:['Raskere smelting eller blåsing: sterkere blåsemaskin (Bessemer), sterkere brennere (SM-ovn), kraftigere O₂-lanse (LD) eller mer transformatoreffekt (lysbueovn).','Faster melting or blowing: a stronger blowing engine (Bessemer), stronger burners (open hearth), a stronger O₂ lance (LD) or more transformer power (arc furnace).'],
   refine:['Kortere tid fra smeltet bad til stål som er klart til tapping: prøvetaking, temperatur og analyse går raskere.','Less time from a melted bath to steel that is ready to tap: sampling, temperature and analysis go faster.'],
+  tapauto:['Automatisk tapping: tappehullet fylles med sand av en robot, tippingen styres automatisk og øsevogna står klar. Hvert nivå gjør selve tappingen (og konverterens tipping ved chargering) kortere, så ovnen står mindre uten strøm.','Automated tapping: a robot fills the tap hole with sand, the tilting is controlled automatically and the ladle car stands ready. Each level makes the tap itself (and the converter’s charging tilt) shorter, so the furnace spends less time with the power off.'],
   operator:['En tapper ved pulten ved TAPP. Han tapper hver charge for deg, så du slipper å gå dit.','A furnace tapper at the desk next to TAP. He taps every heat for you, so you don’t have to walk there.'],
-  ladle:['En øse til i omløp. Mens én øse støpes eller behandles, kan neste stå klar under tappen.','One more ladle in circulation. While one ladle is casting or being treated, the next can wait under the tap.'],
+  ladle:['En øse til i omløp. Mens én øse støpes, behandles eller står i blokkstøpingen, kan neste stå klar på øsevogna under tappen.','One more ladle in circulation. While one ladle is casting, being treated or standing at the ingot pit, the next can wait on the ladle car under the tap.'],
   slagcap:['Slaggpotta rommer mer før den må tømmes. Full potte stopper ovnen. En større potte gir også litt mer betalt for slagget.','The slag pot holds more before it must be emptied. A full pot stops the furnace. A bigger pot also earns a little more for the slag.'],
   slaggbil:['En slaggbil henter den fulle slaggpotta og tømmer den på slaggplassen av seg selv. Slagget selges som pukk.','A slag pot carrier picks up the full pot and empties it at the slag yard by itself. The slag is sold as aggregate.'],
   kalk:['Brent kalk og dolomitt danner slagget som tar opp fosfor og svovel og beskytter ovnsforingen. Ovnen kan ikke smelte raskere enn kalkanlegget leverer.','Burnt lime and dolomite form the slag that takes up phosphorus and sulphur and protects the furnace lining. The furnace can’t melt faster than the lime plant delivers.'],
@@ -33,8 +34,8 @@ const IX={
   cowper:['Cowpere (varmeapparater) varmer blåseluften til over 1000 °C før den blåses inn i masovnen. Varmere blåst gir mer råjern.','Hot stoves (cowpers) heat the blast air to over 1000 °C before it is blown into the blast furnace. Hotter blast gives more iron.'],
   sinter:['Sinterverk, og senere pelletverk, gjør finmalt malm om til porøse klumper. Masovnen går jevnere og får mer jern ut av hvert tonn malm.','A sinter plant, and later a pellet plant, turns fine ore into porous lumps. The furnace runs smoother and gets more iron out of every tonne of ore.'],
   lfq:['Bedre legering og temperaturstyring i øseovnen: høyere kvalitet og høyere pris på alt stål som går gjennom den.','Better alloying and temperature control in the ladle furnace: higher quality and a higher price for all steel that goes through it.'],
-  lft:['Kortere behandlingstid i øseovnen.','Shorter treatment time in the ladle furnace.'],
-  osekran:['En raskere øsekran flytter øsene mellom tappen, øseovnen og støpingen.','A faster ladle crane moves the ladles between the tap, the ladle furnace and casting.'],
+  lft:['Kortere behandlingstid i øseovnen, og øsevogna kjører litt raskere.','Shorter treatment time in the ladle furnace, and the ladle car runs a little faster.'],
+  osekran:['En raskere øsekran (som også heiser raskere) løfter øsene fra øseovnen til støpingen og bringer de tomme tilbake.','A faster ladle crane (that also hoists faster) lifts the ladles from the ladle furnace to casting and brings the empty ones back.'],
   kokup:['Flere kokiller (støpeformer) på bunnplata, så en hel øse kan støpes på én gang.','More moulds on the bottom plate, so a full ladle can be cast in one go.'],
   kokbig:['Større kokiller: hver støpeblokk blir tyngre.','Bigger moulds: every ingot is heavier.'],
   solid:['Blokkene størkner raskere i kokillene, så bunnplata blir ledig tidligere.','The ingots solidify faster in the moulds, so the bottom plate is free sooner.'],
@@ -180,6 +181,7 @@ const IX={
   rst:['Start igjen','Et nedlagt anlegg kan startes igjen når en senere ovn trenger det. LD-konverteren med torpedovognene kommer tilbake med den elektriske smelteovnen.','Restart','A mothballed plant can be restarted when a later furnace needs it. The LD converter with its torpedo cars returns with the electric smelting furnace.'],
   torp:['Torpedovogn','Isolert jernbanevogn som frakter rundt 1450 °C varmt råjern fra masovnen til stålverket.','Torpedo car','An insulated rail car that carries hot metal at about 1450 °C from the blast furnace to the melt shop.'],
   ladle:['Støpeøse','Stålkappe med ildfast foring. Den tar imot stålet fra ovnen, og kranen bærer den til øseovnen og støpingen.','Ladle','A steel shell with a refractory lining. It takes the steel from the furnace, and the crane carries it to the ladle furnace and to casting.'],
+  lcar:['Øsevogn','Øsevogna ruller øsa på skinner fra tappestedet under ovnen til øseovnen, der stålet behandles mens øsa står på vogna. Øsekranen løfter den ferdige øsa til støpingen og setter den tomme på øsestolen, der vogna henter den og kjører den tilbake under tappen.','Ladle car','The ladle car rolls the ladle on rails from the tap under the furnace to the ladle furnace, where the steel is treated with the ladle still on the car. The ladle crane lifts the treated ladle on to casting and sets the empty one on the ladle stand, where the car picks it up and takes it back under the tap.'],
   hmL:['Råjernsøse','Torpedovogna heller råjernet i denne øsa, som så chargerer det i ovnen.','Hot-metal ladle','The torpedo car pours its iron into this ladle, which then charges it into the furnace.'],
   pigm:['Masseljernsmaskin','En kjede av små former. Råjern som ikke går til stålverket, støpes her til masseljern.','Pig casting machine','A chain of small moulds. Hot metal that doesn’t go to the melt shop is cast into pig iron here.'],
   train:['Malmtog','Malmtoget tipper jernmalm i malmlageret.','Ore train','The ore train tips iron ore into the ore yard.'],
@@ -352,7 +354,12 @@ function hitInfo(wx,wy){
   for(const z of TG){if(z.id==='skip'||!z.open())continue;cand(z.id==='drop'?'drop':'ring',z.id,z,z.x,z.y,max(44,z.r))}
   for(const s of SRC){if(!s.open())continue;cand(s.pile?'pile':'src',s.id,s,s.x,s.y,s.r)}
   if(best)return best}
+ /* the ladle car (and the ladle riding on it); under the ladle-furnace roof the furnace's own bubble comes first */
+ const lcar={type:'lcar',key:'lcar',x:CAR.x,y:POS.tap.y},lfRoof=carOn()&&hyp(wx-POS.lf.x,wy-POS.lf.y)<44;
+ if(carOn()&&!lfRoof&&inR(wx,wy,CAR.x-44,POS.tap.y-28,88,56))return lcar;
  for(const L of LADLES){if(hyp(wx-L.x,wy-L.y)<34)return{type:'ladle',key:'ladle:'+L.i,L,x:L.x,y:L.y}}
+ if(lfRoof)return{type:'zone',key:'zone:lf',z:ZN.lf,x:POS.lf.x,y:POS.lf.y};
+ if(carOn()&&inR(wx,wy,POS.rail.x0,POS.tap.y-30,POS.rail.x1-POS.rail.x0,60))return lcar;
  for(const t of TORPS){if(rjClosed()&&era()!==7)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;
   if(Math.abs(wx-t.x)<70&&Math.abs(wy-y)<26)return{type:'torp',key:'torp:'+t.i,t,x:t.x,y}}
  for(const c of CRANES){if(c.built()&&hyp(wx-c.x,wy-c.y)<30)return{type:'crane',key:'crane:'+c.id,c,x:c.x,y:c.y}}
@@ -399,6 +406,9 @@ function hitInfo(wx,wy){
  for(const z of ZONES){if(zoneShown(z)&&inZone(z,wx,wy))return{type:'zone',key:'zone:'+z.id,z,x:wx,y:wy}}
  return null}
 /* ---- the bubble's content: title, 1–3 sentences, and a line of live numbers ---- */
+function carNums(){const C=CAR,L=C.L,full=L&&L.steel>.05;
+ const st=C.st==='tap'?(L&&L.state==='filling'?'Under tappen – fylles':L?'Under tappen – klar':'Under tappen'):C.st==='toLF'?'Kjører til øseovnen':C.st==='lf'?(L&&L.state==='lf'?'I øseovnen':'Venter på øsekranen'):C.st==='toStand'?'Kjører til øsestolen':C.st==='stand'?'Henter tom øse':'Kjører tom øse til tappen';
+ return t_(st)+(full?' · '+tf(L.steel)+' t':'')+' · '+t_('{0} % i bruk',Math.round((C.busy||0)*100))}
 function upNums(u){const l=lv(u.id),mx=l>=u.max,lvT=u.person?t_('Hjelpere {0} av {1}',l,u.max):t_('Nivå {0}/{1}',l,u.max);
  if(mx)return lvT+' · '+t_('MAKS');if(!upOpen(u))return lvT+' · '+t_('låst');const paid=S.paid['u:'+u.id]||0;return lvT+' · '+t_('neste: {0}',upSub(u))+' · '+kr(Math.ceil(upCost(u)-paid))}
 function furnNums(){const E=E_(),st=status('ovn');return Math.round(F.temp)+' °C · '+tf(F.bath)+'/'+fcap()+' t'+(E.type==='conv'?' · '+tf(blowT())+' s':' · '+Math.round(MW())+' '+t_(E.pu))+(st&&st.t?' · '+st.t:'')}
@@ -426,7 +436,8 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
   if(s.yard)n=tf(yardT(s))+'/'+(s.id==='ore'?oreYardCap():yardCap())+' t';else if(s.store)n=t_('{0} på lager',ST[s.store]|0);else if(s.id==='kokv')n=t_('{0} varme',S.kok.hot);else if(s.id==='pot')n=S.pot+'/'+potMax()+(lv('slaggbil')?' · '+t_('Slaggbil'):'');
   return{t:ti,d:tx,n}}
  case'pile':{const k=h.o.pile,a=PILE[k],top=a.length?a[a.length-1]:{k,t:1,q:qLF()},pr=val(top)*BASEP()*gm()/max(.001,top.t);return{t:t_(PR[k].n),d:ixs(IX.kind[k]),n:a.length+' '+t_('stk')+' · '+kr(pr,'/t')+(lv('pass')&&AUTO()?' · '+t_('CO₂ {0} t/t · grønn pris ×{1}',dsep(co2t().toFixed(2)),dsep(greenK().toFixed(2))):'')}}
- case'ladle':{const L=h.L,[ti,tx]=ix4(IX.misc.ladle),stx={park:'venter',filling:'fylles',await:'venter på kranen',carried:'løftes',lf:'i øseovnen',pit:'blokkstøping',tur:'på øsetårnet',cast:'støper'}[L.state]||'';
+ case'lcar':{const[ti,tx]=ix4(IX.misc.lcar);return{t:ti,d:tx,n:carNums()}}
+ case'ladle':{const L=h.L,[ti,tx]=ix4(IX.misc.ladle),stx={park:carOn()&&!onCar(L)?'på øsestolen':'venter',filling:'fylles',await:'venter på kranen',carried:'løftes',lf:'i øseovnen',pit:'blokkstøping',tur:'på øsetårnet',cast:'støper',car:'på øsevogna'}[L.state]||'';
   return{t:ti,d:tx,n:(L.steel>.05?tf(L.steel)+' t · ':'')+t_(stx)+(L.q>1.001?' · '+t_('Kvalitet ×{0}',L1(L.q)):'')}}
  case'torp':{const t=h.t,[ti,tx]=ix4(IX.misc[era()===7?'torp7':'torp']);return{t:ti,d:tx,n:tf(t.load)+'/'+torpCap()+' t · '+t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())}}
  case'crane':{const c=h.c,u={skrap:'kran',malm:'malmkran',ose:'osekran',mag:'magkran'}[c.id];if(c.id==='skrap'&&CS()){const[ti,tx]=ix4(IX.cs.crane);return{t:ti,d:tx,n:t_('Løft {0} t',tf(craneLift()))+' · '+upNums(UPm.kran)}}return{t:cap1(t_(c.n)),d:ixs(IX.crane[c.id]),n:upNums(UPm[u])}}

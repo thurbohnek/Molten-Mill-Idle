@@ -435,8 +435,23 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
  /* furnace platform + slag yard */
  f.fillStyle='rgba(0,0,0,.18)';if(ET()!=='sm')f.beginPath(),f.arc(POS.F.x,POS.F.y,150,0,TAU),f.fill();else SK.rr(f,676,404,250,394,14),f.fill();
  if(slagOn()){const p=POS.slagp;f.fillStyle='#2b2826';f.beginPath();f.ellipse(p.x,p.y,84,56,0,0,TAU);f.fill();for(let i=0;i<120;i++){const a=r()*TAU,d=Math.sqrt(r());f.fillStyle=r()<.5?'rgba(90,86,80,.5)':'rgba(0,0,0,.35)';f.fillRect(p.x+Math.cos(a)*d*80,p.y+Math.sin(a)*d*52,3,3)}}
- /* ladle car rails from the tap to the ladle parking */
- SK.railV(f,POS.tap.x,POS.tap.y-40,POS.park[1].y+40,40);
+ /* ladle car rails: before the automated melt shop a short track from the tap down to the ladle parking. From then on the
+    ladle car runs in a fenced track bed (hazard edges, buffer stops) from under the tap past the ladle furnace to the empty-ladle
+    stand; the old parking spots become two spare ladle stands on a fenced plate. */
+ if(carOn()){const y=POS.tap.y,x0=POS.rail.x0,x1=POS.rail.x1,p0=POS.park[0],p1=POS.park[1];
+  f.fillStyle='#24272d';f.fillRect(p0.x-28,y+30,56,p1.y+30-(y+30));f.strokeStyle='#f5c518';f.lineWidth=2;f.setLineDash([6,5]);f.strokeRect(p0.x-27,y+31,54,p1.y+28-(y+31));f.setLineDash([]);
+  for(const p of[p0,p1]){f.fillStyle='#3a3f47';f.fillRect(p.x-24,p.y-27,8,54);f.fillRect(p.x+16,p.y-27,8,54);f.fillStyle='#1b1d21';f.fillRect(p.x-16,p.y-4,32,8)}
+  f.fillStyle='#17191d';f.fillRect(x0,y-30,x1-x0,60);f.fillStyle='#202329';f.fillRect(x0,y-24,x1-x0,48);
+  f.fillStyle=hazPat(f);f.fillRect(x0,y-30,x1-x0,5);f.fillRect(x0,y+25,x1-x0,5);f.fillRect(x0,y-30,5,60);f.fillRect(x1-5,y-30,5,60);
+  SK.rail(f,x0+8,x1-8,y,40);
+  /* the walkway crossing: a chequer-plate deck over the rails with yellow edges */
+  {const w0=POS.rail.w0,w1=POS.rail.w1;f.fillStyle='#3b4048';f.fillRect(w0,y-30,w1-w0,60);f.fillStyle='rgba(255,255,255,.07)';for(let yy=y-26;yy<y+28;yy+=6)for(let xx=w0+3+((yy/6)&1)*3;xx<w1-2;xx+=6)f.fillRect(xx,yy,3,1.4);
+   f.fillStyle='#f5c518';f.fillRect(w0,y-30,4,60);f.fillRect(w1-4,y-30,4,60);f.fillStyle='rgba(109,99,88,.55)';f.fillRect(w0+4,y-21.5,w1-w0-8,2.2);f.fillRect(w0+4,y+19.5,w1-w0-8,2.2)}
+  /* festoon cable trough along the south rail */f.fillStyle='#2b2f36';f.fillRect(x0+8,y+16,x1-x0-16,5);
+  for(const bx of[x0+7,x1-14]){f.fillStyle='#8f2a20';f.fillRect(bx,y-23,7,46);f.fillStyle='#f5c518';f.fillRect(bx,y-23,7,5);f.fillRect(bx,y+18,7,5)}
+  /* the empty-ladle stand: two support beams the car drives between */
+  {const sx=POS.stand.x;f.fillStyle='#4a5059';f.fillRect(sx-26,y-29,52,9);f.fillRect(sx-26,y+20,52,9);f.fillStyle='#6b727c';f.fillRect(sx-26,y-29,52,2);f.fillRect(sx-26,y+20,52,2)}}
+ else SK.railV(f,POS.tap.x,POS.tap.y-40,POS.park[1].y+40,40);
  /* roller tables / conveyors that exist */
  for(const[p,on]of ROLLS){if(!on())continue;f.lineCap='butt';f.lineJoin='miter';f.strokeStyle='#202328';f.lineWidth=22;f.beginPath();p.forEach((q,i)=>i?f.lineTo(q[0],q[1]):f.moveTo(q[0],q[1]));f.stroke();f.strokeStyle='#4a5059';f.lineWidth=16;f.setLineDash([3,6]);f.stroke();f.setLineDash([])}
  /* truck bays */

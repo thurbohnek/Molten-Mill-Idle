@@ -188,7 +188,9 @@ const EN={
  'Venter på torpedovogn':'Waiting for a torpedo car','{0} t/min råjern':'{0} t/min hot metal','Mangler {0}':'Missing {0}','Nok forsyning':'Supply OK','Mangler {0}anlegg':'Missing {0} plant',
  'Flaskehals: øsekranen':'Bottleneck: the ladle crane','Behandler':'Treating','Flaskehals: øseovn':'Bottleneck: ladle furnace','Venter på stål':'Waiting for steel',
  'Mangler kokiller!':'No moulds!','Flaskehals: blokkstøping':'Bottleneck: ingot casting','Stigstøper':'Bottom pouring','Støper':'Casting',
- 'Bryteren står på Streng':'The switch is set to Caster','Auto: stålet går til strengen':'Auto: the steel goes to the caster','Flaskehals: strenger':'Bottleneck: strands',
+ 'Bryteren står på Streng':'The switch is set to Caster','Auto: stålet går til strengen':'Auto: the steel goes to the caster',
+ /* v7.6: the ladle car and both casting lines on auto */
+ 'Auto: tar overskuddet':'Auto: takes the surplus','Tappeautomatikk':'Tap automation','øsevogn':'ladle car','Øsevogna kommer':'Ladle car on its way','Under tappen – fylles':'Under the tap – filling','Under tappen – klar':'Under the tap – ready','Under tappen':'Under the tap','Kjører til øseovnen':'To the ladle furnace','I øseovnen':'In the ladle furnace','Kjører til øsestolen':'To the ladle stand','Henter tom øse':'Picking up an empty ladle','Kjører tom øse til tappen':'Empty ladle to the tap','{0} % i bruk':'{0} % busy','på øsestolen':'on the ladle stand','på øsevogna':'on the ladle car','Flaskehals: strenger':'Bottleneck: strands',
  'Støper · {0} strenger':'Casting · {0} strands','Støper · {0} strenger · {1} m/min':'Casting · {0} strands · {1} m/min','{0} av {1} strenger · {2} m/min':'{0} of {1} strands · {2} m/min','Støpefart {0} m/min ({1} % av maks)':'Casting speed {0} m/min ({1} % of max)','Venter på øsekranen':'Waiting for the ladle crane','Bryteren står på Blokk':'The switch is set to Ingots','Flaskehals':'Bottleneck','Valseprogram: Armering':'Mill program: Rebar',
  'Valseprogram: Valstråd':'Mill program: Wire rod','Emner går til salg (meny)':'Billets go to sale (menu)','Bær {0} hit':'Carry {0} here','Venter på {0}':'Waiting for {0}',
  /* goals */

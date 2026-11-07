@@ -41,13 +41,13 @@ for(const s of W.SW)two(IX.sw[s.id],'switch '+s.id);
 for(const c of W.CRANES)two(IX.crane[c.id],'crane '+c.id);
 for(const z of W.TG)if(z.id!=='drop'){const o=IX.ring[z.id];ok(o&&o[0]&&o[1]&&o[2]&&o[3],'ring '+z.id)}
 for(const s of W.SRC)if(!s.pile&&s.id!=='koklag'){const o=IX.ring[s.id];ok(o&&o[1]&&o[3],'source '+s.id)}
-for(const k of['torp','ladle','hmL','pigm','train','desk','prestige','plot'])ok(IX.misc[k]&&IX.misc[k][1]&&IX.misc[k][3],'misc '+k);
+for(const k of['torp','ladle','lcar','hmL','pigm','train','desk','prestige','plot'])ok(IX.misc[k]&&IX.misc[k][1]&&IX.misc[k][3],'misc '+k);
 console.log('UP',W.UP.length,'HIRE',Object.keys(W.HIRE).length,'zones',W.ZONES.length,'kinds',Object.keys(W.KNAME).length,'eras',W.ERA.length+'+'+W.RJE.length,'keys checked',need.size);
 // every info bubble can be built in both languages without errors or missing keys
 for(const lang of['en','no']){W.setLang(lang);for(const L of['up','hire','zone']){}
  const hs=[];for(const d of W.PADS)hs.push({type:'pad',d});for(const s of W.SW)hs.push({type:'sw',s});for(const z of W.TG)hs.push({type:z.id==='drop'?'drop':'ring',o:z});
- for(const s of W.SRC)hs.push({type:s.pile?'pile':'src',o:s});hs.push({type:'tap'},{type:'furnace'},{type:'rjf'});for(const z of W.ZONES)hs.push({type:'zone',z});
- for(const c of W.CRANES)hs.push({type:'crane',c});for(const L of W.LADLES)for(const st of['park','filling','await','carried','lf','pit','tur','cast'])hs.push({type:'ladle',L:Object.assign({},L,{state:st,steel:5,q:1.1})});for(const tp of W.TORPS)hs.push({type:'torp',t:tp});for(const k of['hmL','pigm','train'])hs.push({type:'misc',id:k});hs.push({type:'misc',id:'desk',r:'skrap'});
+ for(const s of W.SRC)hs.push({type:s.pile?'pile':'src',o:s});hs.push({type:'tap'},{type:'furnace'},{type:'rjf'},{type:'lcar'});for(const z of W.ZONES)hs.push({type:'zone',z});
+ for(const c of W.CRANES)hs.push({type:'crane',c});for(const L of W.LADLES)for(const st of['park','filling','await','carried','lf','pit','tur','cast','car'])hs.push({type:'ladle',L:Object.assign({},L,{state:st,steel:5,q:1.1})});for(const tp of W.TORPS)hs.push({type:'torp',t:tp});for(const k of['hmL','pigm','train'])hs.push({type:'misc',id:k});hs.push({type:'misc',id:'desk',r:'skrap'});
  /* Phase 4 equipment bubbles */for(const k of Object.keys(W.IX.p4))hs.push({type:'p4',id:k});
  /* Phase 3 equipment bubbles */for(const k of Object.keys(W.IX.p3).concat(['tdheat','slagdet','ems','hss','insp','sort','slagmill','dheat','co2','robot','twin','pass','endless']))hs.push({type:'p3',id:k});
  for(let e=0;e<8;e++){S.b={};S.mb={};const ids=['sm','ld','eaf1','uhp','consteel','h2','esf'];for(let i=0;i<e;i++)S.b[ids[i]]=1;if(e===7)S.mb.ld={st:'run'};for(const h of hs){if(h.type==='pad'&&h.d.kind==='build'&&!W.nextBuild())continue;let r;try{r=W.infoFor(h)}catch(err){ok(false,lang+' infoFor threw '+JSON.stringify(h.type)+' '+err.message);continue}
