@@ -23,10 +23,10 @@ function update(dt){
   if(keys.l)ix-=1;if(keys.r)ix+=1;if(keys.u)iy-=1;if(keys.d)iy+=1;
   if(ix||iy){G.go=null;G.free=false}
   else if(G.go){const cr0=G.crane?CRm[G.crane]:null,a=cr0||P,g=G.go,w=g.pts[g.i],dx=w.x-a.x,dy=w.y-a.y,dd=hyp(dx,dy),last=g.i===g.pts.length-1;
-   if(dd<(last?(cr0?6:5):16)){if(last){G.go=null;if(g.arr)ctlArrive(g.arr)}else g.i++}
+   if(dd<(last?(cr0?6:5):16)){if(last){G.go=null;if(g.arr)ctlArrive(g.arr)}else{g.i++;g.best=null;g.st=0}}
    else{const k=last?min(1,dd/40+.25):1;ix=dx/dd*k;iy=dy/dd*k;
     /* stuck (pushed by something): plan again once, then give up */
-    g.st=(g.st||0)+dt;if(g.st>.6){g.st=0;if(g.best!=null&&dd>g.best-6){g.tries=(g.tries||0)+1;if(g.tries>2||cr0)G.go=null;else{const np=planPath(a.x,a.y,g.tx,g.ty);if(np&&np.length){g.pts=np;g.i=0;g.best=null}else G.go=null}}else g.best=dd}}}}
+    g.st=(g.st||0)+dt;if(g.st>.6){g.st=0;if(g.best!=null&&dd<g.best-6)g.tries=0;if(g.best!=null&&dd>g.best-6){g.tries=(g.tries||0)+1;if(g.tries>2||cr0)G.go=null;else{const np=planPath(a.x,a.y,g.tx,g.ty);if(np&&np.length){g.pts=np;g.i=0;g.best=null}else G.go=null}}else g.best=dd}}}}
  const im=hyp(ix,iy);if(im>1){ix/=im;iy/=im}
  if(im>.1&&!S.moved)S.moved=true;
  const cr=G.crane?CRm[G.crane]:null;if(cr&&!canMan(cr)){G.crane=null;cr.man=false}
