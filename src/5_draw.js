@@ -33,7 +33,7 @@ function drawYard(s){if(!s.open()||!inView(s.x,s.y,170))return;const n=min(170,M
  g.drawImage(c.cv,s.x-110,s.y-130,220,260);
  txt(tf(yardT(s))+' t',s.x,s.y+112,10,C.ui,800,'center',3);LOBS.push({x:s.x-26,y:s.y+105,w:52,h:14})}
 /* ---- charging: chargeringskasser (SM), skrapkurv (EAF/UHP), Consteel trough with preheat tunnel ---- */
-function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='belt'&&CS()){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
+function drawCharge(){const E=E_(),cx=POS.drop.x,cy=POS.drop.y;if(E.ch==='none'||E.ch==='plate')return;/* Phase 5: no scrap charging */if(E.ch==='belt'&&CS()){drawBeltLine();return}if(!inView(cx+150,cy,320))return;const fillK=clamp(S.chg/chgCap(),0,1);
  if(E.ch==='conv'){/* converter: one scrap charging box on a rail car between the yard and the vessel */
   SK.rail(g,cx+40,640,cy,26);const fl=F.ch&&F.ch.s>0&&F.ch.t/F.ch.dur>.1&&F.ch.t/F.ch.dur<.5;SK.car(g,cx+84,cy,70,40);
   if(!fl){SK.box(g,cx+56,cy-14,56,28,'#4a5058','#1b1e22',3);const n=Math.round(fillK*8);for(let q=0;q<n;q++)SK.chunk(g,cx+64+(q%4)*13,cy-6+floor(q/4)*11,4,hsh(q),SK.SCRAPC[q%5])}}
@@ -75,6 +75,7 @@ function furnOpts(){const e=era(),A={tap:-PI/2,door:0,car:PI/2,h4:-2.4-ROT,h5:-.
  return o}
 function drawFurnace(){const x=F.x,y=F.y;if(!inView(x,y,260))return;const e=era(),tl=F.tilt;
  if(ET()==='conv'){const E=E_();SK2.converter(g,x,y,convR(),T,{tilt:tl,ld:e===2||e===7,blow:F.state==='melt'&&F.solid>0&&!F.stop&&!F.ch?1:0,lance:F.lance,hot:F.bath>0||F.solid>0?clamp(.35+.65*(F.bath+F.solid)/fcap(),0,1):0,tapping:F.state==='tapping'&&F.tapT>.6});drawConvCharge();return}
+ if(ET()==='hold'||ET()==='ind'){drawIndF();return}
  if(ET()==='sm'){SK.smFurnace(g,x,y,T,{heat:clamp(.25+.75*F.bath/fcap(),0,1),door:F.ch?F.smDoor:-1,tapping:F.state==='tapping'&&F.tapT>.6,fire:F.state!=='tapping'});return}
  g.save();g.translate(x,y);g.rotate(tl*.25);SK.eaf(g,0,0,92,T,ROT,furnOpts());g.restore()}
 /* supply plants (blue zone) and the pipes / belt that feed the furnace; flow animates with real use */
@@ -406,7 +407,7 @@ function drawRJ(){if(rjGone()||!inView(-368,570,560))return;const cl=rjClosed(),
  if(cl){/* closed: desaturate and darken the whole råjernsverk (cheap blend modes, no canvas filter) */g.save();const z0=ZN.rjsup,z1=ZN.rj;g.globalCompositeOperation='saturation';g.fillStyle='#808080';g.fillRect(z0.x0,z0.y0,z0.x1-z0.x0,z1.y1-z0.y0);g.globalCompositeOperation='source-over';g.fillStyle='rgba(18,20,24,.42)';g.fillRect(z0.x0,z0.y0,z0.x1-z0.x0,z1.y1-z0.y0);g.restore();const a=.85;g.globalAlpha=a;SK.box(g,RJX-60,RJY-40,120,28,'rgba(16,19,26,.9)','rgba(255,255,255,.2)',8);txt(t_('NEDLAGT'),RJX,RJY-26,14,C.uidim,800);g.globalAlpha=1}
  /* malm buffer at the top */
  if(!cl){const t=t_('SKIP')+' '+tf(S.rj.ore)+'/'+skipCap()+' t';ctx.font=`800 10px ${FONT}`;const w=ctx.measureText(t).width+10;LBL.push({k:'skip',x:POS.skip.x-w/2,y:POS.skip.y+44,w,h:15,pr:1,ax:POS.skip.x,f:(lx,ly)=>txt(t,lx+w/2,ly+7,10,RJ.starve>1.5?C.danger:C.ui,800,'center',3)})}}
-function drawTorps(){const e7=era()===7;if(rjClosed()&&!e7||!inView(e7?-200:220,700,e7?900:700))return;const cl=false;
+function drawTorps(){if(era()>=8){drawP5Cars();return}const e7=era()===7;if(rjClosed()&&!e7||!inView(e7?-200:220,700,e7?900:700))return;const cl=false;
  for(const t of TORPS){if(cl&&t.i>0)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;if(!inView(t.x,y,90))continue;
   const k=t.load/max(1,torpCap()),pour=t.st==='pour'&&t.pouring;SK2.torpedo(g,t.x,y,130,k,T,{tilt:pour?.9:0});
   if(pour){const mx=t.x,my=y-16*OK+10;stream(mx,my,POS.hmL.x-6,POS.hmL.y-6,.6)}
@@ -576,7 +577,7 @@ function drawStatus(){for(const z of ZONES){if(!zoneBuilt(z)||!inView(z.x0+120,z
 const GAUGE={x:966,y:356};
 function drawGauge(){const x=GAUGE.x,y=GAUGE.y,cap=fcap();if(!inView(x,y,80))return;ctx.fillStyle='rgba(14,17,23,.92)';rr(x-60,y-22,120,48,10);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;rr(x-60,y-22,120,48,10);ctx.stroke();LOBS.push({x:x-60,y:y-22,w:120,h:48});
  const tc=F.temp>=1600?C.moltenhi:F.temp>=1560?C.molten:C.ui;txt(Math.round(F.temp)+' °C',x,y-6,15,tc,800);
- const bath=F.state==='tapping'?max(0,F.bath-F.tapAmt*clamp(F.tapT/3,0,1)):F.bath,stt=t_(F.stop?'STOPP':F.state==='ready'?'KLAR':F.state==='tapping'?'v§TAPPER':F.state==='refine'?(ET()==='sm'?'KOKER':ET()==='conv'?'PRØVE':'VARMER'):F.lim?'FORSYNING':F.ch&&ET()==='conv'?'CHARGERER':F.solid>0?(ET()==='conv'?'BLÅSER':'SMELTER'):F.waitHM>1.5?'RÅJERN?':'LADER');
+ const bath=F.state==='tapping'?max(0,F.bath-F.tapAmt*clamp(F.tapT/3,0,1)):F.bath,stt=t_(F.stop?'STOPP':F.state==='ready'?'KLAR':F.state==='tapping'?'v§TAPPER':F.state==='refine'?(ET()==='sm'?'KOKER':ET()==='conv'?'PRØVE':'VARMER'):F.lim?'FORSYNING':F.ch&&ET()==='conv'?'CHARGERER':F.solid>0?(ET()==='conv'?'BLÅSER':'SMELTER'):ET()==='hold'?(F.rate>.05?'FYLLES':'STÅL?'):ET()==='ind'&&F.starve>1.5?'PLATER?':F.waitHM>1.5?'RÅJERN?':'LADER');
  const fb=clamp(bath/cap,0,1),fs=clamp(F.solid/cap,0,1-fb);ctx.fillStyle='#262a32';rr(x-50,y+8,100,9,4);ctx.fill();ctx.fillStyle=C.molten;rr(x-50,y+8,100*fb,9,4);ctx.fill();if(fs>0){ctx.fillStyle=C.steell;ctx.fillRect(x-50+100*fb,y+8,100*fs,9)}
  txt(stt+' · '+Math.round(bath)+'/'+cap+' t',x,y+13,8,F.stop||F.lim?'#fff':'#111',800)}
 /* ---- label pass: name plates, pile plates and ladle tonnage are drawn last, on top of the world.
@@ -774,7 +775,8 @@ function draw(){
  VX0=cam.x-cssW/2/zoom-20;VX1=cam.x+cssW/2/zoom+20;VY0=cam.y-cssH/2/zoom-60;VY1=cam.y+cssH/2/zoom+60;
  ctx.save();ctx.translate(cssW/2+shx,cssH/2+shy);ctx.scale(zoom,zoom);ctx.translate(-cam.x,-cam.y);
  const sx0=clamp(VX0,WX0,WW),sy0=clamp(VY0,0,WH),sx1=clamp(VX1,WX0,WW),sy1=clamp(VY1,0,WH);
- if(sx1>sx0&&sy1>sy0)ctx.drawImage(fc,(sx0-WX0)*FS,sy0*FS,(sx1-sx0)*FS,(sy1-sy0)*FS,sx0,sy0,sx1-sx0,sy1-sy0);
+ {const ya=min(sy1,WHM);if(sx1>sx0&&ya>sy0)ctx.drawImage(fc,(sx0-WX0)*FS,sy0*FS,(sx1-sx0)*FS,(ya-sy0)*FS,sx0,sy0,sx1-sx0,ya-sy0);
+  /* Phase 5: the plot column below 1560 */const xb=min(sx1,OUTX),yb=max(sy0,WHM);if(WH>WHM&&xb>sx0&&sy1>yb)ctx.drawImage(fc2,(sx0-WX0)*FS,(yb-WHM)*FS,(xb-sx0)*FS,(sy1-yb)*FS,sx0,yb,xb-sx0,sy1-yb)}
  ctx.lineCap='butt';ctx.lineJoin='miter';
  /* floor rings */
  {const L=tapLadle(),tg=F.state==='ready'&&L?.5+.5*Math.sin(T*8):0;padRing(POS.tapPad.x,POS.tapPad.y,38,t_(lv('operator')?'AUTO':'TAPP'),lv('operator')?0:tg)}
@@ -789,10 +791,10 @@ function draw(){
  if(B_('kob'))padRing(POS.kobIn.x,POS.kobIn.y,36,t_('STENGER'),0,1-nodeRoom('kob')/NODE.kob.cap,'#3a6ea8');
  drawMovers();
  for(const s of SRC){if(s.yard)drawYard(s);else if(s.store)drawStore(s)}
- drawRJ();drawDRI();drawESF();drawTorps();drawMB();drawCR();drawTwin();
+ drawRJ();drawDRI();drawESF();drawMOE();drawPLS();drawEW();drawTorps();drawMB();drawCR();drawTwin();
  drawKok();for(const k of PRK)drawPileK(k);
  for(const z of TG)drawCash(z);
- drawSupply();if(E_().ch!=='belt')dropRing();drawCharge();if(E_().ch==='belt')dropRing();drawPit();drawCaster();drawEndless();drawGjv();drawVV();drawTC();drawStel();drawNett();drawKob();drawQA();drawByp();drawRob();drawSort();drawOvnSide();
+ drawSupply();if(E_().ch!=='belt'&&era()<8)dropRing();drawCharge();if(E_().ch==='belt')dropRing();drawPit();drawCaster();drawEndless();drawGjv();drawVV();drawTC();drawStel();drawNett();drawKob();drawQA();drawByp();drawRob();drawSort();drawOvnSide();
  if(inView(POS.truck1.x,POS.truck1.y,300))drawTruckV(POS.truck1.x,POS.truck1.y,VEH.bil1);if(B_('stel')&&inView(POS.truck2.x+200,POS.truck2.y,400))drawTruckH(POS.truck2.x,POS.truck2.y,VEH.bil2);
  drawTrain();drawShip();
  drawHMStation();drawTRob();drawFurnace();drawBucketFlight();drawHMPour();
@@ -817,7 +819,7 @@ function draw(){
  if(inView(POS.pit.x,POS.pit.y,200)){const st=PIT.state;if(st==='pour'){const L=PIT.L;if(L){const w=PIT.fill<.08?PIT.fill/.08:PIT.fill>.94?(1-PIT.fill)/.06:1;stream(L.x,L.y+12,POS.pit.x,POS.pit.y-4,w)}glowC(POS.pit.x,POS.pit.y,160,C.molten,.35)}else if(st==='solid'||st==='strip'){glowC(POS.pit.x,POS.pit.y,140,C.molten,.2)}}
  if(B_('strang')&&inView(1500,830,260)){const k=CAST.tlev;if(k>.02)glowC(1450,830,150,C.molten,.14*k);if(CAST.pour)glowC(PBX,TUR.y,46,C.molten,.32);if(CAST.flow)glowC(1520,830,110,C.molten,.08)}
  if(LADLES.some(l=>l.state==='lf')&&inView(POS.lf.x,POS.lf.y,120)){const x=POS.lf.x,y=POS.lf.y;glowC(x,y,70,C.arc,.14);if(!RM){ctx.strokeStyle=rgba(C.arc,.9);ctx.lineWidth=2;for(let i=0;i<3;i++){const a=-PI/2+i*TAU/3;if(Math.random()<.6)bolt(x+Math.cos(a)*8,y+Math.sin(a)*8,rnd(6,14))}}}
- glowP4();if(NODE.gjv.cur)glowC(POS.gjv.x,POS.gjv.y,130,C.molten,.16);if(NODE.vv.cur)glowC(2470,600,110,C.molten,.14);
+ glowP4();glowP5();if(NODE.gjv.cur)glowC(POS.gjv.x,POS.gjv.y,130,C.molten,.16);if(NODE.vv.cur)glowC(2470,600,110,C.molten,.14);
  for(const p of parts){if(!inView(p.x,p.y,10))continue;const a=clamp(p.l/p.m,0,1);if(p.sq){ctx.globalCompositeOperation='source-over';ctx.fillStyle=p.c;ctx.globalAlpha=a;ctx.fillRect(p.x-3,p.y-3,6,6);ctx.globalAlpha=1;ctx.globalCompositeOperation='lighter'}else{ctx.strokeStyle=rgba(p.c.startsWith('#')?p.c:C.moltenhi,a);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*.04,p.y-p.vy*.04);ctx.stroke()}}
  ctx.globalCompositeOperation='source-over';
  drawStatus();drawSwitches();drawUpPads();drawGauge();drawLabels();
@@ -1021,7 +1023,7 @@ const DRIC=['#5f646c','#6d727a','#555a61','#787d84'];
 /* DRI pellets riding a belt (local frame of SK.belt): k = how busy the belt is */
 const driItems=(k,hot)=>(g2,L,w2,tt)=>{if(k<.02)return;const nn=max(5,floor(L/11));for(let i=0;i<nn;i++){if(hsh(i*3.7)>k+.15)continue;const p=((RM?i/nn:tt*.12*(.5+k)*140/L+i/nn)%1)*L;g2.fillStyle=hot&&i%3===0?'#a5552c':DRIC[i%4];SK.circ(g2,p,(hsh(i)-.5)*w2*.55,2.3);g2.fill()}};
 function belts(path,w,k,hot,o){for(let i=1;i<path.length;i++){const a=path[i-1],b=path[i];SK.belt(g,a[0],a[1],b[0],b[1],w,T,Object.assign({speed:12+40*k,items:driItems(k,hot)},o||{}))}}
-function drawDRI(){if(!B_('h2'))return;const P_=P4G,D=S.dri,on=DRI.rate>.01,run=DRI.heat,hr=DRI.h2run;
+function drawDRI(){if(!B_('h2')||mbSt('dri')==='gone')return;const P_=P4G,D=S.dri,on=DRI.rate>.01,run=DRI.heat,hr=DRI.h2run;
  /* pellet yard: the train on the siding tips its wagons, the pile grows with the stock */
  if(inView(-1430,400,240)){const y=P_.rail,cyc=DRI.trainT%10,full=D.pel>=pelCap()-1,w=full?-1:floor(cyc/2.2),tipK=full?0:Math.sin(PI*clamp((cyc%2.2)/1.8,0,1));
   for(let i=0;i<4;i++){const x=-1560+i*84,tip=i===w?tipK:0,empty=i<w&&!full;g.save();g.translate(x,y-tip*12);SK.box(g,-36,-14,72,28,'#5a4a42','#241a16',3);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-32,-10,64,20);
@@ -1065,8 +1067,12 @@ function drawDRI(){if(!B_('h2'))return;const P_=P4G,D=S.dri,on=DRI.rate>.01,run=
   g.strokeStyle='#e0a050';g.lineWidth=3;g.beginPath();g.arc(b.x,b.y-40*OK,b.r+4,-PI/2,-PI/2+TAU*fk);g.stroke()}
  /* era 6: the DRI gallery runs in the gaps between the old plots to the charging conveyor; era 7: down to the ESF bins */
  if(era()===6){const k=clamp(DRI.beltOut/max(.01,driBelt()),0,1);belts(P_.gal,12,k,true,{trestle:true})}
- else if(B_('esf')){const k=era()===7?clamp(ESF.rate/max(.01,esfRate()),0,1):0;belts(P_.feed,12,k,true,{trestle:true})}}
-function drawESF(){if(!B_('esf'))return;const E=ESFG,run=era()===7?ESF.heat:0,on=era()===7&&ESF.rate>.01,cx=(E.x0+E.x1)/2;if(!inView(cx-60,E.cy,340))return;
+ else if(B_('esf')){const k=era()===7?clamp(ESF.rate/max(.01,esfRate()),0,1):0;belts(P_.feed,12,k,true,{trestle:true})}
+ /* Phase 5: H₂ down to the plasma reactor and its condensed water back (once the reactor stands) */
+ if(B_('pls')&&mbSt('pls')!=='gone'){const on9=era()===9&&PLS.rate>.01,c=P_.cav;SK.pipe(g,[[-1222,262],[-1222,276],[-1600,276],[-1600,1604]],5,'#cfd8e3',T,{flow:on9?'#9fd8ff':null,speed:26});
+  SK.pipe(g,[[-1607,1580],[-1607,284],[-1596,284],[-1596,240],[P_.hall.x0,240]],4,'#4f8fd8',T,{flow:on9?'#bfe3ff':null,speed:22})}
+ if(mbOn('dri')){const h=P_.hall;mbVeil(h.x0-10,h.y0-14,-790,P_.yard.y1+8,-1180,330)}}
+function drawESF(){if(!B_('esf')||mbSt('esf')==='gone')return;const E=ESFG,run=era()===7?ESF.heat:0,on=era()===7&&ESF.rate>.01,cx=(E.x0+E.x1)/2;if(!inView(cx-60,E.cy,340))return;
  /* transformers south of the furnace, busbars up to the electrodes */
  const T6=6,ex=i=>E.x0+(i+.5)*(E.x1-E.x0)/T6;
  for(let i=0;i<3;i++){const x=E.trafo.x0+20+i*((E.trafo.x1-E.trafo.x0-40)/2);SK.box(g,x-30,E.trafo.y,60,E.trafo.h,'#8a8a84','rgba(0,0,0,.45)',4);for(let k=0;k<6;k++){g.fillStyle=k%2?'#5c5c56':'#a3a39c';g.fillRect(x-30+k*10.5,E.trafo.y+E.trafo.h-6,6,8)}
@@ -1085,7 +1091,146 @@ function drawESF(){if(!B_('esf'))return;const E=ESFG,run=era()===7?ESF.heat:0,on
  const sp=E.slag;SK.box(g,sp.x+24,E.cy-6,E.x0-sp.x-24,12,'#3a3530','#15171a',3);SK.ladle(g,sp.x,sp.y,22,T,{fill:on?.6:.2,eye:false});
  if(on){g.strokeStyle=rgba('#ffb030',.85);g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(E.x0,E.cy);g.lineTo(sp.x+10,sp.y-6);g.stroke();g.lineCap='butt'}
  /* hot-metal end (east): the taphole and the runner up to the torpedo car on track A */
- SK.box(g,E.x1-4,E.cy-34,22,40,'#3a3530','#15171a',3)}
+ SK.box(g,E.x1-4,E.cy-34,22,40,'#3a3530','#15171a',3);
+ if(mbOn('esf'))mbVeil(E.slag.x-30,E.binY-36,E.x1+30,E.trafo.y+E.trafo.h+8,cx,E.cy)}
 /* glow pass: shaft core, ESF arcs, slag and iron runners */
 function glowP4(){if(B_('h2')&&DRI.rate>.01){const s=P4G.shaft;glowC(s.x,s.y-36*OK,s.R+20,C.molten,.12*DRI.heat)}
  if(B_('esf')&&era()===7&&ESF.rate>.01){const E=ESFG;for(let i=0;i<6;i++){const x=E.x0+(i+.5)*(E.x1-E.x0)/6;glowC(x,E.cy,46,C.arc,.12*ESF.heat)}glowC(E.slag.x,E.slag.y,50,C.molten,.2)}}
+/* ---------- Phase 5 drawing (eras 8–10) ---------- */
+/* a plant laid down where it stands: a grey veil over it and a stencil (the floor stays) */
+function mbVeil(x0,y0,x1,y1,cx,cy){g.fillStyle='rgba(28,31,37,.62)';SK.rr(g,x0,y0,x1-x0,y1-y0,12);g.fill();txt(t_('LAGT NED'),cx,cy,12,'rgba(244,241,234,.5)',800,'center',3);LOBS.push({x:cx-50,y:cy-10,w:100,h:20})}
+/* the induction holding furnace (eras 8–9) / induction furnace (era 10): a round crucible in a yoke frame with the copper coil
+   showing at the joints, a tilting frame, the pouring spout toward the ladle car and the launder / plate feeder from the west */
+function drawIndF(){const x=F.x,y=F.y,ind=ET()==='ind',fk=clamp(F.bath/fcap(),0,1),hot=clamp(.25+.75*fk,0,1),R=56,z=30;
+ /* launder (liquid steel) or vibrating feeder (plates) from the transfer line's end into the furnace */
+ {const ax=694,ay=688,bx=x-58,by=y-26,flow=ind?S.hm>1&&F.solid>0:TORPS.some(t=>t.st==='pour'&&t.pouring);
+  g.save();g.translate(ax,ay);const a=Math.atan2(by-ay,bx-ax),L=hyp(bx-ax,by-ay);g.rotate(a);SK.box(g,-4,-11,L+8,22,'#4a4f56','#1b1e22',4);
+  if(ind){g.fillStyle='#24272c';g.fillRect(0,-7,L,14);const n=floor(L/12),sh=RM?0:(T*40)%12;for(let i=0;i<n;i++){if(S.hm<1||hsh(i*1.7)>clamp(S.hm/hmCap()*3,0,1))continue;g.fillStyle=i%2?'#aab2bc':'#8d959f';g.fillRect((i*12+(flow?sh:0))%L,-5,9,10)}}
+  else{g.fillStyle='#2a1d17';g.fillRect(0,-7,L,14);if(flow){const gr=g.createLinearGradient(0,0,L,0);gr.addColorStop(0,'#ffb030');gr.addColorStop(1,'#ff7a1a');g.fillStyle=gr;g.fillRect(0,-4.5,L,9)}}
+  g.restore()}
+ g.save();g.translate(x,y);g.rotate(F.tilt*.25);
+ SK.shadow(g,8,12,R+26,R*.8,.35);
+ /* tilting frame (yoke) with hydraulic cylinders */
+ SK.box(g,-R-18,-R-14,2*R+36,2*R+28,'#3a3f47','#15171a',8);g.fillStyle='#2a2d33';g.fillRect(-R-26,-12,10,24);g.fillRect(R+16,-12,10,24);g.fillStyle='#8b939e';g.fillRect(-R-24,-4,6,8);g.fillRect(R+18,-4,6,8);
+ /* the crucible: steel shell with the copper coil between the yokes */
+ SK2.cyl(g,0,0,R,0,z,'#5b616a','#9aa2ac',0);
+ g.lineWidth=3;for(let k=0;k<4;k++){const zz=5+k*7;g.strokeStyle=ind&&F.arc>0?mix('#c77d3a','#ffcf8a',(RM?.5:.4+.4*Math.sin(T*9+k))*F.arc):'#b8733a';g.beginPath();g.ellipse(0,-zz*OK,R+1,R*.32,0,.15,PI-.15);g.stroke()}
+ for(const a of[0,PI/2,PI,PI*1.5]){const cx=Math.cos(a)*R*.98,cy=Math.sin(a)*R*.32-15*OK;SK.box(g,cx-5,cy-12,10,22,'#2b2f36','#121316',2)}/* the yokes */
+ const ty=-z*OK;SK2.cap(g,0,ty,R,'#5d636c');
+ /* the induction coil shows as a copper ring round the crucible (it glows a little while it heats) */
+ g.save();g.setLineDash([4,3]);g.lineWidth=5;g.strokeStyle=ind&&F.arc>0?mix('#c77d3a','#ffcf8a',.35*F.arc):'#c77d3a';SK.circ(g,0,ty,R-3);g.stroke();g.restore();
+ g.fillStyle='#7a5a48';SK.circ(g,0,ty,R-9);g.fill();/* refractory rim */
+ const gr=g.createRadialGradient(-10,ty-8,4,0,ty,R-14);gr.addColorStop(0,heat(.45+.5*hot));gr.addColorStop(.7,heat(.25+.45*hot));gr.addColorStop(1,heat(.1+.2*hot));g.fillStyle=fk>.02?gr:'#3a2a24';SK.circ(g,0,ty,R-14);g.fill();
+ /* plates sinking into the bath while they melt (era 10) */
+ if(ind&&F.solid>.5){const n=min(9,1+floor(F.solid/fcap()*14));for(let i=0;i<n;i++){const a=i*2.1+.4,r=(R-24)*Math.sqrt(hsh(i*3.1));g.save();g.translate(Math.cos(a)*r,ty+Math.sin(a)*r*.8);g.rotate(a);g.fillStyle=mix('#8d959f','#ff9a3d',.35);g.fillRect(-9,-3,18,6);g.restore()}}
+ /* pouring spout toward the ladle car (east) */
+ g.fillStyle='#4a4f56';g.beginPath();g.moveTo(R-6,ty-10);g.lineTo(R+22,ty-4);g.lineTo(R+22,ty+4);g.lineTo(R-6,ty+10);g.closePath();g.fill();g.fillStyle=fk>.02?heat(.3+.4*hot):'#2a2220';g.fillRect(R-4,ty-3,24,6);
+ /* the lid, swung aside on its hinge */
+ SK.shadow(g,-R-4,ty-R*.6+6,26,18,.3);g.fillStyle='#6b7079';SK.circ(g,-R+4,ty-R*.62,24);g.fill();g.strokeStyle='#3e434a';g.lineWidth=2;SK.circ(g,-R+4,ty-R*.62,15);g.stroke();
+ g.restore()}
+/* transfer cars on the Phase 5 line: an open ladle on a self-propelled car (liquid steel) or a flat wagon stacked with plates */
+function drawP5Cars(){const pl=era()>=10;
+ for(const t of TORPS){const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),[x,y,a]=tlPt(t.x,onA);if(!inView(x,y,90))continue;
+  const k=t.load/max(1,torpCap()),pour=t.st==='pour'&&t.pouring;g.save();g.translate(x,y);g.rotate(a);
+  SK.shadow(g,3,4,62,20,.3);SK.box(g,-56,-17,112,34,'#3d434b','#1b1e22',4);SK.hazardBar(g,-56,-17,6,34);SK.hazardBar(g,50,-17,6,34);
+  g.fillStyle='#16181c';for(const xx of[-40,-24,24,40])for(const yy of[-19,15])g.fillRect(xx-5,yy,10,4);
+  if(pl){/* plates in two stacks, strapped */const n=Math.round(k*8);for(let s2=0;s2<2;s2++)for(let i=0;i<n;i++){const ox=s2?6:-46;g.fillStyle=i%2?'#9aa2ac':'#7d858f';g.fillRect(ox,-12+i*.4-i*1.6,40,22);g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=1;g.strokeRect(ox,-12-i*1.2,40,22)}
+   if(n){g.fillStyle='#f5c518';g.fillRect(-28,-14-n*1.2,3,26);g.fillRect(24,-14-n*1.2,3,26)}}
+  else{g.rotate(-a);SK.ladle(g,0,-4,24,T,{fill:k,eye:k>.1,rot:pour?.5:0});g.rotate(a)}
+  g.restore();
+  if(pour&&!pl)stream(x+14,y-14,696,684,.55);
+  if(t.load>.5){const s2=tf(t.load)+' t';ctx.font=`800 10px ${FONT}`;const w=ctx.measureText(s2).width+8,vert=Math.abs(Math.sin(a))>.5,lx=vert?x:min(x,TL.A[2][0]-72),ly=vert?y-76:y-48;/* (at the melt shop end: left of the launder) */LBL.push({k:'tp'+t.i,x:lx-w/2,y:ly,w,h:15,pr:0,ax:lx,f:(qx,qy)=>txt(s2,qx+w/2,qy+7,10,pl?C.ui:C.moltenhi,800,'center',3)})}}
+ /* the plant's outlet into the car at the fill point */
+ const tc=castTorp();if(tc&&RJ.tapping){const[cx,cy]=tlPt(tc.x,true);if(!pl)stream(cx-16,TL.yF-4,cx,cy-8,.55)}}
+/* ---- era 8: molten oxide electrolysis ---- */
+function drawMOE(){if(!B_('moe')||mbSt('moe')==='gone')return;const m=P5G.moe;if(!inView((m.yx0+m.hx1)/2,(m.hy0+m.hy1)/2,460))return;
+ const run=era()===8,live=run?MOE.heat:0,mb=mbOn('moe'),n=nCell(),A=P5.an,flow=run&&MOE.rate>.01;
+ /* transformer + rectifier yard: two transformers and the rectifier cabinet with its busbars */
+ for(const yy of[m.hy0+6,m.hy0+86]){SK.box(g,m.yx0,yy,m.yx1-m.yx0,66,'#8a8a84','rgba(0,0,0,.45)',5);for(let q=0;q<7;q++){g.fillStyle=q%2?'#5c5c56':'#a3a39c';g.fillRect(m.yx0+4+q*10.5,yy+58,6,10)}
+  g.save();g.translate((m.yx0+m.yx1)/2,yy+22);g.fillStyle='#f5c518';g.beginPath();g.moveTo(0,-7);g.lineTo(6,5);g.lineTo(-6,5);g.closePath();g.fill();g.restore()}
+ SK.box(g,m.yx0,m.hy1-50,m.yx1-m.yx0,46,'#2b3038','#141619',4);for(let q=0;q<6;q++){g.fillStyle=live>.1&&(RM||hsh(q+floor(T*3))>.2)?'#5fd38d':'#2a3a30';SK.circ(g,m.yx0+12+q*11,m.hy1-38,2.4);g.fill()}
+ txt('DC',(m.yx0+m.yx1)/2,m.hy1-18,10,'#c9ced6',800,'center');
+ /* the hall: open top view, crane rails on both long walls */
+ const W2=m.hx1-m.hx0,H2=m.hy1-m.hy0;SK.shadow(g,(m.hx0+m.hx1)/2+6,(m.hy0+m.hy1)/2+8,W2*.52,H2*.56,.28);SK.box(g,m.hx0,m.hy0,W2,H2,'#2a2e35','#121418',8);
+ g.strokeStyle='rgba(242,184,75,.32)';g.lineWidth=2;SK.rr(g,m.hx0+5,m.hy0+5,W2-10,H2-10,6);g.stroke();
+ g.fillStyle='#22252b';g.fillRect(m.hx0+8,m.hy0+8,W2-16,4);g.fillRect(m.hx0+8,m.hy1-14,W2-16,4);
+ /* busbars: from the rectifier along both walls, a riser to every cell */
+ const bt=m.cy0-12,bb=m.cy1+8;g.fillStyle='#c77d3a';g.fillRect(m.yx1-4,bt-3,m.hx1-m.yx1-12,6);g.fillRect(m.yx1-4,bb-3,m.hx1-m.yx1-12,6);g.fillStyle='rgba(255,220,170,.35)';g.fillRect(m.yx1-4,bt-3,m.hx1-m.yx1-12,1.5);g.fillRect(m.yx1-4,bb-3,m.hx1-m.yx1-12,1.5);
+ /* the cells */
+ for(let i=0;i<12;i++){const x0=m.hx0+12+m.pitch*i,w=m.pitch-10,cx=x0+w/2,y0=m.cy0,h=m.cy1-m.cy0;
+  if(i>=n){g.save();g.setLineDash([4,4]);g.strokeStyle='rgba(244,241,234,.2)';g.lineWidth=1.5;SK.rr(g,x0,y0,w,h,6);g.stroke();g.restore();g.strokeStyle='rgba(244,241,234,.22)';g.lineWidth=2;SK.line(g,cx-6,y0+h/2,cx+6,y0+h/2,'rgba(244,241,234,.22)',2);SK.line(g,cx,y0+h/2-6,cx,y0+h/2+6,'rgba(244,241,234,.22)',2);continue}
+  const chg=run&&A.st==='change'&&A.i===i,on=live*(chg?.15:1);
+  g.fillStyle='#b8733a';g.fillRect(cx-3,bt,6,y0-bt);g.fillRect(cx-3,y0+h,6,bb-y0-h);
+  SK.box(g,x0,y0,w,h,'#6b737d','#1c2026',6);g.fillStyle='#3a2f2a';SK.rr(g,x0+4,y0+4,w-8,h-8,4);g.fill();
+  if(on>.05){const gr=g.createLinearGradient(0,y0,0,y0+h);gr.addColorStop(0,heat(.35+.35*on));gr.addColorStop(.5,heat(.55+.35*on));gr.addColorStop(1,heat(.35+.35*on));g.fillStyle=gr;SK.rr(g,x0+5,y0+5,w-10,h-10,4);g.fill()}
+  /* the anode (inert, light grey) hangs in the bath; during a change it is lifted out by the robot */
+  if(!chg){SK.box(g,cx-w*.2,y0+22,w*.4,h-44,'#cfd3d8','#7d858f',3);g.fillStyle='#8b939e';g.fillRect(cx-2,y0+10,4,13)}
+  /* oxygen bubbles rising from the anode */
+  if(on>.3&&!RM)SK.parts(4,.9,i*7.3,T,(f,a2,b2)=>{g.fillStyle=`rgba(191,227,255,${(1-f)*.75})`;SK.circ(g,cx+(a2-.5)*w*.5,y0+h*.7-f*h*.55,1.6+b2*1.6);g.fill()})}
+ /* the launder along the south wall to the tap at the east end, and the elevated runner over the corridor to the car */
+ const ly=m.tapY;SK.box(g,m.hx0+10,ly-7,W2-14,14,'#4a4f56','#1b1e22',3);g.fillStyle=flow?'#ff8a2a':'#2a1d17';g.fillRect(m.hx0+14,ly-3,W2-22,6);
+ if(flow){for(let i=0;i<n;i++){const cx=m.hx0+12+m.pitch*i+(m.pitch-10)/2;g.strokeStyle='rgba(255,154,61,.85)';g.lineWidth=2;g.setLineDash([3,3]);g.beginPath();g.moveTo(cx,m.cy1);g.lineTo(cx,ly-3);g.stroke();g.setLineDash([])}}
+ SK.box(g,m.hx1-4,ly-7,P5G.A-12-m.hx1+4,14,'#4a4f56','#1b1e22',3);g.fillStyle=flow&&RJ.tapping?'#ff9a3d':'#2a1d17';g.fillRect(m.hx1,ly-3,P5G.A-16-m.hx1,6);
+ for(const px of[m.hx1+30,m.hx1+80])g.fillStyle='#2b2f36',g.fillRect(px-3,ly+6,6,10);
+ /* the anode-change robot: a gantry across the hall that runs along the rails */
+ if(!mb){const ax=run?A.x:m.hx0+60,lift=run&&A.st==='change'?Math.sin(PI*clamp(A.t/(4/(1+.4*lv('anode'))),0,1)):0;
+  SK.box(g,ax-7,m.hy0+6,14,H2-12,'#e0b020','#5a4510',3);SK.hazardBar(g,ax-7,m.hy0+6,14,5);SK.box(g,ax-14,(m.cy0+m.cy1)/2-16,28,32,'#3b4048','#15171a',4);
+  if(lift>.05){SK.box(g,ax-9,(m.cy0+m.cy1)/2-24-lift*10,18,48,'#cfd3d8','#7d858f',3)}}
+ /* O₂: header from the cell hoods → compressor → tank → pipeline to the buyer */
+ const o=m.o2;SK.pipe(g,[[m.hx1-10,m.hy0+16],[o.x,m.hy0+16],[o.x,o.y-o.r]],5,'#d9e6f2',T,{flow:flow?'#9fd8ff':null,speed:24});
+ SK.pipe(g,[[o.x+o.r-4,o.y-6],[o.x+o.r+16,o.y-6],[o.x+o.r+16,ZN.moe.y0+12]],5,'#d9e6f2',T,{flow:flow?'#9fd8ff':null,speed:24});
+ SK.loxTank(g,o.x,o.y,o.r);
+ SK.box(g,-940,1276,46,40,'#3b4048','#15171a',4);SK.fan(g,-917,1296,12,T*(flow?1:0),8);
+ if(mb)mbVeil(m.yx0-10,m.hy0-10,m.hx1+60,m.hy1+12,(m.hx0+m.hx1)/2,(m.hy0+m.hy1)/2)}
+/* ---- era 9: hydrogen plasma smelting ---- */
+function drawPLS(){if(!B_('pls')||mbSt('pls')==='gone')return;const q=P5G.pls;if(!inView(-1220,1760,460))return;
+ const run=era()===9,live=run?PLS.heat:0,mb=mbOn('pls'),on=run&&PLS.rate>.01,hk=clamp(PLS.rate/max(.01,plsCap()),0,1);
+ /* H₂ in from the store and the condensed water back to the electrolysers, along the plant fence */
+ SK.pipe(g,[[-1600,1604],[-1600,1640],[-1300,1640],[-1300,q.R.y-q.R.r+18]],5,'#cfd8e3',T,{flow:on?'#9fd8ff':null,speed:26});
+ SK.pipe(g,[[q.cond.x0+20,q.cond.y0],[q.cond.x0+20,1614],[-1607,1614],[-1607,1580]],4,'#4f8fd8',T,{flow:on?'#bfe3ff':null,speed:-22});
+ /* ore fines silo + pneumatic feed */
+ const s=q.silo,ff=clamp(S.p5.fines/finesCap(),0,1);SK2.cyl(g,s.x,s.y,s.r,0,46,'#5d636c','#a3a9b1',14);SK2.cap(g,s.x,s.y-46*OK,s.r,mix('#5b636d','#7d5c49',ff));
+ g.strokeStyle='#e0a050';g.lineWidth=3;g.beginPath();g.arc(s.x,s.y-46*OK,s.r+4,-PI/2,-PI/2+TAU*ff);g.stroke();
+ SK.pipe(g,[[s.x+s.r-4,s.y+8],[q.R.x-q.R.r+10,s.y+8],[q.R.x-q.R.r+10,q.R.y-10]],6,'#8a7a6e',T,{flow:on?'#a17760':null,speed:30});
+ /* the reactor: a round, refractory-lined vessel; plasma torches around the hollow centre electrode, the arc glows violet-white */
+ const R=q.R;SK.shadow(g,R.x+8,R.y+10,R.r+10,R.r*.8,.35);SK2.cyl(g,R.x,R.y,R.r,0,26,'#5b616a','#9aa2ac',13);const ty=R.y-26*OK;
+ SK2.cap(g,R.x,ty,R.r,'#6b7079');g.fillStyle='#4b5158';SK.circ(g,R.x,ty,R.r-14);g.fill();
+ if(live>.05){const fl=RM?.85:.7+.3*Math.abs(Math.sin(T*17)),gr=g.createRadialGradient(R.x,ty,4,R.x,ty,R.r-16);gr.addColorStop(0,`rgba(250,244,255,${.95*live*fl})`);gr.addColorStop(.35,`rgba(217,184,255,${.75*live})`);gr.addColorStop(1,`rgba(120,80,190,${.25*live})`);g.fillStyle=gr;SK.circ(g,R.x,ty,R.r-16);g.fill()}
+ const nt=nTorch();for(let i=0;i<nt;i++){const a=-PI/2+i*TAU/nt,tx=R.x+Math.cos(a)*(R.r-30),tyy=ty+Math.sin(a)*(R.r-30);SK.line(g,R.x+Math.cos(a)*(R.r+6),ty+Math.sin(a)*(R.r+6),tx,tyy,'#8b939e',5);g.fillStyle='#2b2f35';SK.circ(g,tx,tyy,6);g.fill();
+  if(live>.1){g.fillStyle=`rgba(243,233,255,${.9*live})`;SK.circ(g,tx,tyy,3);g.fill()}}
+ g.fillStyle='#2b2f35';SK.circ(g,R.x,ty,10);g.fill();g.strokeStyle='#c9ced3';g.lineWidth=2;SK.circ(g,R.x,ty,10);g.stroke();
+ /* tap: runner from the reactor's east side over the corridor to the car */
+ const tpy=q.tapY;SK.box(g,R.x+R.r-8,tpy-7,P5G.A-12-(R.x+R.r-8),14,'#4a4f56','#1b1e22',3);g.fillStyle=on&&RJ.tapping?'#ff9a3d':'#2a1d17';g.fillRect(R.x+R.r-4,tpy-3,P5G.A-16-(R.x+R.r-4),6);
+ /* off-gas (steam) → condenser with fans → stack (only water vapour leaves) */
+ const c=q.cond;SK.pipe(g,[[R.x+R.r*.6,ty-R.r*.5],[c.x0+50,ty-R.r*.5],[c.x0+50,c.y1]],8,'#7a8088',T,{flow:on?'rgba(244,248,252,.8)':null,speed:30});
+ SK.box(g,c.x0,c.y0,c.x1-c.x0,c.y1-c.y0,'#3b4048','#15171a',6);SK.fan(g,c.x0+30,c.y0+40,16,T*(on?1:0),9);SK.fan(g,c.x0+76,c.y0+40,16,T*(on?1:0),9);
+ const st=q.stack;SK2.cyl(g,st.x,st.y,12,0,70,'#6b7079','#c9ced6',24);SK2.cap(g,st.x,st.y-70*OK,12,'#3a3f46');
+ {const top=st.y-70*OK,sk=on?hk:.12;if(RM){g.fillStyle=`rgba(244,248,252,${.25*sk})`;SK.circ(g,st.x+10,top-22,14);g.fill()}else SK.parts(8,.5,91,T,(f,a2)=>{g.fillStyle=`rgba(244,248,252,${(1-f)*.4*sk})`;SK.circ(g,st.x+f*30+(a2-.5)*8,top-6-f*56,6+f*16);g.fill()})}
+ if(mb)mbVeil(s.x-s.r-14,c.y0-24,c.x1+14,R.y+R.r+14,R.x,R.y+R.r+2)}
+/* ---- era 10: low-temperature electrowinning ---- */
+function drawEW(){if(!B_('ew'))return;const w=P5G.ew;if(!inView(-1220,2160,460))return;
+ const run=era()===10,live=run?EW.heat:0,n=nTankE(),cf=clamp(S.p5.cath/max(1,cathCap()),0,1),hv=P5.hv;
+ /* dissolution tank: ore fines in a hot caustic bath, with an agitator */
+ const l=w.leach;SK2.cyl(g,l.x,l.y,l.r,0,24,'#5d6a70','#9fb0b8',12);const lt=l.y-24*OK;SK2.cap(g,l.x,lt,l.r,'#5b636d');g.fillStyle=live>.05?'#3fa8a0':'#2c4a48';SK.circ(g,l.x,lt,l.r-7);g.fill();
+ g.save();g.translate(l.x,lt);g.rotate(RM?0:T*2*live);g.fillStyle='#c9ced6';g.fillRect(-l.r+12,-2,2*l.r-24,4);g.restore();g.fillStyle='#2b2f35';SK.circ(g,l.x,lt,5);g.fill();
+ SK.pipe(g,[[l.x+l.r,l.y],[w.hx0+10,l.y]],5,'#5fb3ad',T,{flow:live>.1?'#bdf2ec':null,speed:20});
+ /* rectifier */const r=w.rect;SK.box(g,r.x0,r.y0,r.x1-r.x0,r.y1-r.y0,'#2b3038','#141619',5);for(let q=0;q<6;q++){g.fillStyle=live>.1&&(RM||hsh(q+floor(T*3))>.2)?'#5fd38d':'#2a3a30';SK.circ(g,r.x0+14+q*13,r.y0+14,2.4);g.fill()}txt('DC',(r.x0+r.x1)/2,(r.y0+r.y1)/2+8,10,'#c9ced6',800,'center');
+ g.fillStyle='#c77d3a';g.fillRect(r.x1-2,r.y0+30,w.hx0-r.x1+12,6);
+ /* the tank house: 3 rows of 4 tanks; iron plates grow on the cathodes (thicker as the cathode stock grows) */
+ const W2=w.hx1-w.hx0,H2=w.hy1-w.hy0;SK.box(g,w.hx0,w.hy0,W2,H2,'#2a2e35','#121418',8);g.strokeStyle='rgba(92,200,232,.3)';g.lineWidth=2;SK.rr(g,w.hx0+5,w.hy0+5,W2-10,H2-10,6);g.stroke();
+ const tw=(W2-50)/4,th=58;for(let i=0;i<12;i++){const row=floor(i/4),col=i%4,x0=w.hx0+14+col*(tw+8),y0=w.hy0+16+row*(th+18);
+  if(i>=n){g.save();g.setLineDash([4,4]);g.strokeStyle='rgba(244,241,234,.2)';g.lineWidth=1.5;SK.rr(g,x0,y0,tw,th,6);g.stroke();g.restore();continue}
+  SK.box(g,x0,y0,tw,th,'#4a5a62','#1c2026',6);g.fillStyle=live>.05?'#2f8f88':'#284642';SK.rr(g,x0+4,y0+4,tw-8,th-8,4);g.fill();
+  g.fillStyle='#c77d3a';g.fillRect(x0+2,y0-3,tw-4,3);
+  const lifted=run&&hv.row===row&&hv.t<.6;for(let k=0;k<9;k++){const px=x0+10+k*(tw-20)/8,th2=1.6+2.6*cf;if(lifted&&k%2===0)continue;g.fillStyle=k%2?'#c4cbd2':'#9aa2ac';g.fillRect(px-th2/2,y0+8,th2,th-16)}
+  if(live>.3&&!RM)SK.parts(2,.6,i*5.1,T,(f,a2)=>{g.fillStyle=`rgba(220,250,245,${(1-f)*.5})`;SK.circ(g,x0+10+a2*(tw-20),y0+th-10-f*(th-20),1.4);g.fill()})}
+ /* harvest robot: a gantry over the tank rows; it lifts a set of plates and sets them on the stacker */
+ {const gy=w.hy0+16+hv.row*(th+18)+th/2,gx=run?lerp(w.hx0+60,w.hx1-40,(hv.row+hv.t)%1):w.hx0+60;SK.box(g,w.hx0+8,gy-8,W2-16,16,'#e0b020','#5a4510',3);SK.hazardBar(g,w.hx0+8,gy-8,W2-16,4);
+  SK.box(g,gx-14,gy-18,28,36,'#3b4048','#15171a',4);if(run&&hv.t<.6){for(let k=0;k<4;k++){g.fillStyle='#c4cbd2';g.fillRect(gx-10+k*6,gy-24,3,40)}}}
+ /* plate stacker and the roller table to the wagon */
+ const sk=w.stack,sf=clamp(S.rj.hearth/hearthCap(),0,1);SK.box(g,sk.x-25,sk.y-30,50,60,'#3b4048','#15171a',5);const ns=Math.round(sf*12);for(let i=0;i<ns;i++){g.fillStyle=i%2?'#aab2bc':'#8d959f';g.fillRect(sk.x-18,sk.y+18-i*3,36,3)}
+ SK.belt(g,sk.x+25,w.fill,P5G.A-20,w.fill,12,T,{speed:RJ.tapping?40:0,items:(g2,L,w3,tt)=>{if(!RJ.tapping)return;for(let i=0;i<3;i++){const p=((RM?i/3:tt*.6+i/3)%1)*L;g2.fillStyle='#aab2bc';g2.fillRect(p-6,-w3*.35,12,w3*.7)}}})}
+/* glow pass for the Phase 5 plants */
+function glowP5(){if(era()===8&&MOE.rate>.01){const m=P5G.moe;for(let i=0;i<nCell();i+=2){const x=m.hx0+12+m.pitch*(i+.5);glowC(x,(m.cy0+m.cy1)/2,60,C.molten,.08*MOE.heat)}glowC(-830,m.tapY,40,C.molten,.15)}
+ if(era()===9&&PLS.rate>.01){const R=P5G.pls.R;glowC(R.x,R.y-26*OK,R.r+40,'#c9a0ff',.22*PLS.heat)}
+ if(ET()==='hold'||ET()==='ind'){if(TORPS.some(t=>t.st==='pour'&&t.pouring)&&ET()==='hold')glowC(720,656,46,C.molten,.25);if(ET()==='ind'&&F.arc>0)glowC(F.x,F.y-18,90,'#ffb36b',.12*F.arc)}}

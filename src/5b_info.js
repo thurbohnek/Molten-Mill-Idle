@@ -268,14 +268,14 @@ function p4Nums(id){const D=S.dri;switch(id){
  case'esf':case'esfbin':return era()===7?t_('{0} MW · {1} t/min råjern',Math.round(esfMW()),tf(ESF.rate*60)):t_('Venter på LD-konverteren');
  case'esfslag':return kr(rate('v:esf'),'/min');case'esftap':return t_('{0} t i ovnen',tf(S.rj.hearth))}return''}
 function p4Hit(wx,wy){const o=(id,x,y)=>({type:'p4',key:'p4:'+id,id,x,y}),g=P4G,E=ESFG;
- if(B_('h2')){const h=g.hall;if(inR(wx,wy,h.x0,h.y0,h.x1-h.x0,h.y1-h.y0))return o('hall',(h.x0+h.x1)/2,(h.y0+h.y1)/2);
+ if(B_('h2')&&!mbOn('dri')&&mbSt('dri')!=='gone'){const h=g.hall;if(inR(wx,wy,h.x0,h.y0,h.x1-h.x0,h.y1-h.y0))return o('hall',(h.x0+h.x1)/2,(h.y0+h.y1)/2);
   for(const t of g.tank.slice(0,nTank()))if(hyp(wx-t.x,wy-t.y)<t.r+6)return o('tank',t.x,t.y);
   if(lv('h2st')>=3&&inR(wx,wy,g.cav.x,g.cav.y,g.cav.w,g.cav.h))return o('cav',g.cav.x+g.cav.w/2,g.cav.y+g.cav.h/2);
   if(hyp(wx-g.shaft.x,wy-g.shaft.y)<g.shaft.R+10)return o('shaft',g.shaft.x,g.shaft.y);if(hyp(wx-g.stack.x,wy-g.stack.y)<26)return o('stack',g.stack.x,g.stack.y);
   if(hyp(wx-g.bin.x,wy-g.bin.y)<g.bin.r+8)return o('bin',g.bin.x,g.bin.y);
   if(inR(wx,wy,g.yard.x0,g.yard.y0,g.yard.x1-g.yard.x0,g.yard.y1-g.yard.y0))return o('pyard',g.pile.x,g.pile.y);
   if(era()===6){const G2=g.gal;for(let i=1;i<G2.length;i++){const a=G2[i-1],b=G2[i];if(inR(wx,wy,min(a[0],b[0])-10,min(a[1],b[1])-10,Math.abs(b[0]-a[0])+20,Math.abs(b[1]-a[1])+20))return o('gal',wx,wy)}}}
- if(B_('esf')){if(inR(wx,wy,E.x0,E.y0,E.x1-E.x0,E.y1-E.y0))return o('esf',(E.x0+E.x1)/2,E.cy);for(const x of E.bins)if(hyp(wx-x,wy-E.binY)<26)return o('esfbin',x,E.binY);
+ if(B_('esf')&&!mbOn('esf')&&mbSt('esf')!=='gone'){if(inR(wx,wy,E.x0,E.y0,E.x1-E.x0,E.y1-E.y0))return o('esf',(E.x0+E.x1)/2,E.cy);for(const x of E.bins)if(hyp(wx-x,wy-E.binY)<26)return o('esfbin',x,E.binY);
   if(hyp(wx-E.slag.x,wy-E.slag.y)<34||inR(wx,wy,E.slag.x,E.cy-16,E.x0-E.slag.x,32))return o('esfslag',E.slag.x,E.slag.y);if(inR(wx,wy,E.x1,E.cy-60,ESFG.tapX-E.x1,80))return o('esftap',E.x1+10,E.cy)}
  return null}
 /* ---- Phase 3 explanations: [Norwegian, English] (up/zone/kind) and [no title, no text, en title, en text] (p3 equipment) ---- */
@@ -360,14 +360,15 @@ function hitInfo(wx,wy){
  for(const L of LADLES){if(hyp(wx-L.x,wy-L.y)<34)return{type:'ladle',key:'ladle:'+L.i,L,x:L.x,y:L.y}}
  if(lfRoof)return{type:'zone',key:'zone:lf',z:ZN.lf,x:POS.lf.x,y:POS.lf.y};
  if(carOn()&&inR(wx,wy,POS.rail.x0,POS.tap.y-30,POS.rail.x1-POS.rail.x0,60))return lcar;
- for(const t of TORPS){if(rjClosed()&&era()!==7)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3),y=onA?POS.torpA:POS.torpB;
+ for(const t of TORPS){if(rjClosed()&&era()<7)continue;const onA=t.st==='go'||t.st==='pour'||(t.st==='fill'&&fillQ()[0]===t&&Math.abs(t.x-POS.torpX0)<3);
+  if(era()>=8){const[x,y]=tlPt(t.x,onA);if(hyp(wx-x,wy-y)<46)return{type:'torp',key:'torp:'+t.i,t,x,y};continue}const y=onA?POS.torpA:POS.torpB;
   if(Math.abs(wx-t.x)<70&&Math.abs(wy-y)<26)return{type:'torp',key:'torp:'+t.i,t,x:t.x,y}}
  for(const c of CRANES){if(c.built()&&hyp(wx-c.x,wy-c.y)<30)return{type:'crane',key:'crane:'+c.id,c,x:c.x,y:c.y}}
  for(const h of helpers){if(!inCab(h)&&hyp(wx-h.x,wy-(h.y-14))<(h.agv?22:18))return{type:h.agv?'agv':'helper',key:(h.agv?'agv:':'helper:')+h.gi,h,x:h.x,y:h.y}}
  for(const d of ctlDesks()){if(inR(wx,wy,d.x-24,d.y-16,48,40))return{type:'misc',key:'misc:ctl_'+d.id,id:'ctl_'+d.id,d,x:d.x,y:d.y}}
  for(const u of MBK){if(!mbOn(u)||u==='rj')continue;const g2=mbGeo(u);if(g2&&inR(wx,wy,g2.z.x0,g2.z.y0+30,330,g2.z.y1-g2.z.y0-40))return{type:'mb',key:'mb:'+u,u,x:g2.cx,y:g2.cy}}
  if(AUTO()&&inR(wx,wy,CRB.x0,CRB.y0,CRB.x1-CRB.x0,CRB.y1-CRB.y0))return{type:'misc',key:'misc:cr',id:'cr',x:(CRB.x0+CRB.x1)/2,y:CRB.y0+40};
- {const p4=p4Hit(wx,wy);if(p4)return p4}
+ {const p4=p4Hit(wx,wy);if(p4)return p4}{const p5=p5Hit(wx,wy);if(p5)return p5}
  if(CS()){const C=CSG,cs=(id,x,y)=>({type:'cs',key:'cs:'+id,id,x,y});
   if(hyp(wx-TROBP.x,wy-TROBP.y)<28||inR(wx,wy,882,686,30,76))return cs('robot',TROBP.x,TROBP.y);
   if(inR(wx,wy,POS.F.x-16,POS.F.y+84,32,SLAGP.y-SLAGP.h/2-POS.F.y-80))return cs('door',POS.F.x,POS.F.y+96);
@@ -380,7 +381,7 @@ function hitInfo(wx,wy){
   if(inR(wx,wy,C.dx-C.dw/2-8,140,C.dw+16,C.y-C.hw-140)||inR(wx,wy,364,150,90,120))return cs('duct',C.dx,wy);
   if(inR(wx,wy,60,40,300,200))return cs('filter',wx,wy)}
  {const p3=p3Hit(wx,wy);if(p3)return p3}
- if(inR(wx,wy,GAUGE.x-60,GAUGE.y-22,120,48)||(ET()==='sm'?inR(wx,wy,676,404,250,394):hyp(wx-POS.F.x,wy-POS.F.y)<112))return{type:'furnace',key:'furnace',x:POS.F.x,y:POS.F.y};
+ if(inR(wx,wy,GAUGE.x-60,GAUGE.y-22,120,48)||(ET()==='hold'||ET()==='ind')&&inR(wx,wy,686,600,72,96)||(ET()==='sm'?inR(wx,wy,676,404,250,394):hyp(wx-POS.F.x,wy-POS.F.y)<112))return{type:'furnace',key:'furnace',x:POS.F.x,y:POS.F.y};
  if(!rjGone()&&Math.abs(wx-POS.rjF.x)<95&&wy>POS.rjF.y-260&&wy<POS.rjF.y+92)return{type:'rjf',key:'rjf',x:POS.rjF.x,y:POS.rjF.y};
  if(usesHM()&&hyp(wx-POS.hmL.x,wy-POS.hmL.y)<40)return{type:'misc',key:'misc:hmL',id:'hmL',x:POS.hmL.x,y:POS.hmL.y};
  for(const r in POSTS){const p=postOf(r);if((lv(HIRE[r].id)||AUTO()&&r!=='rj')&&stOn(r)&&inR(wx,wy,p.x-24,p.y-14,48,40))return{type:'misc',key:'misc:desk',id:AUTO()?'pult':'desk',r,x:p.x,y:p.y}}
@@ -411,7 +412,7 @@ function carNums(){const C=CAR,L=C.L,full=L&&L.steel>.05;
  return t_(st)+(full?' · '+tf(L.steel)+' t':'')+' · '+t_('{0} % i bruk',Math.round((C.busy||0)*100))}
 function upNums(u){const l=lv(u.id),mx=l>=u.max,lvT=u.person?t_('Hjelpere {0} av {1}',l,u.max):t_('Nivå {0}/{1}',l,u.max);
  if(mx)return lvT+' · '+t_('MAKS');if(!upOpen(u))return lvT+' · '+t_('låst');const paid=S.paid['u:'+u.id]||0;return lvT+' · '+t_('neste: {0}',upSub(u))+' · '+kr(Math.ceil(upCost(u)-paid))}
-function furnNums(){const E=E_(),st=status('ovn');return Math.round(F.temp)+' °C · '+tf(F.bath)+'/'+fcap()+' t'+(E.type==='conv'?' · '+tf(blowT())+' s':' · '+Math.round(MW())+' '+t_(E.pu))+(st&&st.t?' · '+st.t:'')}
+function furnNums(){const E=E_(),st=status('ovn');return Math.round(F.temp)+' °C · '+tf(F.bath)+'/'+fcap()+' t'+(E.type==='conv'?' · '+tf(blowT())+' s':E.type==='hold'?'':' · '+Math.round(MW())+' '+t_(E.pu))+(st&&st.t?' · '+st.t:'')}
 function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  switch(h.type){
  case'pad':{const d=h.d;if(!d)return null;
@@ -419,7 +420,7 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
    return{t:upName(u),d:ixs(IX.up[u.id]),n}}
   if(d.kind==='hire'){const l=lv(d.h.id),N=d.h.costs.length,au=AUTO()&&IX.op[d.st];return{t:hName(d.h),d:au?ixs(IX.op[d.st]):ixs(IX.hire[d.st])+' '+ixs(IX.hire.all),n:t_(au?'Operatører {0} av {1}':'Hjelpere {0} av {1}',l,N)+(l<N?' · '+kr(cost(d)-(S.paid[paidKey(d)]||0)):'')}}
   if(d.kind==='build'){const b=nextBuild();if(!b)return null;const[,tx]=ix4(IX.misc.build);return{t:t_('Bygg: {0}',t_(b.n)),d:t_(b.d)+' '+tx,n:kr(b.cost)+' · '+t_('betalt {0}',kr(S.paid['b:'+b.id]||0))}}
-  if(d.kind==='demol'||d.kind==='restart'){const M=MBU[d.u],dm=d.kind==='demol',[ti,tx]=ix4(IX.misc[dm?'dem':rebuildLD(d)?'rebuild':'rst']);return{t:ti+': '+mbName(d.u),d:tx,n:dm?kr(cost(d)-(S.paid[paidKey(d)]||0))+' · '+t_('+{0} t skrap',M.scrap)+' · '+t_('vedlikehold {0}',kr(M.up,'/min')):restartOK(d.u)?kr(cost(d)):t_('Låst · ingen ovn trenger den ennå')}}
+  if(d.kind==='demol'||d.kind==='restart'){const M=MBU[d.u],dm=d.kind==='demol',[ti,tx]=ix4(IX.misc[dm?'dem':d.u==='dri'?(rebuildDRI(d)?'rebuilddri':'rstdri'):rebuildLD(d)?'rebuild':'rst']);return{t:ti+': '+mbName(d.u),d:tx,n:dm?kr(cost(d)-(S.paid[paidKey(d)]||0))+' · '+t_('+{0} t skrap',M.scrap)+' · '+t_('vedlikehold {0}',kr(M.up,'/min')):restartOK(d.u)?kr(cost(d)):t_('Låst · ingen ovn trenger den ennå')}}
   if(d.kind==='prestige'){const[ti,tx]=ix4(IX.misc.prestige);return{t:ti,d:tx,n:presGain()>0?t_('+{0} ekspertise',presGain()):t_('Tjen {0} totalt',kr(PRES_NEED))+' · '+kr(S.earned)}}return null}
  case'sw':{const s=h.s;return{t:t_(s.lab),d:ixs(IX.sw[s.id]),n:t_('Nå: {0}',swTxt(s.id).replace(/^[^:]*: /,''))}}
  case'tap':{const[ti,tx]=ix4(IX.ring.tap);return{t:ti,d:tx+(lv('operator')?' '+ixs(IX.up.operator):''),n:furnNums()}}
@@ -439,7 +440,7 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'lcar':{const[ti,tx]=ix4(IX.misc.lcar);return{t:ti,d:tx,n:carNums()}}
  case'ladle':{const L=h.L,[ti,tx]=ix4(IX.misc.ladle),stx={park:carOn()&&!onCar(L)?'på øsestolen':'venter',filling:'fylles',await:'venter på kranen',carried:'løftes',lf:'i øseovnen',pit:'blokkstøping',tur:'på øsetårnet',cast:'støper',car:'på øsevogna'}[L.state]||'';
   return{t:ti,d:tx,n:(L.steel>.05?tf(L.steel)+' t · ':'')+t_(stx)+(L.q>1.001?' · '+t_('Kvalitet ×{0}',L1(L.q)):'')}}
- case'torp':{const t=h.t,[ti,tx]=ix4(IX.misc[era()===7?'torp7':'torp']);return{t:ti,d:tx,n:tf(t.load)+'/'+torpCap()+' t · '+t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())}}
+ case'torp':{const t=h.t,[ti,tx]=ix4(IX.misc[era()>=10?'pwag':era()>=8?'ltcar':era()===7?'torp7':'torp']);return{t:ti,d:tx,n:tf(t.load)+'/'+torpCap()+' t · '+t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())}}
  case'crane':{const c=h.c,u={skrap:'kran',malm:'malmkran',ose:'osekran',mag:'magkran'}[c.id];if(c.id==='skrap'&&CS()){const[ti,tx]=ix4(IX.cs.crane);return{t:ti,d:tx,n:t_('Løft {0} t',tf(craneLift()))+' · '+upNums(UPm.kran)}}return{t:cap1(t_(c.n)),d:ixs(IX.crane[c.id]),n:upNums(UPm[u])}}
  case'cs':{const[ti,tx]=ix4(IX.cs[h.id]);const fd=t_('{0} t/min inn i ovnen',tf(CSB.feed*60));
   const n={charge:()=>t_('Fylt {0}/{1} t',tf(S.chg),tf(chgCap())),conveyor:()=>fd+' · '+upNums(UPm.charge),seal:()=>t_('Avgass ved uttaket: ca. {0} °C',Math.round(csGasT(CSG.xs+6))),
@@ -450,7 +451,8 @@ function infoFor(h){if(!h)return null;const sn=x=>t_(SUPN[x]);
  case'helper':{const r=h.h.r,hi=HIRE[r];if(AUTO()&&IX.op[r])return{t:hName(hi),d:ixs(IX.op[r]),n:t_('Operatører {0} av {1}',lv(hi.id),hi.costs.length)};return{t:hName(hi),d:ixs(IX.hire[r])+' '+ixs(IX.hire.all),n:t_('Hjelpere {0} av {1}',lv(hi.id),hi.costs.length)}}
  case'agv':{const r=h.h.r,[ti,tx]=ix4(IX.misc.agv);return{t:ti,d:tx,n:t_('{0} vogner ved {1}',nAGV(r),t_(PR[AGVK[r]].n))+' · '+t_('last {0} stk',hcap())}}
  case'mb':{const u=h.u,M=MBU[u],[,tx]=ix4(IX.misc.mb),[,tr]=ix4(IX.misc.mbre);return{t:mbName(u)+' · '+M.yr,d:tx+(M.re?' '+tr:''),n:t_('LAGT NED')+' · '+t_('vedlikehold {0}',kr(M.up,'/min'))}}
- case'furnace':{const E=E_();return{t:(era()===7?t_('LD-konverter')+' · '+t_(E.n):t_(E.n))+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
+ case'furnace':{const E=E_();return{t:(era()===7?t_('LD-konverter')+' · '+t_(E.n):era()>=8?t_(ET()==='ind'?'Induksjonsovn':'Holdeovn')+' · '+t_(E.n):t_(E.n))+' · '+E.yr,d:ixs(IX.era[era()]),n:furnNums()}}
+ case'p5':{const[ti,tx]=ix4(IX.p5[h.id]);return{t:ti,d:tx,n:p5Nums(h.id)}}
  case'rjf':{if(rjClosed()){const[,tx]=ix4(IX.misc.closed),[,tm]=ix4(IX.misc.mb);return{t:t_(RJE[rjEra()].n),d:tx+' '+tm,n:t_('NEDLAGT')+(mbOn('rj')?' · '+t_('vedlikehold {0}',kr(MBU.rj.up,'/min')):'')}}const st=status('rj');return{t:t_(RJE[rjEra()].n)+' · '+RJE[rjEra()].yr,d:ixs(IX.rje[rjEra()]),n:t_('{0} t/min råjern',tf(RJ.rate*60))+' · '+t_('i ovnen {0} t',tf(S.rj.hearth))+(st&&st.lv?' · '+st.t:'')}}
  case'up':{const u=h.u;return infoFor({type:'pad',d:PAD['u_'+u.id]})}
  case'p4':{const[ti,tx]=ix4(IX.p4[h.id]);return{t:ti,d:tx,n:p4Nums(h.id)}}
@@ -494,3 +496,77 @@ function tapInfo(wx,wy,t0){if(G.mode!=='play'||G.modal||G.mapOn)return false;con
  if(h.key===INFO.closedKey&&Math.abs(t0-INFO.closedT)<120)return false;return showInfo(h)}
 /* the next press anywhere (canvas, HUD, menu) closes the bubble; it still starts the joystick */
 document.addEventListener('pointerdown',()=>{if(INFO.on){INFO.closedKey=INFO.key;INFO.closedT=performance.now();hideInfo()}else INFO.closedKey=null},true);
+
+/* ---- Phase 5 explanations: [no title, no text, en title, en text] (equipment); up / op / hire / zone / era entries ---- */
+Object.assign(IX.up,{
+ cells:['Én elektrolysecelle til langs hallen. Hver celle har sin egen anode og tappes i den felles renna. Flere celler gir mer stål.','One more electrolysis cell along the hall. Each cell has its own anode and is tapped into the common launder. More cells make more steel.'],
+ rect:['Kraftigere transformator og likeretter: mer strøm (kA) gjennom hver celle. Strømmen er det som splitter jernoksidet, så mer strøm gir mer stål.','A stronger transformer and rectifier: more current (kA) through every cell. The current is what splits the iron oxide, so more current makes more steel.'],
+ anode:['En raskere anoderobot bytter slitte anoder på kortere tid, så hver celle står kortere stille.','A faster anode robot changes worn anodes in less time, so every cell stands still for less time.'],
+ o2c:['Oksygenet fra anodene komprimeres og selges i rørledning. Hvert nivå gir mer betalt per tonn O₂.','The oxygen from the anodes is compressed and sold by pipeline. Each level earns more per tonne of O₂.'],
+ ltc:['Større øser (eller platevogner) på overføringsvognene, og vognene kjører litt raskere.','Bigger ladles (or plate wagons) on the transfer cars, and the cars run a little faster.'],
+ ltcn:['En vogn til på overføringslinja, så anlegget aldri står og venter på en tom vogn.','One more car on the transfer line, so the plant never waits for an empty car.'],
+ indmw:['Kraftigere omformer og spole i induksjonsovnen: den smelter jernplatene raskere.','A stronger power converter and coil on the induction furnace: it melts the iron plates faster.'],
+ pmw:['Mer effekt i plasmabrennerne: mer malmstøv reduseres og smeltes per minutt.','More power in the plasma torches: more ore fines are reduced and melted per minute.'],
+ ptorch:['Én plasmabrenner til rundt den hule elektroden: mer effekt i reaktoren.','One more plasma torch around the hollow electrode: more power in the reactor.'],
+ fines:['Mer malmstøv inn i siloen per minutt. Reaktoren trenger rundt 1,5 tonn malmstøv per tonn stål.','More ore fines into the silo per minute. The reactor needs about 1.5 tonnes of fines per tonne of steel.'],
+ cond:['Dampkondensatoren gjør vanndampen fra reaktoren om til vann igjen og sender det tilbake til elektrolysørene. Mer vann tilbake gir mer hydrogen.','The steam condenser turns the reactor’s water vapour back into water and sends it to the electrolysers. More water back gives more hydrogen.'],
+ tanks:['Ett elektrolysekar til i karhallen, med egne katodeplater.','One more electrolysis tank in the tank house, with its own cathode plates.'],
+ ewcur:['Høyere strømtetthet: jernet vokser raskere på katodeplatene.','A higher current density: the iron grows faster on the cathode plates.'],
+ harv:['Raskere høsterobot: løfter de ferdige jernplatene ut av karene og stabler dem for platevognene.','A faster harvest robot: lifts the finished iron plates out of the tanks and stacks them for the plate wagons.']});
+Object.assign(IX.op,{moe:['Celleoperatører følger cellene fra pulten: strøm, temperatur og anodebytter. Hver operatør gir litt mer stål.','Cell operators watch the cells from the desk: current, temperature and anode changes. Each operator gives a little more steel.'],
+ pls:['Plasmaoperatører kjører reaktoren fra pulten. Hver operatør gir litt mer stål.','Plasma operators run the reactor from the desk. Each operator gives a little more steel.'],
+ ew:['Karoperatører følger karene og robotene fra pulten. Hver operatør gir litt flere plater.','Tank operators watch the tanks and the robots from the desk. Each operator gives a few more plates.']});
+Object.assign(IX.hire,{moe:['Celleoperatører sitter ved pulten i cellehallen – her bærer ingen noe.','Cell operators sit at the desk in the cell hall – nobody carries anything here.'],
+ pls:['Plasmaoperatører sitter ved pulten ved reaktoren – her bærer ingen noe.','Plasma operators sit at the desk by the reactor – nobody carries anything here.'],
+ ew:['Karoperatører sitter ved pulten i karhallen – robotene høster platene.','Tank operators sit at the desk in the tank house – the robots harvest the plates.']});
+Object.assign(IX.zone,{moe:['Smelteelektrolyse: malm løst i et smeltet oksidbad splittes av likestrøm til flytende stål og oksygen. Ingen kull, ingen hydrogen – bare strøm.','Molten oxide electrolysis: ore dissolved in a molten oxide bath is split by direct current into liquid steel and oxygen. No coal, no hydrogen – only electricity.'],
+ pls:['Hydrogenplasma: malmstøv blåses inn i en lysbue av hydrogenplasma. Reduksjon og smelting skjer i samme kar; ut kommer flytende stål og vanndamp.','Hydrogen plasma: ore fines are blown into an arc of hydrogen plasma. Reduction and melting happen in the same vessel; out come liquid steel and water vapour.'],
+ ew:['Kald elektrolyse: jernmalm løses i en lut ved rundt 110 °C, og strøm setter rent jern av som plater på katodene. Platene smeltes i induksjonsovnen.','Low-temperature electrowinning: iron ore is dissolved in a caustic bath at about 110 °C, and current deposits pure iron as plates on the cathodes. The plates are melted in the induction furnace.']});
+IX.era[8]=['Smelteelektrolyse (rundt 2040): cellehallen lager flytende stål av malm og strøm. Overføringsvogner kjører stålet hit, og en induksjonsholdeovn samler det til en charge og tapper det i støpeøsene.','Molten oxide electrolysis (around 2040): the cell hall makes liquid steel from ore and electricity. Transfer cars bring the steel here, and an induction holding furnace collects it into a heat and taps it into the casting ladles.'];
+IX.era[9]=['Hydrogenplasma (rundt 2045): plasmareaktoren gjør malmstøv om til flytende stål i ett trinn. Holdeovnen tar imot stålet og tapper det i støpeøsene.','Hydrogen plasma (around 2045): the plasma reactor turns ore fines into liquid steel in one step. The holding furnace takes the steel and taps it into the casting ladles.'];
+IX.era[10]=['Kald elektrolyse (rundt 2050): jernplater fra karhallen smeltes i induksjonsovnen og tappes i støpeøsene. Ingen lysbue, ingen kull – bare strøm og rent jern.','Low-temperature electrowinning (around 2050): iron plates from the tank house are melted in the induction furnace and tapped into the casting ladles. No arc, no coal – only electricity and pure iron.'];
+Object.assign(IX.misc,{ltcar:['Overføringsvogn','En selvgående vogn med en isolert øse. Den henter flytende stål ved anlegget og heller det i holdeovnen i stålverket.','Transfer car','A self-propelled car with an insulated ladle. It takes liquid steel at the plant and pours it into the holding furnace in the melt shop.'],
+ pwag:['Platevogn','En flat vogn med stabler av jernplater fra karhallen. I stålverket tippes platene i induksjonsovnens platebinge.','Plate wagon','A flat wagon with stacks of iron plates from the tank house. At the melt shop the plates are tipped into the induction furnace’s plate bin.'],
+ rstdri:['Start igjen','Plasmareaktoren trenger hydrogen: elektrolysørene og H₂-lageret i det gamle DRI-anlegget startes igjen. Sjaktovnen forblir kald.','Restart','The plasma reactor needs hydrogen: the electrolysers and the H₂ store of the old DRI plant are restarted. The shaft furnace stays cold.'],
+ rebuilddri:['Bygg opp igjen','DRI-anlegget ble revet. Plasmareaktoren trenger hydrogen – her bygges elektrolysørene og lageret opp igjen.','Rebuild','The DRI plant was demolished. The plasma reactor needs hydrogen – the electrolysers and the store are rebuilt here.'],
+ ctl_moe:['Cellepult','Herfra kjøres cellehallen. Trykk på pulten for å ta over: +10 % strøm i cellene. Går du fra pulten, tar automatikken over igjen.','Cell desk','The cell hall is run from here. Tap the desk to take over: +10 % current in the cells. Leave the desk and the automation takes over again.'],
+ ctl_pls:['Plasmapult','Herfra kjøres plasmareaktoren. Trykk på pulten for å ta over: +10 % effekt. Går du fra pulten, tar automatikken over igjen.','Plasma desk','The plasma reactor is run from here. Tap the desk to take over: +10 % power. Leave the desk and the automation takes over again.'],
+ ctl_ew:['Karpult','Herfra kjøres karhallen. Trykk på pulten for å ta over: +10 % strøm i karene. Går du fra pulten, tar automatikken over igjen.','Tank desk','The tank house is run from here. Tap the desk to take over: +10 % current in the tanks. Leave the desk and the automation takes over again.']});
+Object.assign(IX.drop,{none:['Chargeringen hviler: stålet kommer flytende fra det nye anlegget, så her chargeres ikke noe skrap.','Charging is resting: the steel arrives liquid from the new plant, so no scrap is charged here.'],
+ plate:['Chargeringen hviler: induksjonsovnen får jernplatene med platevogner, så her chargeres ikke noe skrap.','Charging is resting: the induction furnace gets its iron plates by plate wagon, so no scrap is charged here.']});
+IX.p5={
+ rect:['Likeretter','Transformatorer og en likeretter gjør vekselstrøm om til den kraftige likestrømmen cellene trenger. Strømskinner fører den langs hele hallen.','Rectifier','Transformers and a rectifier turn alternating current into the strong direct current the cells need. Busbars carry it along the whole hall.'],
+ hall:['Cellehall','Celler på rad: i hver celle løses malm i et oksidbad på rundt 1600 °C. Likestrøm skiller ut flytende stål i bunnen og oksygen ved anoden.','Cell hall','Cells in a row: in each cell ore is dissolved in an oxide bath at about 1600 °C. Direct current separates liquid steel at the bottom and oxygen at the anode.'],
+ launder:['Tapperenne','Cellene tappes fra bunnen i en oppvarmet renne som fører stålet til overføringsvogna.','Tapping launder','The cells are tapped from the bottom into a heated launder that leads the steel to the transfer car.'],
+ robot:['Anoderobot','En portalkran kjører langs hallen og bytter slitte anoder automatisk. Cellen står stille mens anoden byttes.','Anode robot','A gantry runs along the hall and changes worn anodes automatically. The cell stands still while its anode is changed.'],
+ o2:['Oksygen','Oksygenet fra anodene samles, komprimeres og selges i rørledning – et biprodukt som gir inntekt.','Oxygen','The oxygen from the anodes is collected, compressed and sold by pipeline – a by-product that earns money.'],
+ silo:['Malmstøvsilo','Finmalt jernmalm. Den blåses pneumatisk inn i reaktoren.','Ore-fines silo','Finely ground iron ore. It is blown pneumatically into the reactor.'],
+ reactor:['Plasmareaktor','Malmstøv faller gjennom en lysbue av hydrogenplasma fra den hule elektroden og brennerne. Hydrogenet tar oksygenet; flytende stål samles i bunnen.','Plasma reactor','Ore fines fall through an arc of hydrogen plasma from the hollow electrode and the torches. The hydrogen takes the oxygen; liquid steel collects at the bottom.'],
+ cond:['Dampkondensator','Avgassen er vanndamp. Kondensatoren gjør den til vann igjen, og vannet går i rør tilbake til elektrolysørene – en sirkel.','Steam condenser','The off-gas is water vapour. The condenser turns it back into water, and the water is piped back to the electrolysers – a circle.'],
+ pipes:['H₂ og vann','Hydrogen fra det gamle DRI-anleggets lager går ned til reaktoren; vann fra kondensatoren går tilbake opp til elektrolysørene.','H₂ and water','Hydrogen from the old DRI plant’s store goes down to the reactor; water from the condenser goes back up to the electrolysers.'],
+ leach:['Lutkar','Finmalt jernmalm løses i en varm, sterk lut. Den rike luten pumpes til elektrolysekarene.','Dissolution tank','Finely ground iron ore is dissolved in a hot, strong caustic bath. The rich liquor is pumped to the electrolysis tanks.'],
+ tankh:['Karhall','Rader med elektrolysekar. Strøm setter rent jern av som plater på katodene – omtrent som i en sinkfabrikk.','Tank house','Rows of electrolysis tanks. Current deposits pure iron as plates on the cathodes – much like a zinc refinery.'],
+ harv:['Høsterobot','En portalrobot løfter ferdige jernplater opp av karene og setter dem på stableren.','Harvest robot','A gantry robot lifts finished iron plates out of the tanks and sets them on the stacker.'],
+ stack:['Platestabler','Jernplatene stables her til platevognene henter dem.','Plate stacker','The iron plates are stacked here until the plate wagons take them.'],
+ line:['Overføringslinje','To spor: fullt ut på det ene, tomt tilbake på det andre. Linja går opp langs anleggene og videre på de gamle torpedosporene til stålverket.','Transfer line','Two tracks: full out on one, empty back on the other. The line runs up past the plants and on along the old torpedo tracks to the melt shop.'],
+ feed:['Innløp til ovnen','Overføringsvogna heller stålet i en renne inn i holdeovnen (eller tipper platene på en mater inn i induksjonsovnen).','Furnace inlet','The transfer car pours the steel into a launder into the holding furnace (or tips the plates onto a feeder into the induction furnace).']};
+function p5Nums(id){switch(id){
+ case'rect':return t_('{0} kA per celle',cellKA());case'hall':return status('moe')?status('moe').t:'';case'launder':return t_('{0} t i renna',tf(S.rj.hearth));
+ case'robot':return t_('{0} % av tiden i drift',Math.round(anodeAv()*100));case'o2':return t_('{0} t/min O₂',tf(rate('f:moe>salg')))+' · '+kr(rate('v:moe'),'/min');
+ case'silo':return t_('{0}/{1} t',tf(S.p5.fines),tf(finesCap()))+' · '+t_('{0} t/min inn',tf(finesRate()*60));case'reactor':return status('pls')?status('pls').t:'';
+ case'cond':return t_('{0} % vann tilbake',Math.round(waterK()*100));case'pipes':return t_('{0} t/min H₂',tf(rate('f:h2>pls')));
+ case'leach':case'tankh':return status('ew')?status('ew').t:'';case'harv':return t_('{0} t/min',tf(rate('harv')))+' · '+upNums(UPm.harv);case'stack':return t_('{0} t',tf(S.rj.hearth));
+ case'line':return t_(nTorp()===1?'{0} vogn':'{0} vogner',nTorp())+' · '+torpCap()+' t';case'feed':return ET()==='ind'?t_('Platebinge {0}/{1} t',tf(S.hm),hmCap()):t_('{0} t/min inn',tf(rate('holdin')))}return''}
+function p5Hit(wx,wy){const o=(id,x,y)=>({type:'p5',key:'p5:'+id,id,x,y}),g5=P5G;
+ if(era()>=8&&(ET()==='hold'||ET()==='ind')&&inR(wx,wy,686,610,64,84))return o('feed',716,650);
+ if(B_('moe')&&mbSt('moe')!=='gone'&&!mbOn('moe')){const m=g5.moe;if(inR(wx,wy,m.yx0,m.hy0,m.yx1-m.yx0,m.hy1-m.hy0))return o('rect',(m.yx0+m.yx1)/2,(m.hy0+m.hy1)/2);
+  if(Math.abs(wy-m.tapY)<12&&wx>m.hx0&&wx<g5.A)return o('launder',wx,m.tapY);if(era()===8&&Math.abs(wx-P5.an.x)<16&&wy>m.hy0&&wy<m.hy1)return o('robot',P5.an.x,(m.cy0+m.cy1)/2);
+  if(inR(wx,wy,m.hx0,m.hy0,m.hx1-m.hx0,m.hy1-m.hy0))return o('hall',(m.hx0+m.hx1)/2,(m.hy0+m.hy1)/2);if(hyp(wx-m.o2.x,wy-m.o2.y)<m.o2.r+6||inR(wx,wy,-940,1276,46,40))return o('o2',m.o2.x,m.o2.y)}
+ if(B_('pls')&&mbSt('pls')!=='gone'&&!mbOn('pls')){const q=g5.pls;if(hyp(wx-q.silo.x,wy-q.silo.y)<q.silo.r+8)return o('silo',q.silo.x,q.silo.y);if(hyp(wx-q.R.x,wy-q.R.y)<q.R.r+8)return o('reactor',q.R.x,q.R.y);
+  if(inR(wx,wy,q.cond.x0,q.cond.y0-30,q.cond.x1-q.cond.x0,q.cond.y1-q.cond.y0+30))return o('cond',(q.cond.x0+q.cond.x1)/2,(q.cond.y0+q.cond.y1)/2);if(Math.abs(wx+1603)<10&&wy>270&&wy<1650)return o('pipes',-1603,wy)}
+ if(B_('ew')){const w=g5.ew;if(hyp(wx-w.leach.x,wy-w.leach.y)<w.leach.r+8)return o('leach',w.leach.x,w.leach.y);if(inR(wx,wy,w.rect.x0,w.rect.y0,w.rect.x1-w.rect.x0,w.rect.y1-w.rect.y0))return o('rect',(w.rect.x0+w.rect.x1)/2,(w.rect.y0+w.rect.y1)/2);
+  if(inR(wx,wy,w.stack.x-25,w.stack.y-30,50,60))return o('stack',w.stack.x,w.stack.y);if(era()===10){const gy=w.hy0+16+P5.hv.row*76+29;if(Math.abs(wy-gy)<14&&wx>w.hx0&&wx<w.hx1)return o('harv',wx,gy)}
+  if(inR(wx,wy,w.hx0,w.hy0,w.hx1-w.hx0,w.hy1-w.hy0))return o('tankh',(w.hx0+w.hx1)/2,(w.hy0+w.hy1)/2)}
+ if(era()>=8&&(Math.abs(wx-g5.A-14)<30&&wy>692&&wy<TL.yF+20||Math.abs(wy-707)<30&&wx>g5.A&&wx<680))return o('line',wx,wy);
+ for(const u of['esf','dri','moe','pls'])if(mbOn(u)&&inZone(ZN[MBU[u].own],wx,wy,0)){const c=ownC(u);return{type:'mb',key:'mb:'+u,u,x:c.cx,y:c.cy}}
+ return null}

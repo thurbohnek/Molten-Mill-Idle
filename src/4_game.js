@@ -2,7 +2,9 @@
 /* ---------- effects ---------- */
 function spark(x,y,n,sp,c,life,up){if(RM)n=Math.ceil(n/2);for(let i=0;i<n&&parts.length<320;i++){const a=up!=null?up+rnd(-.9,.9):rnd(0,TAU),s=rnd(.3,1)*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:rnd(.5,1)*(life||.6),m:life||.6,c:c||C.moltenhi,g:120})}}
 function confetti(x,y,n){const cols=[C.hazard,C.molten,C.good,C.ui];n=n||30;if(RM)n=floor(n/2.5);for(let i=0;i<n&&parts.length<400;i++){const a=rnd(0,TAU),s=rnd(60,220);parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-80,l:rnd(.6,1.1),m:1.1,c:cols[i%4],g:260,sq:1})}}
-function ftext(t,x,y,c){if(texts.length>40)texts.shift();texts.push({t,x,y,c:c||C.ui,a:0})}
+/* floating texts: a new one that would land on a young one nearby (a sale while the last one still rises, READY + the heat
+   message) is lifted above it */
+function ftext(t,x,y,c){if(texts.length>40)texts.shift();for(let k=0;k<6;k++){const o=texts.find(q=>q.a<.9&&Math.abs(q.x-x)<70&&Math.abs(q.y-y)<18);if(!o)break;y=o.y-20}texts.push({t,x,y,c:c||C.ui,a:0})}
 function fly(it,x,y,tg,i){if(flyers.length>80)flyers.shift();flyers.push({it,x0:x,y0:y,tg,i,t:0,d:.22})}
 const qT=[];let tOn=0;function toast(m,big){if(qT.length>4)qT.shift();qT.push([m,!!big])}
 function moneyTarget(){const a=$('mv').getBoundingClientRect(),b=cv.getBoundingClientRect();return[a.left-b.left-12,a.top-b.top+a.height/2]}
@@ -41,7 +43,7 @@ function update(dt){
  /* yards and small stores refill by themselves */
  for(const id of['y0','y1']){const s=SRCm[id];if(s.open()&&yardT(s)<yardCap())S.yard[id]=min(yardCap(),yardT(s)+yardRate()*dt)}
  /* the dark sprite of a newly mothballed plant is drawn once, here (not inside a frame) */
- for(const u of MBK)if(u!=='rj'&&mbOn(u)&&!MBC[u])MBC[u]=mbSprite(u);
+ for(const u of MBK)if(u!=='rj'&&!MBU[u].own&&mbOn(u)&&!MBC[u])MBC[u]=mbSprite(u);
  /* mothballed plants cost a little upkeep */
  {const uk=mbUpkeep()*dt/60;if(uk>0){const a=min(S.money,uk);S.money-=a;S.st.upkeep=(S.st.upkeep||0)+a}}
  /* the furnace / caster desk: leaving the desk hands control back */
@@ -125,8 +127,8 @@ function buyTarget(){const r=recommend();if(!r)return null;if(r.left<=S.money+.0
  let b=null;for(const d of PADS){if(!payable(d)||keepIt(d))continue;const left=cost(d)-(S.paid[paidKey(d)]||0);if(left>S.money+.01)continue;
   const ok=sav?(left<=r.left*.04||(padUrgent(d)&&left<=r.left*.2)):left<=r.left*.25;if(ok&&(!b||left<b.left))b={d,left}}return b}
 /* Phase 4: once the electric smelting furnace stands, the goal is to restart (or rebuild) the LD converter */
-function rsGoal(){if(!B_('esf')||ldRun())return null;const d=PAD.rst_ld;if(!vis(d))return null;const c=cost(d),paid=S.paid[paidKey(d)]||0,left=c-paid,nm=t_(rebuildLD(d)?'Bygg opp igjen':'Start igjen')+': '+mbName('ld');
- return{m:S.money>=left?t_('Mål: <span>{0}</span> – gå på ruta',nm):t_('Mål: tjen {0} → <span>{1}</span>',kr(c),nm),p:clamp((S.money+paid)/c,0,1),b:{id:'_rs',x:d.x,y:d.y,cost:left,d:'Den elektriske smelteovnen trenger konverteren: grønt råjern går med torpedovogn til LD-konverteren.'}}}
+function rsGoal(){const u=B_('pls')&&era()===8?'dri':B_('esf')&&!ldRun()&&era()<8?'ld':null;if(!u)return null;const d=PAD['rst_'+u];if(!vis(d))return null;const c=cost(d),paid=S.paid[paidKey(d)]||0,left=c-paid,nm=t_(rebuildX(d)?'Bygg opp igjen':'Start igjen')+': '+mbName(u);
+ return{m:S.money>=left?t_('Mål: <span>{0}</span> – gå på ruta',nm):t_('Mål: tjen {0} → <span>{1}</span>',kr(c),nm),p:clamp((S.money+paid)/c,0,1),b:{id:'_rs',x:d.x,y:d.y,cost:left,d:u==='dri'?'Plasmareaktoren trenger hydrogen: start elektrolysørene i det gamle DRI-anlegget igjen.':'Den elektriske smelteovnen trenger konverteren: grønt råjern går med torpedovogn til LD-konverteren.'}}}
 function phaseGoal(){const b=nextBuild();if(!b){const rg=rsGoal();if(rg)return rg}if(!b)return S.ph>=BUILDS.length?{m:presGain()>0?t_('Mål: <span>Nytt verk</span> er klart'):t_('Mål: tjen {0} → <span>Nytt verk</span>',kr(PRES_NEED)),p:clamp(S.earned/PRES_NEED,0,1)}:null;
  const left=b.cost-(S.paid['b:'+b.id]||0);return{m:S.money>=left?t_('Mål: bygg <span>{0}</span> – gå på ruta',t_(b.n)):t_('Mål: tjen {0} → <span>{1}</span>',kr(b.cost),t_(b.n)),p:clamp((S.money+(S.paid['b:'+b.id]||0))/b.cost,0,1),b}}
 function goal(){const pg=phaseGoal();let x=null,y=null,sub='';
@@ -176,9 +178,9 @@ function ordCard(){const o=S.ord,on=!!o&&ordOn()&&G.mode==='play';let h='';
  if(lastHud.ord!==h){lastHud.ord=h;const e=$('ord');e.innerHTML=h;e.classList.toggle('on',on);e.classList.toggle('done',on&&o.done===1);e.classList.toggle('exp',on&&o.done===2);stage.classList.toggle('ordon',on)}}
 /* control desks (automated eras): the scrap-crane pulpit, the magnet-crane pulpit and, in the control room, the furnace,
    ladle-crane and caster desks. Before that a crane is taken over anywhere in its zone. */
-const CTLN={furnace:'ovnen',caster:'strengen',dri:'sjaktovnen'};
+const CTLN={furnace:'ovnen',caster:'strengen',dri:'sjaktovnen',moe:'cellehallen',pls:'plasmareaktoren',ew:'karhallen'};
 function ctlDesks(){if(!AUTO())return[];const o=[{id:'furnace',x:CRDESK.furnace.x,y:CRDESK.furnace.y},{id:'ladle',crane:'ose',x:CRDESK.ladle.x,y:CRDESK.ladle.y},{id:'skrap',crane:'skrap',x:POSTS.skrap.x,y:POSTS.skrap.y}];
- if(B_('strang'))o.push({id:'caster',x:CRDESK.caster.x,y:CRDESK.caster.y});if(B_('h2'))o.push({id:'dri',x:POSTS.dri.x,y:POSTS.dri.y});if(CRm.mag.built())o.push({id:'mag',crane:'mag',x:POSTS.strang.x,y:POSTS.strang.y});return o}
+ if(B_('strang'))o.push({id:'caster',x:CRDESK.caster.x,y:CRDESK.caster.y});if(B_('h2')&&era()<8)o.push({id:'dri',x:POSTS.dri.x,y:POSTS.dri.y});/* Phase 5: the desk of the plant that runs */for(const[id,e]of[['moe',8],['pls',9],['ew',10]])if(era()===e)o.push({id,x:POSTS[id].x,y:POSTS[id].y});if(CRm.mag.built())o.push({id:'mag',crane:'mag',x:POSTS.strang.x,y:POSTS.strang.y});return o}
 const ctlDesk=id=>ctlDesks().find(d=>d.id===id)||{x:CRDESK.furnace.x,y:CRDESK.furnace.y};
 /* where the player stands at a desk: below it, clear of its name */
 const STAND=70;
@@ -186,7 +188,7 @@ const deskNear=()=>{let b=null,bd=56;for(const d of ctlDesks()){const dd=hyp(P.x
 function ctlHere(){if(G.ctl)return G.ctl;const d=deskNear();return d&&!d.crane?d.id:null}
 function craneHere(){if(G.crane)return CRm[G.crane];if(AUTO()){const d=deskNear();const c=d&&d.crane&&CRm[d.crane];return c&&canMan(c)?c:null}
  for(const c of CRANES){if(!canMan(c))continue;const d=c.d;if(P.x>d.x0-40&&P.x<d.x1+40&&P.y>d.y0-40&&P.y<d.y1+40)return c}return null}
-function setCtl(k){if(G.ctl===k){G.ctl=null;toast(t_('Automatikken tar over igjen'))}else{G.ctl=k;G.go=null;P.vx=P.vy=0;toast(t_(k==='furnace'?'Du styrer ovnen fra pulten (+10 % effekt, tapper straks)':k==='dri'?'Du styrer sjaktovnen fra pulten (+10 % DRI)':'Du styrer strengen fra pulten (+15 % støpefart)'))}hudT=0;sfx('tick',200);buzz(12)}
+function setCtl(k){if(G.ctl===k){G.ctl=null;toast(t_('Automatikken tar over igjen'))}else{G.ctl=k;G.go=null;P.vx=P.vy=0;toast(t_(k==='furnace'?'Du styrer ovnen fra pulten (+10 % effekt, tapper straks)':k==='dri'?'Du styrer sjaktovnen fra pulten (+10 % DRI)':k==='moe'?'Du styrer cellehallen fra pulten (+10 % strøm)':k==='pls'?'Du styrer plasmareaktoren fra pulten (+10 % effekt)':k==='ew'?'Du styrer karhallen fra pulten (+10 % strøm)':'Du styrer strengen fra pulten (+15 % støpefart)'))}hudT=0;sfx('tick',200);buzz(12)}
 /* walking up to a desk you tapped: take over when you get there */
 function ctlArrive(id){const d=ctlDesks().find(o=>o.id===id);if(!d||hyp(P.x-d.x,P.y-(d.y+STAND))>60)return;if(d.crane){if(!G.crane)toggleCrane()}else if(G.ctl!==d.id)setCtl(d.id)}
 /* a tap on a desk: take over (or hand back) when you stand at it, else walk there first */
@@ -208,6 +210,12 @@ let ecT=0;
 const ECARD={
  6:['Hydrogen erstatter kull','Elektrolysører lager hydrogen. I sjaktovnen reduserer hydrogenet jernmalmpellets til jernsvamp (DRI) – pipa slipper ut vanndamp, ikke CO₂.',
   'Varm DRI går på et galleribånd til chargeringsbåndet og blandes med skrapet. Mer DRI gir renere stål og lavere CO₂ (bedre grønn pris), men trenger mer strøm og kalk. Velg andelen på bryteren.','Anlegget kjøres fra pulten i DRI-anlegget. Trykk for å lukke.'],
+ 8:['Stål av malm og strøm','Cellehallen splitter jernmalm med likestrøm: flytende stål samles i bunnen av cellene, oksygen stiger opp ved anodene og selges.',
+  'Overføringsvogner kjører stålet til en induksjonsholdeovn i stålverket, som tapper det i støpeøsene. Kjøp flere celler og mer strøm.','LD-konverteren, smelteovnen og DRI-anlegget er lagt ned. Trykk for å lukke.'],
+ 9:['Hydrogenplasma','Malmstøv blåses inn i en lysbue av hydrogenplasma. Reduksjon og smelting skjer i samme kar – ut kommer flytende stål og vanndamp.',
+  'Elektrolysørene i det gamle DRI-anlegget lager hydrogenet. Dampkondensatoren gjør vanndampen til vann igjen og sender det tilbake – en sirkel du kan se.','Cellehallen er lagt ned. Trykk for å lukke.'],
+ 10:['Kald elektrolyse','Jernmalm løses i en lut på rundt 110 °C, og strømmen setter rent jern av som plater på katodene. Roboter høster platene.',
+  'Platevogner kjører platene til stålverket, der holdeovnen nå er en kraftig induksjonsovn som smelter dem. Nå er det ovnen som er flaskehalsen.','Plasmareaktoren og DRI-anlegget er lagt ned. Trykk for å lukke.'],
  7:['Elektrisk smelteovn + LD-konverter','Den elektriske smelteovnen smelter DRI til grønt råjern med seks elektroder på rad. Slagget renner kontinuerlig ut i den ene enden og selges til sementverket.',
   'LD-konverteren er startet igjen: torpedovogner frakter råjernet til den, og den blåser det til stål med litt skrap – akkurat som før. Billigere pellets går nå også an.','Båndovnen er lagt ned på en reservetomt. Trykk for å lukke.']};
 function eraCard(){const E=E_(),e=era(),c=ECARD[e];$('ecY').textContent=E.yr+' · '+t_(E.n);$('ecT').textContent=t_(c?c[0]:'Fra nå av styres verket fra kontrollrom');
@@ -269,20 +277,27 @@ const MN={
  kalk:{x:360,y:44,sup:1,n:'Kalk / dolo'},o2:{x:465,y:44,sup:1,n:'Oksygen'},kull:{x:570,y:44,sup:1,n:'Kullinjeksjon'},
  skrap:{x:320,y:215,n:'Skrapplass'},ovn:{x:445,y:215,n:'Ovn'},lf:{x:570,y:215,n:'Øseovn'},
  strang:{x:700,y:150,n:'kart§Stranggjuting'},blokk:{x:700,y:300,n:'Blokkstøping'},gjv:{x:830,y:215,n:'Gjennomvarming'},vv:{x:960,y:215,n:'Valseverk'},
+ /* Phase 5: the running plant sits at (320,330), a plant being prepared under it (p5MapPos) */moe:{x:320,y:330,p5:'moe',n:'Cellehall'},pls:{x:320,y:425,p5:'pls',n:'Plasmareaktor'},ew:{x:320,y:425,p5:'ew',n:'Karhall'},
  /* Phase 4 */pel:{x:75,y:130,p4:1,n:'Pelletlager'},h2:{x:75,y:215,p4:1,n:'Hydrogen'},dri:{x:190,y:215,p4:1,n:'Sjaktovn'},esf:{x:320,y:330,p4:1,n:'El. smelteovn'},
  tc:{x:1090,y:300,n:'Bråkjøling'},endl:{x:960,y:420,n:'Endeløs linje'},rob:{x:1220,y:290,n:'Robotceller'},stel:{x:1090,y:130,n:'Valstråd'},nett:{x:1220,y:130,n:'Nettverk'},kob:{x:1220,y:420,n:'Klipp og bøy'},salg:{x:1360,y:260,sale:1,n:'Salg'}};
-const PCOL={pellet:'#9a5a46',h2:'#9fd8ff',dri:'#8c939c',malm:'#a0604a',rajern:'#ffb030',pig:'#9a8f86',skrap:'#c0804f',stal:'#ff7a1a',ingot:'#e8b04a',billet:'#ff5d5d',rebar:'#b9c1cb',tcore:'#6fb7ff',coil:'#c39bff',mesh:'#9bd35f',bent:'#4dd0c8',slag:'#8b8780',ebar:'#ffb36b',cage:'#f0a0ff'};
-const PNAME={pellet:'Pellets',h2:'Hydrogen',dri:'DRI (jernsvamp)',malm:'Malm',rajern:'Råjern (flytende)',pig:'Masseljern',skrap:'Skrap',stal:'Flytende stål',ingot:'Støpeblokk',billet:'Emne',rebar:'Armeringsstål',tcore:'Bråkjølt armering',coil:'Valstråd',mesh:'Armeringsnett',bent:'Bøyd armering',slag:'Slagg',ebar:'Endeløs armering',cage:'Armeringskurv'};
+const PCOL={o2:'#bfe3ff',plate:'#aab2bc',pellet:'#9a5a46',h2:'#9fd8ff',dri:'#8c939c',malm:'#a0604a',rajern:'#ffb030',pig:'#9a8f86',skrap:'#c0804f',stal:'#ff7a1a',ingot:'#e8b04a',billet:'#ff5d5d',rebar:'#b9c1cb',tcore:'#6fb7ff',coil:'#c39bff',mesh:'#9bd35f',bent:'#4dd0c8',slag:'#8b8780',ebar:'#ffb36b',cage:'#f0a0ff'};
+const PNAME={o2:'Oksygen',plate:'Jernplater',pellet:'Pellets',h2:'Hydrogen',dri:'DRI (jernsvamp)',malm:'Malm',rajern:'Råjern (flytende)',pig:'Masseljern',skrap:'Skrap',stal:'Flytende stål',ingot:'Støpeblokk',billet:'Emne',rebar:'Armeringsstål',tcore:'Bråkjølt armering',coil:'Valstråd',mesh:'Armeringsnett',bent:'Bøyd armering',slag:'Slagg',ebar:'Endeløs armering',cage:'Armeringskurv'};
 /* value per tonne used for kr/min on the map: scrap 1,0 · liquid steel ~1,27 · products by the price ladder */
-const VALT=p=>({pellet:1.2,h2:20,dri:4,malm:1.5,rajern:6,skrap:7.5,stal:9.5,slag:PR.slag.p}[p]||PR[p].p)*BASEP()*gm();
+const VALT=p=>({o2:o2Val(),plate:7,pellet:1.2,h2:20,dri:4,malm:1.5,rajern:6,skrap:7.5,stal:9.5,slag:PR.slag.p}[p]||PR[p].p)*BASEP()*gm();
 const MEDG=[['malm','rj','malm'],['rj','ovn','rajern'],['rj','salg','pig'],['skrap','ovn','skrap'],['ovn','lf','stal'],['ovn','blokk','stal'],['ovn','strang','stal'],['lf','blokk','stal'],['lf','strang','stal'],['strang','gjv','billet'],['gjv','vv','billet'],['vv','tc','rebar'],['vv','stel','rebar'],['vv','kob','rebar'],['tc','kob','tcore'],['stel','nett','coil'],
  ['pel','dri','pellet'],['h2','dri','h2'],['dri','ovn','dri'],['dri','esf','dri'],['esf','ovn','rajern'],['esf','salg','slag'],
+ ['moe','ovn','stal'],['moe','salg','o2'],['h2','pls','h2'],['pls','ovn','stal'],['ew','ovn','plate'],
  ['blokk','salg','ingot'],['strang','salg','billet'],['vv','salg','rebar'],['tc','salg','tcore'],['stel','salg','coil'],['nett','salg','mesh'],['kob','salg','bent'],['ovn','salg','slag'],['strang','endl','billet'],['endl','rob','ebar'],['endl','salg','ebar'],['rob','salg','cage']];
-const mClosed=id=>!!MN[id].rj&&rjClosed()&&!rjGone();
-const mBuilt=id=>MN[id].p4?(id==='esf'?B_('esf'):B_('h2')):id==='endl'?lv('endless')>0&&stOn('endl'):id==='rob'?lv('robot')>0:id==='salg'||(mClosed(id)||MN[id].rj&&rjGone()?false:id==='malm'?true:MN[id].rj&&MN[id].sup?rjReq().indexOf(id)>=0||lv(id)>0:MN[id].sup?E_().req.indexOf(id)>=0||lv(id)>0:stOn(id==='blokk'?'blokk':id));
+const mClosed=id=>!!MN[id].rj&&rjClosed()&&!rjGone()||!!MN[id].p4&&mbOn(id==='esf'?'esf':'dri');
+/* Phase 5: the old ironworks and the laid-down Phase 4 plants (except the H₂ plant, which comes back) leave the map from era 8;
+   the Phase 5 plants show while they run or are being prepared (or are the next build) */
+const p5Run=id=>era()===({moe:8,pls:9,ew:10})[id];
+const mHidden=id=>era()>=8&&(MN[id].rj||MN[id].sup||(id==='pel'||id==='dri'||id==='esf'))||!!MN[id].p5&&!mBuilt(id)&&!(nextBuild()&&nextBuild().z===id);
+function p5MapPos(){for(const id of['moe','pls','ew']){const o=MN[id];if(p5Run(id)){o.x=320;o.y=330}else{o.x=320;o.y=425}}}
+const mBuilt=id=>MN[id].p5?B_(MN[id].p5)&&!mbOn(MN[id].p5)&&mbSt(MN[id].p5)!=='gone':MN[id].p4?(id==='esf'?B_('esf'):B_('h2')):id==='endl'?lv('endless')>0&&stOn('endl'):id==='rob'?lv('robot')>0:id==='salg'||(mClosed(id)||MN[id].rj&&rjGone()?false:id==='malm'?true:MN[id].rj&&MN[id].sup?rjReq().indexOf(id)>=0||lv(id)>0:MN[id].sup?E_().req.indexOf(id)>=0||lv(id)>0:stOn(id==='blokk'?'blokk':id));
 let MMODE='prod',MSEL='ovn';
 function edgeV(e){return flow(e[0],e[1])}
-function mUtil(id){if(id==='dri')return clamp(rate('dri')/60/max(1e-6,shaftCap()),0,1);if(id==='h2')return clamp(h2Rate()*DRI.h2run/max(1e-6,h2Rate()),0,1);if(id==='pel')return clamp(DRI.pelIn/max(1e-6,pelRate()),0,1);if(id==='esf')return clamp(rate('esfmelt')/60/max(1e-6,esfRate()),0,1);
+function mUtil(id){if(id==='moe')return clamp(MOE.rate/max(1e-6,moeRate()),0,1);if(id==='pls')return clamp(PLS.rate/max(1e-6,plsCap()),0,1);if(id==='ew')return clamp(EW.rate/max(1e-6,ewRate()),0,1);if(id==='dri')return clamp(rate('dri')/60/max(1e-6,shaftCap()),0,1);if(id==='h2')return clamp(h2Rate()*DRI.h2run/max(1e-6,h2Rate()),0,1);if(id==='pel')return clamp(DRI.pelIn/max(1e-6,pelRate()),0,1);if(id==='esf')return clamp(rate('esfmelt')/60/max(1e-6,esfRate()),0,1);
  if(id==='rj')return clamp(rate('rjmelt')/max(1e-6,RJ.rp*60),0,1);if(MN[id].sup&&!MN[id].rj){if(F.lim===id)return{lv:2,t:lv(id)?t_('Flaskehals: {0} – for liten kapasitet',t_(SUPN[id])):t_('Flaskehals: {0} mangler',t_(SUPN[id]))};return{lv:0,t:''}}if(MN[id].rj&&MN[id].sup){const c=rjSupCap(id);return c>0?clamp(rate('s:'+id)/(c*60),0,1):0}if(MN[id].sup){const c=supCap(id);return c>0?clamp(rate('s:'+id)/(c*60),0,1):0}
  if(id==='ovn')return clamp(rate('melt')/max(1e-6,F.rp*60),0,1);if(NODE[id])return clamp(NODE[id].util,0,1);
  if(id==='endl')return clamp(EL.outE/max(.01,elRate()),0,1);if(id==='strang')return clamp(rate('o:strang')/(nStr()*strandRate()*60),0,1);if(id==='skrap')return clamp(flow('skrap','ovn')/max(1e-6,F.rp*60),0,1);return null}
@@ -291,6 +306,9 @@ function mStat(id){if(id==='h2'||id==='pel'){const d=status('dri');if(d&&d.lv===
  if(id==='malm'){if(RJ.starve>1.5)return F.waitHM>1.5?{lv:2,t:t_('Flaskehals: malm til ovnen')}:{lv:1,t:t_('Venter på malm')};return{lv:0,t:''}}if(MN[id].sup&&!MN[id].rj){if(F.lim===id)return{lv:2,t:lv(id)?t_('Flaskehals: {0} – for liten kapasitet',t_(SUPN[id])):t_('Flaskehals: {0} mangler',t_(SUPN[id]))};return{lv:0,t:''}}if(MN[id].rj&&MN[id].sup){if(RJ.lim===id&&status('rjsup')&&status('rjsup').lv===2)return{lv:2,t:t_('Flaskehals: {0}',t_(SUPN[id]))};return{lv:0,t:''}}return status(id)}
 function nodeVA(id){let vin=0,vout=0;for(const e of MEDG){const v=edgeV(e)*VALT(e[2]);if(e[1]===id)vin+=v;if(e[0]===id)vout+=e[1]==='salg'?rate('v:'+id):v}return{vin,vout,va:vout-vin}}
 function mPath(a,b){const A=MN[a],B=MN[b],NW=104,NH=54;
+ if(MN[a].p5&&b==='ovn')return`M${A.x+NW/2},${A.y} C${A.x+NW/2+50},${A.y} ${B.x+30},${B.y+80} ${B.x+30},${B.y+NH/2}`;
+ if(a==='moe'&&b==='salg'){const bx=B.x-50;return`M${A.x+NW/2},${A.y+10} C${A.x+NW/2+40},${A.y+10} ${A.x+NW/2+20},476 ${A.x+NW/2+80},476 L${bx},476`}
+ if(a==='h2'&&b==='pls')return`M${A.x+NW/2},${A.y+8} C${A.x+NW/2+90},${A.y+8} ${B.x-NW/2-60},${B.y} ${B.x-NW/2},${B.y}`;
  if(a==='dri'&&b==='ovn'){const ax=A.x,bx=B.x;return`M${ax},${A.y-NH/2} C${ax},${A.y-90} ${bx},${B.y-90} ${bx-20},${B.y-NH/2}`}
  if(a==='pel'&&b==='dri')return`M${A.x+NW/2},${A.y} C${A.x+NW/2+40},${A.y} ${B.x},${B.y-70} ${B.x},${B.y-NH/2}`;
  if(a==='esf'&&b==='ovn'){const ax=A.x+NW/2;return`M${ax},${A.y} C${ax+40},${A.y} ${B.x},${B.y+70} ${B.x},${B.y+NH/2}`}
@@ -301,17 +319,17 @@ function mPath(a,b){const A=MN[a],B=MN[b],NW=104,NH=54;
  if(a==='vv'&&b==='kob'){return`M${A.x+20},${A.y+NH/2} C${A.x+20},${A.y+150} ${B.x-120},${B.y} ${B.x-NW/2},${B.y}`}
  if(a==='ovn'&&(b==='blokk'||b==='strang')){const ax=A.x+NW/2,bx=B.x-NW/2;return`M${ax},${A.y+(b==='blokk'?14:-14)} C${ax+80},${A.y+(b==='blokk'?60:-60)} ${bx-60},${B.y} ${bx},${B.y}`}
  const ax=A.x+NW/2,bx=B.x-NW/2,ay=A.y,by=B.y,dx=(bx-ax)/2;return`M${ax},${ay} C${ax+dx},${ay} ${bx-dx},${by} ${bx},${by}`}
-function renderMap(){if(!G.mapOn)return;const money=MMODE==='money',FN='font-family="Rubik, system-ui, sans-serif"';let h='';
+function renderMap(){if(!G.mapOn)return;const money=MMODE==='money',FN='font-family="Rubik, system-ui, sans-serif"';let h='';p5MapPos();
  const income=rate('v:salg');
- for(const s of['koks','cowper']){if(!mBuilt(s))continue;const A=MN[s],B=MN.rj,off=s==='koks'?-14:14,d=`M${A.x},${A.y+16} C${A.x},${A.y+120} ${B.x+off},${B.y-140} ${B.x+off},${B.y-27}`,on=rate('s:'+s)>.01;
+ for(const s of['koks','cowper']){if(!mBuilt(s)||mHidden(s))continue;const A=MN[s],B=MN.rj,off=s==='koks'?-14:14,d=`M${A.x},${A.y+16} C${A.x},${A.y+120} ${B.x+off},${B.y-140} ${B.x+off},${B.y-27}`,on=rate('s:'+s)>.01;
   h+=`<path d="${d}" fill="none" stroke="${RJ.lim===s?'#ff6b5a':'#7d8590'}" stroke-width="2.5" stroke-dasharray="5 5" opacity=".85"/>`;if(on)h+=`<path class="flow" d="${d}" fill="none" stroke="#c9ced6" stroke-width="1.5" stroke-dasharray="2 14" stroke-linecap="round"/>`}
- for(const s of['kalk','o2','kull']){if(!mBuilt(s))continue;const A=MN[s],B=MN.ovn,off=(['kalk','o2','kull'].indexOf(s)-1)*18,d=`M${A.x},${A.y+16} C${A.x},${A.y+76} ${B.x+off},${B.y-87} ${B.x+off},${B.y-27}`,on=rate('s:'+s)>.01;
+ for(const s of['kalk','o2','kull']){if(!mBuilt(s)||mHidden(s))continue;const A=MN[s],B=MN.ovn,off=(['kalk','o2','kull'].indexOf(s)-1)*18,d=`M${A.x},${A.y+16} C${A.x},${A.y+76} ${B.x+off},${B.y-87} ${B.x+off},${B.y-27}`,on=rate('s:'+s)>.01;
   h+=`<path d="${d}" fill="none" stroke="${F.lim===s?'#ff6b5a':'#7d8590'}" stroke-width="2.5" stroke-dasharray="5 5" opacity=".85"/>`;if(on)h+=`<path class="flow" d="${d}" fill="none" stroke="#c9ced6" stroke-width="1.5" stroke-dasharray="2 14" stroke-linecap="round"/>`}
- for(const e of MEDG){if(!mBuilt(e[0])||!mBuilt(e[1]))continue;const v=edgeV(e);if(v<.005)continue;const val=e[1]==='salg'?rate('v:'+e[0]):v*VALT(e[2]);
+ for(const e of MEDG){if(!mBuilt(e[0])||!mBuilt(e[1])||mHidden(e[0])||mHidden(e[1]))continue;const v=edgeV(e);if(v<.005)continue;const val=e[1]==='salg'?rate('v:'+e[0]):v*VALT(e[2]);
   const w=money?2+min(16,Math.log10(1+val)*2.2):2+min(14,Math.sqrt(v)*1.1),col=money?'#ffcf33':PCOL[e[2]],d=mPath(e[0],e[1]);
   h+=`<path d="${d}" fill="none" stroke="#000" stroke-opacity=".45" stroke-width="${w+3}"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-opacity=".88"/><path class="flow" d="${d}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="${max(1.4,w*.32)}" stroke-dasharray="2 14" stroke-linecap="round"/>`}
  const nb=nextBuild();
- for(const id in MN){const o=MN[id],built=mBuilt(id);
+ for(const id in MN){if(mHidden(id))continue;const o=MN[id],built=mBuilt(id);
   if(mClosed(id)&&(!o.sup||lv(id)>0)){const w=o.sup?92:104,hh=o.sup?32:54,x=o.x-w/2,y=o.y-hh/2;h+=`<g class="node${MSEL===id?' sel':''}" data-id="${id}" tabindex="0" role="button" aria-label="${t_(o.n)}, ${t_('nedlagt')}"><rect class="nb" x="${x}" y="${y}" width="${w}" height="${hh}" rx="${o.sup?16:10}" fill="#14161b" stroke="rgba(244,241,234,.18)" stroke-width="1.5"/><text x="${o.x}" y="${o.y-(o.sup?2:6)}" text-anchor="middle" fill="#6b7079" font-size="${o.sup?11:12}" font-weight="700" ${FN}>${t_(o.n)}</text><text x="${o.x}" y="${o.y+(o.sup?11:12)}" text-anchor="middle" fill="#6b7079" font-size="9.5" font-weight="800" ${FN}>${t_('NEDLAGT')}</text></g>`;continue}const isNext=!built&&nb&&(nb.z===id||(nb.id==='vv'&&(id==='gjv'||id==='vv'))||(id==='ovn'));if(!built&&!isNext)continue;
   const sup=o.sup,w=o.sale?100:sup?92:104,hh=o.sale?400:sup?32:54,x=o.x-w/2,y=o.y-hh/2,sel=MSEL===id;
   if(!built){h+=`<g class="node" data-id="${id}" tabindex="0" role="button" aria-label="${t_(o.n)}, ${t_('neste bygg')}"><rect class="nb" x="${x}" y="${y}" width="${w}" height="${hh}" rx="10" fill="none" stroke="rgba(244,241,234,.35)" stroke-dasharray="5 5" stroke-width="1.5"/><text x="${o.x}" y="${o.y-4}" text-anchor="middle" fill="#a7adb7" font-size="11" font-weight="700" ${FN}>${t_(o.n)}</text><text x="${o.x}" y="${o.y+12}" text-anchor="middle" fill="#7d8590" font-size="9.5" ${FN}>${t_('neste · {0}',kr(nb.cost))}</text></g>`;continue}
@@ -324,13 +342,13 @@ function renderMap(){if(!G.mapOn)return;const money=MMODE==='money',FN='font-fam
   h+=`<rect class="nb" x="${x}" y="${y}" width="${w}" height="${hh}" rx="${sup?16:10}" fill="${fill}" stroke="${stc}" stroke-width="1.5"/>`;
   if(o.sale)h+=`<text x="${o.x}" y="${o.y-14}" text-anchor="middle" fill="#f4f1ea" font-size="15" font-weight="800" ${FN}>${t_('SALG')}</text><text x="${o.x}" y="${o.y+6}" text-anchor="middle" fill="#a7adb7" font-size="10.5" ${FN}>${t_(B_('kai')?'bil · tog · kai':B_('tog')?'bil · tog':'lastebil')}</text><text x="${o.x}" y="${o.y+28}" text-anchor="middle" fill="#ffcf33" font-size="12" font-weight="800" ${FN}>${NO_()?fmt(income):'$'+fmt(income)}</text><text x="${o.x}" y="${o.y+43}" text-anchor="middle" fill="#a7adb7" font-size="10" ${FN}>${NO_()?'kr/min':t_('per min')}</text>`;
   else if(sup)h+=`<text x="${o.x}" y="${o.y-2}" text-anchor="middle" fill="#f4f1ea" font-size="11" font-weight="700" ${FN}>${t_(o.n)}</text><text x="${o.x}" y="${o.y+11}" text-anchor="middle" fill="${(o.rj?RJ.lim:F.lim)===id?'#ff6b5a':sc}" font-size="9" ${FN}>${lv(id)?stat:t_('ikke bygget')}</text>`;
-  else{h+=`<text x="${o.x}" y="${o.y-8}" text-anchor="middle" fill="#f4f1ea" font-size="12" font-weight="700" ${FN}>${id==='rj'?t_('kart§'+RJE[rjEra()].k.replace('EL-RÅJERNSOVN','EL-RÅJERN')):id==='ovn'?t_('kart§'+E_().k.replace('-KONVERTER','').replace('-LYSBUEOVN',' EAF').replace('LYSBUEOVN','EAF').replace('-OVN','')):t_(o.n)}</text><text x="${o.x}" y="${o.y+10}" text-anchor="middle" fill="${sc}" font-size="10.5" font-weight="600" ${FN}>${stat}</text>`;
+  else{h+=`<text x="${o.x}" y="${o.y-8}" text-anchor="middle" fill="#f4f1ea" font-size="12" font-weight="700" ${FN}>${id==='rj'?t_('kart§'+RJE[rjEra()].k.replace('EL-RÅJERNSOVN','EL-RÅJERN')):id==='ovn'?t_('kart§'+E_().k.replace('-KONVERTER','').replace('-LYSBUEOVN',' EAF').replace('LYSBUEOVN','EAF').replace('-OVN','').replace('INDUKSJONSOVN','INDUKSJON')):t_(o.n)}</text><text x="${o.x}" y="${o.y+10}" text-anchor="middle" fill="${sc}" font-size="10.5" font-weight="600" ${FN}>${stat}</text>`;
    if(bad)h+=`<rect x="${o.x-40}" y="${y-11}" width="80" height="16" rx="5" fill="#ff6b5a"/><text x="${o.x}" y="${y+1}" text-anchor="middle" fill="#1a0b08" font-size="9.5" font-weight="800" ${FN}>${t_('FLASKEHALS')}</text>`;
    else if(amb)h+=`<rect x="${o.x-40}" y="${y-11}" width="80" height="16" rx="5" fill="#f5c518"/><text x="${o.x}" y="${y+1}" text-anchor="middle" fill="#111" font-size="9.5" font-weight="800" ${FN}>${t_('VENTER')}</text>`}
   h+='</g>'}
  h+=`<text x="16" y="494" fill="#7d8590" font-size="11" ${FN}>${t_('målt · glidende snitt · per spillminutt')}</text>`;
  $('mapSvg').innerHTML=h;
- const bn=bottlenecks();$('mapSum').innerHTML=t_('Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>',kr(income,'/min'),tf(rate('melt')))+(bn.length?' · '+t_('Flaskehals')+': <b class="bad">'+[...new Set(bn.map(b=>b[0]==='rjsup'?t_(MN[RJ.lim||'koks'].n):b[0]==='rj'?(RJ.lim&&b[1]===t_('Flaskehals: {0}',t_(SUPN[RJ.lim]))?t_(MN[RJ.lim].n):t_('Råjernsovn')):b[0]==='sup'||b[0]==='ovn'&&F.lim?t_(MN[F.lim||'kalk'].n):MN[b[0]]?t_(MN[b[0]].n):t_(ZN[b[0]].n).toLowerCase()))].join(', ')+'</b>':' · '+t_('ingen flaskehals'))+(()=>{const l=MBK.filter(mbOn);return l.length?'<br>'+t_('Lagt ned: {0} · vedlikehold {1}',l.map(mbName).join(', '),kr(mbUpkeep(),'/min')):''})();
+ const bn=bottlenecks();$('mapSum').innerHTML=t_(era()===8||era()===9?'Inntekt <b>{0}</b> · Flytende stål <b>{1} t/min</b>':'Inntekt <b>{0}</b> · Smelter <b>{1} t/min</b>',kr(income,'/min'),tf(era()===8?rate('o:moe'):era()===9?rate('o:pls'):rate('melt')))+(bn.length?' · '+t_('Flaskehals')+': <b class="bad">'+[...new Set(bn.map(b=>b[0]==='rjsup'?t_(MN[RJ.lim||'koks'].n):b[0]==='rj'?(RJ.lim&&b[1]===t_('Flaskehals: {0}',t_(SUPN[RJ.lim]))?t_(MN[RJ.lim].n):t_('Råjernsovn')):b[0]==='sup'||b[0]==='ovn'&&F.lim?t_(MN[F.lim||'kalk'].n):MN[b[0]]?t_(MN[b[0]].n):t_(ZN[b[0]].n).toLowerCase()))].join(', ')+'</b>':' · '+t_('ingen flaskehals'))+(()=>{const l=MBK.filter(mbOn);return l.length?'<br>'+t_('Lagt ned: {0} · vedlikehold {1}',l.map(mbName).join(', '),kr(mbUpkeep(),'/min')):''})();
  renderPanel()}
 const li=(col,t)=>'<li><i style="background:'+col+'"></i><span>'+t+'</span></li>';
 const MZ={pel:'dri',h2:'dri',kalk:'sup',o2:'sup',kull:'sup',salg:'salg1',koks:'rjsup',cowper:'rjsup',malm:'rj'};
@@ -347,7 +365,7 @@ function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel
    +row(t_('Drift'),t_('{0} · kjøpes én gang',kr(0,'/min')));
   h+='<p class="pnote">'+(isLim?t_('Mens ovnen smelter/blåser, trenger den mer enn anlegget klarer, så den går saktere. Snittet er lavere fordi ovnen også lader og tapper. Oppgrader anlegget til minst {0} t/min.',tf(need)):t_('Anlegget holder følge med ovnen. Snittet er lavere enn kapasiteten fordi ovnen også lader og tapper.'))+'</p>'}
  else if(o.sale){const ins=MEDG.filter(e=>e[1]==='salg'&&mBuilt(e[0])&&edgeV(e)>.005);h+='<div class="prow"><div class="k">'+t_('Selges')+'</div><ul>'+(ins.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' = <b>'+kr(rate('v:'+e[0]),'/min')+'</b>')).join('')||'<li>'+t_('ingenting ennå')+'</li>')+'</ul></div>'+row(t_('Sum'),kr(rate('v:salg'),'/min'),' style="color:var(--coin);font-weight:800"')}
- else{const ins=MEDG.filter(e=>e[1]===id&&mBuilt(e[0])),outs=MEDG.filter(e=>e[0]===id&&mBuilt(e[1])&&!(e[2]==='slag'&&!slagOn()));const v=nodeVA(id);
+ else{const ins=MEDG.filter(e=>e[1]===id&&mBuilt(e[0])&&!mHidden(e[0])&&!(era()>=8&&e[0]==='skrap')),outs=MEDG.filter(e=>e[0]===id&&mBuilt(e[1])&&!(e[2]==='slag'&&!slagOn()));const v=nodeVA(id);
   let inL=ins.map(e=>li(PCOL[e[2]],t_('{0} · {1} fra {2}',t_(PNAME[e[2]]),tm(edgeV(e)),t_(MN[e[0]].n)))).join('');const supL=s=>li('#7d8590',t_(MN[s].n)+(lv(s)?' · '+tm(rate('s:'+s)):' · '+t_('mangler')));if(id==='rj')inL+=rjReq().map(supL).join('');if(id==='ovn')inL+=E_().req.map(supL).join('');
   h+='<div class="prow"><div class="k">'+t_('Inn')+'</div><ul>'+(inL||'<li>—</li>')+'</ul></div><div class="prow"><div class="k">'+t_('Ut')+'</div><ul>'+(outs.map(e=>li(PCOL[e[2]],t_(PNAME[e[2]])+' · '+tm(edgeV(e))+' → '+t_(MN[e[1]].n))).join('')||'<li>—</li>')+'</ul></div>';
   h+=row(CUR()+'/min',t_('Verdi inn {0} → ut {1}',kr(v.vin),kr(v.vout))+' · <b style="color:'+(v.va>=0?'var(--good)':'var(--danger)')+'">'+(v.va>=0?'+':'')+kr(v.va,'/min')+'</b>');
@@ -358,6 +376,12 @@ function renderPanel(){const id=MSEL,o=MN[id],on=o?t_(o.n):'';if(!o){$('mapPanel
   if(id==='pel')h+=row(t_('Pellets'),t_('{0}/{1} t · {2} t/min inn',tf(D.pel),tf(pelCap()),tf(pelRate()*60)))+row(t_('Kvalitet'),t_(pelGrade()?'Masovnspellets (billigere)':'DR-pellets'));
   if(id==='dri')h+=row(t_('Sjaktovn'),t_('{0} av {1} t/min',tf(DRI.rate*60),tf(shaftCap()*60)))+row(t_('DRI-lager'),t_('{0}/{1} t',tf(D.bin),tf(binCap())))+(era()===6?row(t_('DRI-andel'),t_('{0} % (satt {1} %)',Math.round(DRI.sh*100),Math.round(S.drimix*100)))+row(t_('CO₂'),t_('{0} t/t stål',L1(co2t()))):'');
   if(id==='esf')h+=row(t_('Effekt'),t_('{0} MW · {1} t/min råjern',Math.round(esfMW()),tf(ESF.rate*60)))+row(t_('Torpedovogner'),t_('{0} × {1} t',nTorp(),torpCap()))}
+ /* Phase 5 plants */
+ if(MN[id].p5){const vg=t_('{0} × {1} t',nTorp(),torpCap());
+  if(id==='moe')h+=row(t_('Celler'),t_('{0} av {1} · {2} kA',nCell(),12,cellKA()))+row(t_('Anodebytte'),t_('{0} % i drift',Math.round(anodeAv()*100)))+row(t_('Oksygen'),t_('{0} t/min solgt',tf(rate('f:moe>salg'))));
+  if(id==='pls')h+=row(t_('Effekt'),t_('{0} MW · {1} brennere',Math.round(plsMW()),nTorch()))+row(t_('Malmstøv'),t_('{0}/{1} t · {2} t/min inn',tf(S.p5.fines),tf(finesCap()),tf(finesRate()*60)))+row(t_('Vann tilbake'),t_('{0} %',Math.round(waterK()*100)));
+  if(id==='ew')h+=row(t_('Kar'),t_('{0} av {1}',nTankE(),12))+row(t_('Høsting'),t_('{0} t/min',tf(rate('harv'))))+row(t_('På katodene'),t_('{0}/{1} t',tf(S.p5.cath),tf(cathCap())));
+  if(p5Run(id))h+=row(t_('Vogner'),vg)}
  const zid=MZ[id]||id,hi=HIRE[zid];if(hi)h+=row(t_('Hjelpere'),t_('{0} av {1}',lv(hi.id),hi.costs.length));
  const ups=UP.filter(u=>u.st===zid);if(ups.length)h+='<div class="prow"><div class="k">'+t_('Oppgr.')+'</div><div class="lv">'+ups.map(u=>{const l=lv(u.id),on=upOpen(u),mx=l>=u.max,ok=on||l>0,urg=on&&!mx&&urgentIds(u.st).indexOf(u.id)>=0;return'<span'+(ok?'':' class="lk"')+'>'+upName(u)+(urg?' <i class="urg">'+t_('flaskehals')+'</i>':'')+'</span><b class="'+(mx?'mx':ok?'':'lk')+'">'+(mx?t_('MAKS'):!on?t_('låst'):(u.max>1?t_('Nivå {0}/{1}',l,u.max):t_('kan kjøpes'))+' · '+kr(upCost(u)))+'</b>'}).join('')+'</div></div>';
  h+='<p class="pnote">'+t_('Hver oppgradering har sin egen rute i stasjonen – velg selv rekkefølgen. Låst = kommer med en senere ovn eller et nytt bygg.')+'</p>';$('mapPanel').innerHTML=h}

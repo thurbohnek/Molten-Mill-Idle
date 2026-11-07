@@ -12,14 +12,18 @@
 // that actually reaches it; the arc furnace's power-off share (tapping + tap reaction + waits) is at most 16 %. In the caster-only and
 // pit-only positions the furnace is faster than one line by design: there the status chips must name that line as the limit.
 // Eras 2–4 (the caster exists but the furnace is much smaller than the maxed caster) keep the old rule: on AUTO the furnace never waits.
-// usage: node endgame.js [simMinutes=10] [mode-ignored] [file]      env: ERAS=0,1,…  (default 1…7; era 0 is report-only)
+// Phase 5: eras 8 (molten oxide electrolysis) and 9 (hydrogen plasma) – "the furnace" is the plant (cell hall / reactor): it is
+// never held back (its outlet is never full for more than 2 % of the time) and its output is 90–95 % of caster + pit; the transfer
+// cars, the holding furnace, the ladle car, the ladle furnace and the crane keep up. Era 10 (electrowinning) – "the furnace" is the
+// induction furnace: the usual furnace checks, and the tank house (supply) has headroom.
+// usage: node endgame.js [simMinutes=10] [mode-ignored] [file]      env: ERAS=0,1,…  (default 1…10; era 0 is report-only)
 const H=require('./harness6.js');const DT=1/30;
 const MIN=+process.argv[2]||10;
 let bad=0;const ok=(c,m)=>{console.log((c?'ok  ':'FAIL')+' '+m);if(!c)bad++};
 /* the last build of each era (all its stations exist); upgrades open in that era are maxed */
 function setup(eraIx,helpers,cast){for(const k of[...H.store.keys()])if(k.startsWith('smelteverket'))H.store.delete(k);const W=H.boot(),S=W.S;S.heats=99;S.st.slagT=999;
- const b=[null,'lf','tog','eaf1','nett','kai','h2','esf'][eraIx];
- if(b)W.build(b);if(eraIx===7)W.toEra(7);
+ const b=[null,'lf','tog','eaf1','nett','kai','h2','esf','esf','esf','esf'][eraIx];
+ if(b)W.build(b);if(eraIx>=7)W.toEra(eraIx);
  for(const u of W.UP)if(W.upOpen(u))W.setLv(u.id,u.max);
  for(const u of W.UP)if(W.upOpen(u))W.setLv(u.id,u.max);/* gates that open after the first pass */
  for(const st in W.HIRE)W.hire(st,helpers&&(W.stOn?W.stOn(st):(z=>(!z.b||W.B_(z.b))&&!(z.rj&&W.rjClosed()))(W.ZN[st]))&&(!W.HIRE[st].req||W.HIRE[st].req())?W.HIRE[st].costs.length:0);
@@ -30,10 +34,10 @@ function run(W,min){const S=W.S,F=W.F,CAST=W.CAST,LADLES=W.LADLES,N=Math.round(m
  /* steel routed to each line (counted when a ladle arrives at the pit or on a turret arm), ladle car busy time */
  const toLine={pit:0,tur:0},prevSt=new Map();let carBusy=0;
  let nOnS=0,flowT=0,dry=0,dryN=0,wasFlow=false,castT=0,tapped=0,cast0=0,bil0=0,h0=0,crBusy=0,lfBusy=0,speedSum=0,speedN=0,vmin=9,yardMin=1e9,stalls=0;
- const out0={};let piles0=null;
+ const out0={};let piles0=null;let held=0,p50=0,tank=0;
  for(let i=0;i<N;i++){W.update(DT);if(i<warm)continue;
-  if(i===warm){h0=S.heats;for(const l of LADLES)prevSt.set(l,l.state);cast0=S.st.prod.billet||0;piles0=Object.fromEntries(W.PRK.map(k=>[k,W.PILE[k].reduce((a,b)=>a+b.t,0)]));for(const id in W.NODE)out0[id]=0}
-  acc.tot+=DT;const st=F.state;
+  if(i===warm){p50=S.st.p5||0;h0=S.heats;for(const l of LADLES)prevSt.set(l,l.state);cast0=S.st.prod.billet||0;piles0=Object.fromEntries(W.PRK.map(k=>[k,W.PILE[k].reduce((a,b)=>a+b.t,0)]));for(const id in W.NODE)out0[id]=0}
+  acc.tot+=DT;const st=F.state;if(W.era()>=8&&S.rj.hearth>=W.hearthCap()-.01)held+=DT;if(W.era()>=10)tank+=W.EW.rate/Math.max(1e-6,W.ewRate())*DT;
   if(F.stop)acc.slag+=DT;
   else if(st==='ready'){if(!W.tapLadle()){acc.ladle+=DT;const L=LADLES.map(l=>l.state+(l.next?'>'+l.next:'')).join(',');why[L]=(why[L]||0)+DT}else acc.tapper+=DT}
   else if(st==='refine')acc.refine+=DT;else if(st==='tapping')acc.tapping+=DT;
@@ -48,15 +52,17 @@ function run(W,min){const S=W.S,F=W.F,CAST=W.CAST,LADLES=W.LADLES,N=Math.round(m
   if(W.carOn&&W.carOn()){const C=W.CAR;if(!(C.st==='tap'&&C.L&&C.L.state==='park'))carBusy+=DT}
   const y=W.count(W.SRCm.y0)+(W.SRCm.y1.open()?W.count(W.SRCm.y1):0);yardMin=Math.min(yardMin,y)}
  const T=acc.tot,heats=S.heats-h0,steel=W.rate('tap')/60;
- const res={flowT,acc,why,T,heats,dry,dryN,castT,crBusy:crBusy/T,lfBusy:lfBusy/T,carBusy:carBusy/T,pitIn:toLine.pit/T,turIn:toLine.tur/T,spd:speedN?speedSum/speedN:null,nOn:speedN?nOnS/speedN:0,vmin,yardMin,piles:{},nodes:{}};
+ const res={held,p5out:((S.st.p5||0)-p50)/T,tankU:tank/T,flowT,acc,why,T,heats,dry,dryN,castT,crBusy:crBusy/T,lfBusy:lfBusy/T,carBusy:carBusy/T,pitIn:toLine.pit/T,turIn:toLine.tur/T,spd:speedN?speedSum/speedN:null,nOn:speedN?nOnS/speedN:0,vmin,yardMin,piles:{},nodes:{}};
  for(const k of W.PRK)res.piles[k]=W.PILE[k].reduce((a,b)=>a+b.t,0)-(piles0?piles0[k]:0);
  for(const id in W.NODE){const n=W.NODE[id];if(n.on())res.nodes[id]={util:n.util,q:n.in.length,cap:n.cap,rate:n.rate()}}
  return res}
 const pct=v=>(v*100).toFixed(1)+' %';
 function report(eraIx,helpers,cast,min){const W=setup(eraIx,helpers,cast);if(!W.nStrands){W.nStrands=()=>1+W.lv('strands');W.strandRate=()=>.6*Math.pow(1.11,W.lv('caster'))}const r=run(W,min),a=r.acc,T=r.T,F=W.F;
- const wait=(a.ladle+a.starve+a.slag+a.hm+a.elek)/T;
- /* furnace output: steel tapped per second of furnace cycle at the measured rate */
- const tapT=W.fcap()*(1-W.E_().heel),cycle=T/Math.max(1,r.heats),fOut=tapT/cycle;
+ const p5p=W.era()===8||W.era()===9;
+ /* eras 8–9: the plant is the furnace – it waits when its outlet is full */
+ const wait=p5p?r.held/T:(a.ladle+a.starve+a.slag+a.hm+a.elek)/T;
+ /* furnace output: steel tapped per second of furnace cycle at the measured rate (eras 8–9: the plant's output) */
+ const tapT=W.fcap()*(1-W.E_().heel),cycle=T/Math.max(1,r.heats),fOut=p5p?r.p5out:tapT/cycle;
  console.log(`\n== era ${eraIx} (${W.E_().n}) helpers=${helpers?'max':'0'} cast=${W.S.cast}  ${min} min ==`);
  console.log(`furnace: ${r.heats} heats, ${tapT.toFixed(0)} t/tap, cycle ${cycle.toFixed(1)} s → ${fOut.toFixed(2)} t/s steel; melt-limit ${W.furnRate().toFixed(2)} t/s (Rpow ${W.Rpow().toFixed(2)})`);
  console.log(`time: melt ${pct(a.melt/T)} refine ${pct(a.refine/T)} tapping ${pct(a.tapping/T)} tapper-react ${pct(a.tapper/T)} | WAIT ladle ${pct(a.ladle/T)} scrap ${pct(a.starve/T)} slag ${pct(a.slag/T)} hm ${pct(a.hm/T)} elek ${pct(a.elek/T)} other ${pct(a.other/T)} → total wait ${pct(wait)}`);
@@ -66,7 +72,8 @@ function report(eraIx,helpers,cast,min){const W=setup(eraIx,helpers,cast);if(!W.
  if(W.B_('strang'))console.log(`steel to the caster ${r.turIn.toFixed(2)} t/s (${pct(r.turIn/Math.max(1e-9,r.turIn+r.pitIn))}) · to the ingot pit ${r.pitIn.toFixed(2)} t/s (${pct(r.pitIn/Math.max(1e-9,r.turIn+r.pitIn))}) · power off (tapping + tap reaction + waits) ${pct((a.tapping+a.tapper+a.ladle+a.slag)/T)}`);
  const nn=Object.entries(r.nodes).map(([k,n])=>`${k} ${n.rate.toFixed(1)} t/s util ${pct(n.util)} q ${n.q}/${n.cap}`).join(' · ');if(nn)console.log('nodes: '+nn);
  const pl=Object.entries(r.piles).filter(([k,v])=>Math.abs(v)>1).map(([k,v])=>k+' '+(v>0?'+':'')+v.toFixed(0)+' t').join(' · ');if(pl)console.log('pile growth: '+pl);
- if(W.era()>=6){const D=W.S.dri;console.log(`DRI: shaft ${(W.DRI.rate*60).toFixed(0)} of ${(W.shaftCap()*60).toFixed(0)} t/min, share ${(W.DRI.sh*100).toFixed(0)} % (set ${W.S.drimix*100} %), bin ${D.bin.toFixed(0)}/${W.binCap()}, H₂ ${D.h2.toFixed(1)}/${W.h2Cap().toFixed(0)}, pellets ${D.pel.toFixed(0)}, short ${W.DRI.short.toFixed(2)} beltLim ${W.DRI.beltLim.toFixed(2)} lim ${W.driLim()} · ESF ${(W.ESF.rate*60).toFixed(0)} of ${(W.esfRate()*60).toFixed(0)} t/min lim ${W.esfLim()} · CO₂ ${W.co2t().toFixed(2)} green ×${W.greenK().toFixed(2)} p4 ×${W.p4K().toFixed(2)}`)}
+ if(W.era()>=8){console.log(`plant: ${p5p?'output '+r.p5out.toFixed(2)+' t/s, held back '+pct(r.held/T):'tanks run at '+pct(r.tankU)} · ${W.era()===8?'MOE '+(W.moeRate()).toFixed(2)+' t/s max, '+W.nCell()+' cells':W.era()===9?'plasma '+W.plsCap().toFixed(2)+' t/s max, fines '+(W.finesRate()*W.FE_ORE).toFixed(1)+' t/s, H₂ '+(W.h2Rate()*W.waterK()/0.045).toFixed(1)+' t/s steel':'tanks '+W.ewRate().toFixed(2)+' t/s, harvest '+W.harvR().toFixed(1)+' t/s, furnace melt-limit '+W.Rpow().toFixed(1)+' t/s'} · cars ${W.nTorp()}×${W.torpCap()} t · carLim ${W.P5.carLim.toFixed(2)} held ${W.P5.held.toFixed(2)}`)}
+ else if(W.era()>=6){const D=W.S.dri;console.log(`DRI: shaft ${(W.DRI.rate*60).toFixed(0)} of ${(W.shaftCap()*60).toFixed(0)} t/min, share ${(W.DRI.sh*100).toFixed(0)} % (set ${W.S.drimix*100} %), bin ${D.bin.toFixed(0)}/${W.binCap()}, H₂ ${D.h2.toFixed(1)}/${W.h2Cap().toFixed(0)}, pellets ${D.pel.toFixed(0)}, short ${W.DRI.short.toFixed(2)} beltLim ${W.DRI.beltLim.toFixed(2)} lim ${W.driLim()} · ESF ${(W.ESF.rate*60).toFixed(0)} of ${(W.esfRate()*60).toFixed(0)} t/min lim ${W.esfLim()} · CO₂ ${W.co2t().toFixed(2)} green ×${W.greenK().toFixed(2)} p4 ×${W.p4K().toFixed(2)}`)}
  const st=W.bottlenecks().map(b=>b[0]+':'+b[1]).join(' | ');console.log('bottlenecks now: '+(st||'-')+' · ovn: '+W.status('ovn').t+' · strang: '+(W.status('strang')||{}).t);
  return{W,r,wait,fOut}}
 /* the ingot pit's maximum: pit-only position with everything maxed (the furnace is faster than the pit there), steel into the pit per s */
@@ -76,7 +83,7 @@ if(require.main!==module)return;
 /* regression test (default): the final era with everything maxed, with and without helpers, auto and caster-only routing;
    plus each earlier era's fully upgraded state (helpers max) from the open hearth on. The Bessemer era is reported only:
    its ladle crane cannot be upgraded before the ladle furnace is built (the next build, minutes into the game). */
-const eras=(process.env.ERAS||'1,2,3,4,5,6,7').split(',').map(Number);
+const eras=(process.env.ERAS||'1,2,3,4,5,6,7,8,9,10').split(',').map(Number);
 const T_=(W,k)=>W.t_(k);
 for(const e of eras){
  /* the pit-only run first: it measures the ingot pit's maximum and its chip must name the pit */
@@ -93,7 +100,7 @@ for(const e of eras){
   ok(wait<.02,`${tag}: furnace waits ${pct(wait)} (< 2 %)`);
   if(e<5&&W.carOn()){ok(r.crBusy<.9&&r.lfBusy<.9&&r.carBusy<.9,`${tag}: ladle crane ${pct(r.crBusy)}, ladle furnace ${pct(r.lfBusy)}, ladle car ${pct(r.carBusy)} busy (< 90 %)`)}
   if(e<5)continue;
-  const bn=W.bottlenecks().filter(b=>b[0]!=='ovn');ok(bn.length===0,`${tag}: no downstream bottleneck chips: `+(bn.map(b=>b.join(':')).join(' | ')||'-'));
+  const bn=W.bottlenecks().filter(b=>b[0]!=='ovn'&&!(e===8&&b[0]==='moe')&&!(e===9&&b[0]==='pls'));ok(bn.length===0,`${tag}: no downstream bottleneck chips: `+(bn.map(b=>b.join(':')).join(' | ')||'-'));
   if(!helpers)continue;
   /* both lines: the caster at full speed + the pit's maximum; the furnace delivers 90–95 % of that and both lines get steel */
   const cmax=W.casterCap(),both=cmax+pmax,share=fOut/both;
@@ -101,11 +108,15 @@ for(const e of eras){
   ok(share>=.9&&share<=.97,`${tag}: the furnace delivers ${pct(share)} of caster + pit capacity (90–95 %)`);
   ok(r.pitIn>=.05*fOut&&r.turIn>=.5*fOut,`${tag}: both lines get steel (caster ${r.turIn.toFixed(1)} t/s, pit ${r.pitIn.toFixed(1)} t/s)`);
   ok(r.crBusy<.9&&r.lfBusy<.9&&r.carBusy<.9,`${tag}: ladle crane ${pct(r.crBusy)}, ladle furnace ${pct(r.lfBusy)}, ladle car ${pct(r.carBusy)} busy (< 90 %)`);
-  if(e<7){const off=(r.acc.tapping+r.acc.tapper+r.acc.ladle+r.acc.slag)/r.T;ok(off<=.16,`${tag}: power-off share ${pct(off)} (≤ 16 %)`)}
+  if(e<7||e===10){const off=(r.acc.tapping+r.acc.tapper+r.acc.ladle+r.acc.slag)/r.T;ok(off<=.16,`${tag}: power-off share ${pct(off)} (≤ 16 %)`)}
   /* headroom at max: the rolling mill takes at least 15 % more than the steel the caster actually sends it */
   for(const id in r.nodes)ok(r.nodes[id].rate/r.turIn-1>=.15,`${tag}: node ${id} ${r.nodes[id].rate.toFixed(1)} t/s vs ${r.turIn.toFixed(1)} t/s from the caster → headroom ${pct(r.nodes[id].rate/r.turIn-1)} (≥ 15 %)`);
   if(e===6)ok(W.DRI.sh>=W.S.drimix*.85&&W.DRI.short<.3,`${tag}: the DRI chain delivers the set share (${(W.DRI.sh*100).toFixed(0)} % of ${W.S.drimix*100} %)`);
   if(e===7)ok(r.acc.hm/r.T<.005,`${tag}: the converter never waits for hot metal (${pct(r.acc.hm/r.T)})`);
-  if(e>=6){const lim=W.era()===6?W.rate('dri')/60/W.shaftCap():W.rate('esfmelt')/60/W.esfRate();ok(lim<.92,`${tag}: the ${e===6?'shaft furnace':'ESF'} has headroom (runs at ${pct(lim)} of max)`)}
+  if(e>=6&&e<8){const lim=W.era()===6?W.rate('dri')/60/W.shaftCap():W.rate('esfmelt')/60/W.esfRate();ok(lim<.92,`${tag}: the ${e===6?'shaft furnace':'ESF'} has headroom (runs at ${pct(lim)} of max)`)}
+  /* Phase 5 */
+  if(e===8||e===9){ok(W.P5.carLim<.3,`${tag}: the transfer cars keep up (carLim ${W.P5.carLim.toFixed(2)})`);ok(r.acc.ladle/r.T<.02,`${tag}: the holding furnace hardly waits for a ladle (${pct(r.acc.ladle/r.T)})`)}
+  if(e===9){const h2=W.h2Rate()*W.waterK()/0.045,fs=W.finesRate()*W.FE_ORE,pc=W.plsCap();ok(h2>=pc*1.1&&fs>=pc*1.1,`${tag}: H₂ (${h2.toFixed(1)} t/s steel) and ore fines (${fs.toFixed(1)}) have ≥ 10 % headroom over the reactor (${pc.toFixed(1)})`)}
+  if(e===10){ok(W.ewRate()>=fOut*1.1,`${tag}: the tank house has headroom (${W.ewRate().toFixed(1)} t/s of plates for ${fOut.toFixed(1)} t/s of steel)`);ok(W.harvR()>=W.ewRate()*1.02,`${tag}: the harvest robots keep up with the tanks`);ok(W.P5.carLim<.3,`${tag}: the plate wagons keep up (carLim ${W.P5.carLim.toFixed(2)})`)}
   ok(r.acc.starve/r.T<.005&&r.acc.slag/r.T<.005,`${tag}: no scrap starvation (${pct(r.acc.starve/r.T)}) and no slag stops (${pct(r.acc.slag/r.T)})`)}}
 console.log(bad?'FAIL '+bad:'PASS');process.exitCode=bad?1:0;

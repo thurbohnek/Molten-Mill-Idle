@@ -76,12 +76,14 @@ function layoutCheck(W,tag){const R=worldRects(W),out=[];
  for(const s of W.SRC)if(s.open()&&!reach(s.x,s.y))out.push(tag+' unreachable source: '+s.id);
  for(const d of W.PADS)if(W.vis(d)&&d.kind!=='build'&&W.blockedPt(d.x,d.y,4))out.push(tag+' pad in solid: '+d.id);
  return out}
-{const seen=new Set();const B=boot().BUILDS.length;delete global.__smeltOn;
- /* ph = B+1: everything built and the LD converter restarted (Phase 4, era 7) */
- /* the Phase 4 passes (h2, esf, era 7) come after the older ones; the random stream is restored after them, so a SEED run
-    starts exactly as it did before Phase 4 (comparable era timings) */
- const OLDB=B-2;let rs=null;
- for(let ph=0;ph<=B+1;ph++)for(const late of[0,1]){if(ph===OLDB+1&&!late&&global.__sdGet)rs=global.__sdGet();const W=boot();W.S.heats=99;W.S.st.slagT=999;if(ph)W.build(W.BUILDS[Math.min(ph,B)-1].id);if(ph>B)W.toEra(7);
+{const seen=new Set();const W0=boot(),BL=W0.BUILDS;delete global.__smeltOn;
+ /* the passes: every build up to the electric smelting furnace (ph 1…OLDB+2), then the later states as named steps:
+    e7 = the LD converter restarted, then the Phase 5 builds; e9 = the H₂ plant restarted for the plasma reactor */
+ /* the Phase 4/5 passes come after the older ones; the random stream is restored after them, so a SEED run starts exactly as it
+    did before Phase 4 (comparable era timings) */
+ const OLDB=BL.findIndex(b=>b.id==='h2');let rs=null;
+ const STEPS=[...BL.slice(0,BL.findIndex(b=>b.id==='esf')+1).map(b=>W=>W.build(b.id)),W=>W.toEra(7),W=>{W.toEra(7);W.build('moe')},W=>W.toEra(8),W=>{W.toEra(8);W.build('pls')},W=>W.toEra(9),W=>{W.toEra(9);W.build('ew')},W=>W.toEra(10)];
+ for(let ph=0;ph<=STEPS.length;ph++)for(const late of[0,1]){if(ph===OLDB+1&&!late&&global.__sdGet)rs=global.__sdGet();const W=boot();W.S.heats=99;W.S.st.slagT=999;if(ph)STEPS[ph-1](W);
   if(late){for(const u of W.UP)if(['malmkran','torpn','koks','cowper','sinter','kran','magkran','varm','rullkob','ktrans','kalk','o2','kull','lans','kanal','hette','yard2','elekkran','slaggbil'].includes(u.id))W.S.lv[u.id]=Math.max(W.S.lv[u.id]||0,u.max>2?3:1);W.setLv('ladle',2);W.setLv('strands',7);W.bakeFloor();W.rebuildSolids()}
   /* one pad per upgrade: every available upgrade must have a visible pad in its station row (no row overflow) */
   const o=layoutCheck(W,'ph'+ph+(late?'L':''));W.layoutPads();
@@ -158,7 +160,7 @@ while(t<sim){try{if(MODE!=='idle')botStep();
 const S=W.S;
 if(process.env.DUMP){const F=W.F;console.log('TORPS',JSON.stringify(W.TORPS),'RJ',JSON.stringify({r:W.RJ.rate,h:S.rj.hearth,ore:S.rj.ore,tg:S.tg.rj,ov:W.RJ.overflow,need:W.hmNeed(),hmCap:W.hmCap(),cap:W.fcap(),scrapMin:W.scrapMin()}));console.log('RATE',W.furnRate(),W.Rpow(),JSON.stringify(W.F.sup),W.F.rate,W.F.state,JSON.stringify(W.F.ch),W.F.hmCh,W.supCap('o2'),JSON.stringify(S.lv.o2));console.log('DUMP F scIn',F.scIn,'hmIn',F.hmIn,'S.hm',S.hm,'scrapMax',W.scrapMax(),F.state,F.bath.toFixed(1),F.solid.toFixed(1),'chg',S.chg,'chgCap',W.chgCap(),'ch',JSON.stringify(F.ch),'stop',F.stop,'pot',S.pot,'elek',S.elek,'lim',F.lim);console.log('ladles',JSON.stringify(W.LADLES.map(l=>({s:l.state,n:l.next,st:+l.steel.toFixed(1),x:Math.round(l.x),y:Math.round(l.y),slot:l.slot,atTap:l.atTap}))));const c=W.CRm.ose;console.log('crane',c.state,Math.round(c.x),Math.round(c.y),'man',c.man,'job',c.job&&JSON.stringify({f:c.job.from,t:c.job.to}),'G.crane',W.G.crane);console.log('goal',JSON.stringify(W.goal()),'task',JSON.stringify(task),'P',Math.round(P.x),Math.round(P.y),'stack',P.stack.map(i=>i.k).join(','));console.log('pit',W.PIT.state,'cast',JSON.stringify({gap:W.CAST.gap}),'tapLadle',!!W.tapLadle(),'cast mode',S.cast,'kok',JSON.stringify(S.kok))}
 console.log(log.join('\n'));if(process.env.DIAGAT)console.log('DIAG',Object.entries(DG).sort((a,b)=>b[1]-a[1]).map(e=>e[0]+'='+e[1].toFixed(0)).join(' '),'\nfcap',W.fcap(),'Rpow',W.Rpow().toFixed(2),'chgCap',W.chgCap(),'yard',W.yardT(W.SRCm.y0).toFixed(0));
-console.log('Nytt verk ready at (min):',global.__presT!=null?(global.__presT/60).toFixed(1):'-');console.log('phase times (min):',Object.entries(phT).map(([c,v])=>c+':'+(v/60).toFixed(1)).join(' '),' firstUpgrade(s):',firstUp&&firstUp.toFixed(0));console.log('era times (min, first run):',Object.entries(eraT).map(([c,v])=>['Bessemer','SM','LD','EAF','UHP','Consteel','H2-DRI','ESF+LD'][c]+':'+(v/60).toFixed(1)).join(' '));
+console.log('Nytt verk ready at (min):',global.__presT!=null?(global.__presT/60).toFixed(1):'-');console.log('phase times (min):',Object.entries(phT).map(([c,v])=>c+':'+(v/60).toFixed(1)).join(' '),' firstUpgrade(s):',firstUp&&firstUp.toFixed(0));console.log('era times (min, first run):',Object.entries(eraT).map(([c,v])=>['Bessemer','SM','LD','EAF','UHP','Consteel','H2-DRI','ESF+LD','MOE','Plasma','EW'][c]+':'+(v/60).toFixed(1)).join(' '));
 console.log('prod',JSON.stringify(S.st.prod),'\nsoldK',JSON.stringify(S.st.soldK),'\ncastB',S.st.castB,'castS',S.st.castS,'slagStops',S.st.slagStops,'recovered',W.G.slagRecover,'stopNow',W.F.stop,'craneManSec',craneManT.toFixed(0));
 console.log('ladles',W.LADLES.map(l=>l.state+':'+l.steel.toFixed(1)).join(' '),'nodes',Object.values(W.NODE).map(n=>n.id+':'+n.in.length+(n.cur?'*':'')).join(' '),'piles',W.PRK.map(k=>k+':'+W.PILE[k].length).join(' '));
 console.log('routeTrips',JSON.stringify(routeTrips));
@@ -179,6 +181,8 @@ if(CHEAT){const miss=[...W.PRK,'slag'].filter(k=>k!=='pig'||!W.rjClosed()||W.S.s
 if(MODE==='bot'&&res.idlePct>8){okay=false;console.log('FAIL: idle too high')}
 /* Phase 4: a long bot run (720 min and more) must reach the hydrogen DRI era and the electric smelting era */
 if(MODE==='bot'&&MIN>=720&&!presDone&&!(eraT[6]!=null&&eraT[7]!=null)){okay=false;console.log('FAIL: the bot did not reach eras 6 and 7 in',MIN,'min')}
+/* Phase 5: the long run (LONGMIN, default 1080 min) must reach the MOE, plasma and electrowinning eras */
+if(MODE==='bot'&&MIN>=(+process.env.LONGMIN||1080)&&!presDone&&!(eraT[8]!=null&&eraT[9]!=null&&eraT[10]!=null)){okay=false;console.log('FAIL: the bot did not reach eras 8, 9 and 10 in',MIN,'min')}
 if(process.env.ERAS&&W.era()<5&&!presDone){okay=false;console.log('FAIL: not every furnace era reached')}
 /* every visible string had a translation (English runs) */
 if(W.I18N_MISS.size){okay=false;console.log('FAIL: untranslated:',JSON.stringify([...W.I18N_MISS].slice(0,30)))}

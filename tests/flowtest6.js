@@ -1,4 +1,4 @@
-// Exhaustive build-state flow test (v6): in every reachable build state, with and without helpers, every
+// Exhaustive build-state flow test (v6): in every reachable build state (now up to the Phase 5 builds), with and without helpers, every
 // built station either produces or shows a visible reason (status chip, level ≥ 1) for why it waits.
 const H=require('./harness6.js');const DT=1/30;
 const W0=H.boot();const B=W0.BUILDS.map(b=>b.id);delete global.__smeltOn;
@@ -17,9 +17,11 @@ for(let ph=0;ph<=B.length;ph++)for(const help of[0,1])for(const legs of[0,1])for
  const done={};let lfSeen=0;
  for(let k=0;k<30*240;k++){W.update(DT);if(W.LADLES.some(l=>l.state==='lf'))lfSeen=1;if(k%15===0){for(const id of STN){const key=outKey[id];if(key&&W.RT.acc[key]>0)done[id]=1}}if(k%30===0)W.draw()}
  if(lfSeen)done.lf=1;
- if(W.rjClosed()){for(const id in W.ZN){const st=W.status(id);if(st&&/råjern/i.test(st.t))problems.push('ph'+ph+': after Omlegging '+id+' still waits for råjern ('+st.t+')')}if(W.S.hm>0||W.TORPS.some(t=>t.load>0))problems.push('ph'+ph+': råjern left in the steel plant after Omlegging')}
+ if(W.rjClosed()){for(const id in W.ZN){const st=W.status(id);if(st&&/råjern/i.test(st.t))problems.push('ph'+ph+': after Omlegging '+id+' still waits for råjern ('+st.t+')')}if(W.era()<7&&(W.S.hm>0||W.TORPS.some(t=>t.load>0)))/* (eras 7–10 run their own lines: hot metal from the ESF, steel / plates from the Phase 5 plants) */problems.push('ph'+ph+': råjern left in the steel plant after Omlegging')}
  for(const id of STN){const z=W.ZN[id];if(W.status(id)===null&&!done[id])continue;checks++;
   if(done[id])continue;const st=W.status(id);
+  /* Phase 5: from era 8 the steel is made from ore – the scrap yard rests (its chip says so) */
+  if(id==='skrap'&&W.era()>=8&&st&&st.t===W.t_('Hviler – stålet lages av malm'))continue;
   if(!st||!(st.lv>=1)||!st.t)problems.push('ph'+ph+(help?' help':'')+(legs?' legs':'')+' cast='+cast+' mix='+mix+': '+id+' dead without reason (status='+JSON.stringify(st)+')');
   else if(help&&legs){/* fully staffed and automated: only switches may excuse a dead station */
    const ok=(id==='blokk'&&(cast==='strang'||cast==='auto'))||(id==='tc'&&mix==='vals')||(id==='strang'&&cast==='blokk')||(id==='stel'&&mix==='arm')||(id==='nett'&&mix==='arm')||((id==='gjv'||id==='vv'||id==='tc'||id==='stel'||id==='nett'||id==='kob')&&cast==='blokk')||(id==='kob'&&mix==='vals')||(id==='lf'&&false)||(id==='skrap'&&/Skrapkassa er full|Chargering full/.test(st.t))||(id==='rj'&&/masseljern|torpedovogn/.test(st.t));

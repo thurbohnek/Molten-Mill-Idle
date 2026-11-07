@@ -4,7 +4,7 @@ const H=require('./harness6.js');const DT=1/30;let bad=0;const ok=(c,m)=>{consol
 const fresh=()=>{H.store.clear();const W=H.boot();W.S.heats=99;W.S.st.slagT=999;return W};
 const inSol=(W,x,y)=>W.SOLIDS().some(s=>s.r?Math.hypot(x-s.x,y-s.y)<s.r:x>s.x&&x<s.x+s.w&&y>s.y&&y<s.y+s.h);
 {const W=fresh();ok(W.WH===W.WH0&&Object.keys(W.S.mb).length===0,'new game: no old plants, world 1140 tall');
- W.build('sm');const m=W.S.mb.bess;ok(m&&m.st==='mb'&&m.p==='mbp0','SM built → Bessemer mothballed on the first reserve plot');ok(W.WH===W.WHMAX,'the world grew to '+W.WH);
+ W.build('sm');const m=W.S.mb.bess;ok(m&&m.st==='mb'&&m.p==='mbp0','SM built → Bessemer mothballed on the first reserve plot');ok(W.WH===W.WHM,'the world grew to '+W.WH);
  const g=W.mbGeo('bess');ok(inSol(W,g.cx,g.cy),'the mothballed converter is solid');ok(W.vis(W.PAD.dem_bess)&&W.payable(W.PAD.dem_bess),'Demolish pad shown');
  ok(W.zoneBuilt(W.ZN.mbp0),'its plot is shown');
  W.build('eaf1');ok(['bess','sm','ld','rj'].every(u=>W.mbOn(u)),'Omlegging: Bessemer, SM, LD and the ironworks all mothballed');
@@ -33,7 +33,7 @@ const inSol=(W,x,y)=>W.SOLIDS().some(s=>s.r?Math.hypot(x-s.x,y-s.y)<s.r:x>s.x&&x
 /* migration: a save from before Phase 2 already in the UHP era gets its old plants as if they had been kept */
 {H.store.clear();const W0=H.boot();W0.S.heats=99;W0.build('uhp');W0.save();const raw=JSON.parse(H.store.get('smelteverket.v6'));delete raw.mb;H.store.set('smelteverket.v6',JSON.stringify(raw));
  const W=H.boot();ok(['bess','sm','ld','rj','eaf'].every(u=>W.mbOn(u)),'old save in the UHP era: old plants created mothballed');
- const ps=['bess','sm','ld','eaf'].map(u=>W.S.mb[u].p);ok(new Set(ps).size===4,'on distinct plots');ok(W.WH===W.WHMAX,'world grown');
+ const ps=['bess','sm','ld','eaf'].map(u=>W.S.mb[u].p);ok(new Set(ps).size===4,'on distinct plots');ok(W.WH===W.WHM,'world grown (to 1560; the Phase 5 column comes later)');
  let ex=0;for(let i=0;i<30*30;i++){try{W.update(DT);if(i%30===0)W.draw()}catch(e){ex++}}ok(ex===0,'migrated save runs');
  /* a damaged entry is repaired, nothing breaks */
  W.S.mb.sm={st:'??'};W.S.mb.bogus={st:'mb',p:'mbp0'};W.save();const W3=H.boot();ok(!W3.S.mb.bogus&&W3.mbOn('sm'),'bad mothball entries are repaired')}

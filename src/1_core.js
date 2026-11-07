@@ -35,7 +35,9 @@ const tf=v=>v>=100?fmt(v):v>=10?L1(v):dsep((Math.round(v*100)/100).toFixed(2));
    utlasting (rail + quay) at the far right. */
 /* WX0 is the grid / floor origin (the Phase 4 plots left of the ironworks included); WXL is the walkable left edge:
    -760 until the hydrogen plant's plot opens (the build after the quay), then the world grows to the left */
-const WX0=-1620,WXL0=-760,WW=4300,WH0=1140,WHMAX=1560,CY=600,QX=3560,QY=850;
+const WX0=-1620,WXL0=-760,WW=4300,WH0=1140,WHM=1560,WHMAX=2400,CY=600,QX=3560,QY=850;
+/* Phase 5: the world grows down to 2400 in a column under the Phase 4 plots only (x < OUTX); the rest stays 1560 tall */
+const OUTX=-744;
 let WXL=WXL0;
 /* the world grows downward when the first old plant is mothballed: a strip of reserve plots + the control room (y 1132–1536) */
 let WH=WH0;
@@ -74,8 +76,13 @@ const ZONES=[
  {id:'rob',x0:3156,y0:1132,x1:3520,y1:1536,col:'#f0a0ff',n:'ROBOTCELLER',on:()=>AUTO()&&lv('endless')>0},
  /* Phase 4 (2030 →): a new plot left of the old ironworks – the hydrogen direct-reduction plant on top, the electric smelting
     furnace under it. The DRI gallery runs in the gaps between the old plots to the conveyor-fed arc furnace. */
- {id:'dri',x0:-1604,y0:24,x1:-776,y1:596,col:'#7ad7c2',n:'HYDROGEN-DRI',b:'h2'},
- {id:'esf',x0:-1604,y0:612,x1:-776,y1:1116,col:'#ff9b5a',n:'ELEKTRISK SMELTEOVN',b:'esf'}];
+ {id:'dri',x0:-1604,y0:24,x1:-776,y1:596,col:'#7ad7c2',n:'HYDROGEN-DRI',b:'h2',mbu:'dri'},
+ {id:'esf',x0:-1604,y0:612,x1:-776,y1:1116,col:'#ff9b5a',n:'ELEKTRISK SMELTEOVN',b:'esf',mbu:'esf'},
+ /* Phase 5 (2040 →): a column of new plots under the electric smelting furnace – molten oxide electrolysis, the hydrogen plasma
+    reactor and low-temperature electrowinning. The transfer line runs up the corridor east of them (x −812 / −784). */
+ {id:'moe',x0:-1604,y0:1132,x1:-836,y1:1536,col:'#f2b84b',n:'SMELTEELEKTROLYSE',b:'moe',mbu:'moe'},
+ {id:'pls',x0:-1604,y0:1552,x1:-836,y1:1956,col:'#d08cff',n:'PLASMAREAKTOR',b:'pls',mbu:'pls'},
+ {id:'ew',x0:-1604,y0:1972,x1:-836,y1:2376,col:'#5cc8e8',n:'KALD ELEKTROLYSE',b:'ew'}];
 const ZN=Object.fromEntries(ZONES.map(z=>[z.id,z]));
 const inZone=(z,x,y,m)=>{m=m||0;return x>=z.x0+m&&x<=z.x1-m&&y>=z.y0+m&&y<=z.y1-m};
 const POS={
@@ -117,6 +124,15 @@ const P4G={hall:{x0:-1584,y0:70,x1:-1256,y1:262},tank:[{x:-1170,y:116,r:30},{x:-
  belt:[[-1290,404],[-984,236]],gal:[[-1012,418],[-760,418],[-760,308],[16,308],[16,600],[64,600]],feed:[[-1040,446],[-1040,648],[-1316,648]]};
 const ESFG={x0:-1380,x1:-952,y0:718,y1:822,cy:770,tapX:-880,bins:[-1300,-1166,-1032],binY:670,slag:{x:-1462,y:770},trafo:{x0:-1330,x1:-1000,y:846,h:30}};
 const TWINP={x:1180,y:1372};
+/* Phase 5 geometry. MOE: transformer/rectifier yard at the west end, the cell hall with up to 12 cells in a row (busbars along
+   both walls, a heated launder along the south wall to the tap at the east end), the O₂ unit east of the hall.
+   Plasma: ore-fines silo, the round reactor with its plasma torches, the steam condenser; H₂ and water pipes run up the plant fence
+   (x −1600 / −1607) to the electrolyser hall. Electrowinning: dissolution tank, rectifier, the tank house (3 rows), the plate stacker.
+   tap = where the plant fills the transfer car (track A, x −812). */
+const P5G={A:-812,B:-784,
+ moe:{yx0:-1580,yx1:-1500,hx0:-1490,hx1:-950,hy0:1186,hy1:1404,cy0:1214,cy1:1360,pitch:45,o2:{x:-917,y:1240,r:22},tapY:1396,fill:1400,desk:{x:-1010,y:1462}},
+ pls:{silo:{x:-1500,y:1690,r:36},R:{x:-1210,y:1745,r:84},cond:{x0:-1070,y0:1620,x1:-960,y1:1700},stack:{x:-1015,y:1612},tapY:1775,fill:1775},
+ ew:{leach:{x:-1530,y:2090,r:40},rect:{x0:-1585,y0:2150,x1:-1490,y1:2240},hx0:-1470,hx1:-960,hy0:2030,hy1:2266,stack:{x:-905,y:2240},fill:2240}};
 /* Consteel line (era 5), left → right along the spine: open charging section in the scrap yard (pan conveyor, loaded by the
    magnet crane) → dynamic seal → preheating tunnel (the off-gas leaves at its charging end, dx) → connecting car into the shell.
    The gas cleaning (drop-out box → bag filter → fan → stack) stands in the free strip above the scrap yard. */
@@ -158,7 +174,12 @@ const ERA=[
  /* Phase 4: the same conveyor-fed arc furnace, now also fed hot direct-reduced iron (DRI) from the hydrogen shaft furnace */
  {n:'Hydrogen-DRI',k:'DRI-BÅNDOVN',yr:2030,cap:90,type:'eaf',P:140,E:340,ref:1,ch:'belt',req:['kalk','o2','kull'],fb:.45,elek:75,slag:22,heel:.45,tap:'ebt',pu:'MVA',tt:'≈40 min',hm:[0,0],gate:'h2'},
  /* the electric smelting furnace melts DRI to green hot metal; the restarted LD converter refines it with some scrap */
- {n:'Elektrisk smelteovn',k:'LD-KONVERTER',yr:2035,type:'conv',cap:48,blow:12,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:22,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.6,.85],needs:['ld'],gate:'esf'}];
+ {n:'Elektrisk smelteovn',k:'LD-KONVERTER',yr:2035,type:'conv',cap:48,blow:12,ref:1,ch:'conv',req:['kalk','o2'],fb:.6,elek:0,slag:22,heel:0,tap:'mouth',pu:'s blåsing',tt:'≈40 min',hm:[.6,.85],needs:['ld'],gate:'esf'},
+ /* Phase 5: liquid steel comes from the new plant by transfer car and is poured into an induction holding furnace in the melt
+    shop, which taps it into the casting ladles (eras 8–9). In era 10 the same furnace melts the iron plates from the tank house. */
+ {n:'Smelteelektrolyse',k:'HOLDEOVN',yr:2040,type:'hold',cap:48,P:0,E:0,ref:.6,ch:'none',req:[],fb:.6,elek:0,slag:0,heel:0,tap:'ind',pu:'MW',tt:'≈6 s',hm:[0,0],gate:'hold'},
+ {n:'Hydrogenplasma',k:'HOLDEOVN',yr:2045,type:'hold',cap:48,P:0,E:0,ref:.6,ch:'none',req:[],fb:.6,elek:0,slag:0,heel:0,tap:'ind',pu:'MW',tt:'≈6 s',hm:[0,0],needs:['dri'],gate:'pls'},
+ {n:'Kald elektrolyse',k:'INDUKSJONSOVN',yr:2050,type:'ind',cap:90,P:320,E:550,ref:1,ch:'plate',req:[],fb:.45,elek:0,slag:0,heel:.45,tap:'ind',pu:'MW',tt:'≈40 min',hm:[0,0],gate:'ind'}];
 ERA.forEach(e=>{e.needs=e.needs||[]});
 const SUPC={kalk:.7,o2:1.4,kull:5},SUPN={kalk:'kalk/dolo',o2:'oksygen',kull:'kull',koks:'koks',cowper:'cowpere'};
 /* råjernsovn on its own plot: coke blast furnace → electric pig-iron furnace (Søderberg electrodes, closed top) */
@@ -186,11 +207,17 @@ const BUILDS=[
  {id:'kai',sn:'Kai',n:'Kai',z:'utlast',cost:7.5e8,x:3700,y:764,d:'Skip gir best pris for eksport.'},
  /* Phase 4 */
  {id:'h2',sn:'Hydrogen-DRI',n:'Hydrogen-DRI-anlegg',z:'dri',cost:3e9,x:-1100,y:470,era:6,d:'Elektrolyse lager hydrogen som reduserer jernmalmpellets til DRI. Varm DRI mates inn i båndovnen.'},
- {id:'esf',sn:'El. smelteovn',n:'bygg§Elektrisk smelteovn',z:'esf',cost:1.2e10,x:-1100,y:960,d:'Smelter DRI til grønt råjern. Start LD-konverteren igjen for å raffinere det.'}];
+ {id:'esf',sn:'El. smelteovn',n:'bygg§Elektrisk smelteovn',z:'esf',cost:1.2e10,x:-1100,y:960,d:'Smelter DRI til grønt råjern. Start LD-konverteren igjen for å raffinere det.'},
+ /* Phase 5: each new plant is built on its plot first (and can be upgraded), then the melt shop (or the H₂ plant) is switched over */
+ {id:'moe',sn:'Cellehall',n:'Smelteelektrolyse',z:'moe',cost:1.2e10,x:-1220,y:1300,after:()=>ldRun(),d:'En lang hall med elektrolyseceller: likestrøm splitter jernmalm til flytende stål og oksygen.'},
+ {id:'hold',sn:'Holdeovn',n:'Holdeovn',z:'ovn',cost:5e9,x:990,y:1040,era:8,d:'En induksjonsovn i stålverket tar imot stålet fra cellehallen og tapper det i støpeøsene. LD-konverteren legges ned.'},
+ {id:'pls',sn:'Plasmareaktor',n:'Hydrogenplasma-reaktor',z:'pls',cost:1.2e10,x:-1220,y:1740,d:'Malmstøv blåses inn i en lysbue av hydrogenplasma: flytende stål og vanndamp. Start elektrolysørene igjen for hydrogenet.'},
+ {id:'ew',sn:'Karhall',n:'Kald elektrolyse',z:'ew',cost:2e10,x:-1220,y:2160,after:()=>era()>=9,d:'Jern felles ut som plater i lunkne kar. Roboter høster platene; de smeltes i en induksjonsovn.'},
+ {id:'ind',sn:'Induksjonsovn',n:'Induksjonsovn',z:'ovn',cost:9e9,x:990,y:1040,era:10,d:'Holdeovnen bygges om til en kraftig induksjonsovn som smelter jernplatene fra karhallen.'}];
 const BLD=Object.fromEntries(BUILDS.map(b=>[b.id,b]));
 const PRES_NEED=4e9;
 /* Nytt verk is offered from the quay on (the end of the game before Phase 4); the Phase 4 eras extend the run beyond it */
-const PRES_PH=BUILDS.findIndex(b=>b.id==='kai')+1,P4_PH=BUILDS.findIndex(b=>b.id==='h2');
+const PRES_PH=BUILDS.findIndex(b=>b.id==='kai')+1,P4_PH=BUILDS.findIndex(b=>b.id==='h2'),P5_PH=BUILDS.findIndex(b=>b.id==='pls');
 
 /* ---------- upgrades: every upgrade has its own pad in its station's upgrade row; the player picks the order.
    req = only real progress gates (furnace era, building, the plant it needs); intro:1 = shown during the first two heats too ---------- */
@@ -199,20 +226,20 @@ const UP=[
  {id:'speed',st:'skrap',n:'Raskere gange',max:12,base:45,m:1.6},
  {id:'yard',st:'skrap',n:'Skraptilførsel',max:20,base:70,m:1.55,req:()=>scrapUse()},
  {id:'kran',st:'skrap',n:'Skrapkran',max:23,base:180,m:1.52,req:()=>scrapUse()},
- {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere chargeringsbånd','Raskere chargeringsbånd','Større skrapkasse'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
+ {id:'charge',st:'skrap',n:()=>['Større skrapkasse','Flere chargeringskasser','Større skrapkasse','Større skrapkurv','Større skrapkurv','Raskere chargeringsbånd','Raskere chargeringsbånd','Større skrapkasse','Større skrapkasse','Større skrapkasse','Større skrapkasse'][era()],max:20,base:110,m:1.5,req:()=>scrapUse()},
  {id:'yard2',st:'skrap',n:'Skraphaug 2',max:1,costs:[900],req:()=>scrapUse()},
  {id:'magnet',st:'skrap',n:'Større magnet',max:10,base:2e6,m:1.6,req:()=>CS()},
  {id:'forvarm',st:'skrap',n:'Kurvforvarming',max:1,costs:[1e5],req:()=>era()===3||era()===4},
  {id:'sort',st:'skrap',n:'Skrapsortering',max:3,costs:[1.2e5,1.5e6,2e7],req:()=>AUTO()},
  {id:'furnace',st:'ovn',n:()=>ET()==='conv'?'Større konverter':'Større ovn',max:20,base:120,m:1.5},
- {id:'power',st:'ovn',n:()=>['Sterkere blåsemaskin','Sterkere brennere','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt','Mer effekt','Kraftigere O₂-lanse'][era()],max:20,base:160,m:1.5},
+ {id:'power',st:'ovn',n:()=>['Sterkere blåsemaskin','Sterkere brennere','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt','Mer effekt','Kraftigere O₂-lanse','Mer effekt','Mer effekt','Mer effekt'][era()],max:20,base:160,m:1.5,req:()=>era()<8},
  {id:'refine',st:'ovn',n:()=>ET()==='sm'?'Raskere raffinering':'Raskere tapping',max:8,base:300,m:1.9},
  {id:'operator',st:'ovn',n:'Tapper',max:1,costs:[1500],person:1},
  {id:'ladle',st:'ovn',n:'Ekstra øse',max:4,costs:[450,2.5e4,1.5e6,1.5e7]},
  {id:'slagcap',st:'ovn',n:'Større slaggpotte',max:10,base:1500,m:1.7,req:()=>slagOn()},
  {id:'slaggbil',st:'ovn',n:'Slaggbil',max:1,costs:[6e4],req:()=>slagOn()},
  /* v7.6: automated tapping for the conveyor-fed furnace and the restarted converter – shorter tapping and tilting */
- {id:'tapauto',st:'ovn',n:'Tappeautomatikk',max:8,base:2e8,m:1.7,req:()=>CS()||era()===7},
+ {id:'tapauto',st:'ovn',n:'Tappeautomatikk',max:8,base:2e8,m:1.7,req:()=>CS()||era()>=7},
  {id:'kalk',st:'sup',n:'Kalk og dolo',max:23,base:60,m:1.5,sup:1,req:()=>E_().req.indexOf('kalk')>=0||lv('kalk')>0},
  {id:'o2',st:'sup',n:'Oksygenanlegg',max:21,base:500,m:1.5,sup:1,req:()=>E_().req.indexOf('o2')>=0||lv('o2')>0},
  {id:'lans',st:'sup',n:()=>lv('lans')?'Veggmonterte injektorer':'Dørlansemanipulator',max:2,costs:[2e4,6e5],req:()=>isEAF()&&lv('o2')>0&&(lv('lans')<1||era()>=4)},
@@ -278,12 +305,27 @@ const UP=[
  /* Phase 4: the hydrogen DRI plant (electrolysis → H₂ storage → shaft furnace ← pellets → DRI conveyor) and the ESF */
  {id:'elyz',st:'dri',n:'Elektrolysører',max:22,base:3e7,m:1.3},
  {id:'h2st',st:'dri',n:()=>lv('h2st')>=3?'Større fjellhall':'H₂-lager',max:6,costs:[1.5e8,6e8,2e9,6e9,1.5e10,4e10]},
- {id:'shaft',st:'dri',n:'Større sjaktovn',max:20,base:4e7,m:1.3},
- {id:'pellet',st:'dri',n:'Pellettilførsel',max:20,base:2e7,m:1.3},
- {id:'dribelt',st:'dri',n:'DRI-bånd',max:12,base:1e8,m:1.5,req:()=>era()===6||lv('dribelt')>0},
+ {id:'shaft',st:'dri',n:'Større sjaktovn',max:20,base:4e7,m:1.3,req:()=>era()<8},
+ {id:'pellet',st:'dri',n:'Pellettilførsel',max:20,base:2e7,m:1.3,req:()=>era()<8},
+ {id:'dribelt',st:'dri',n:'DRI-bånd',max:12,base:1e8,m:1.5,req:()=>(era()===6||lv('dribelt')>0)&&era()<8},
  {id:'esfmw',st:'esf',n:'Mer effekt (MW)',max:20,base:1.5e8,m:1.3},
  {id:'etorp',st:'esf',n:'Større torpedovogner',max:8,base:4e8,m:1.5},
- {id:'etorpn',st:'esf',n:'Ekstra torpedovogn',max:3,costs:[1e9,4e9,1.5e10]}];
+ {id:'etorpn',st:'esf',n:'Ekstra torpedovogn',max:3,costs:[1e9,4e9,1.5e10]},
+ /* Phase 5: the cell hall (MOE), the transfer line and the induction furnace (melt shop row), the plasma reactor, the tank house */
+ {id:'cells',st:'moe',n:'Flere celler',max:4,costs:[8e8,1.5e9,2.5e9,4e9]},
+ {id:'rect',st:'moe',n:'Likeretter',max:20,base:1.5e8,m:1.22},
+ {id:'anode',st:'moe',n:'Anoderobot',max:6,costs:[3e8,7e8,1.5e9,3e9,5e9,8e9]},
+ {id:'o2c',st:'moe',n:'O₂-kompressor',max:10,base:2e8,m:1.5},
+ {id:'ltc',st:'ovn',n:()=>era()>=10?'Større platevogner':'Større overføringsøse',max:8,base:3e8,m:1.45,req:()=>era()>=8},
+ {id:'ltcn',st:'ovn',n:()=>era()>=10?'Ekstra platevogn':'Ekstra overføringsvogn',max:4,costs:[1e9,2.5e9,6e9,1.5e10],req:()=>era()>=8},
+ {id:'indmw',st:'ovn',n:'Induksjonseffekt',max:10,base:1.2e9,m:1.3,req:()=>B_('ew')},
+ {id:'pmw',st:'pls',n:'Plasmaeffekt (MW)',max:20,base:5e8,m:1.2},
+ {id:'ptorch',st:'pls',n:'Flere plasmabrennere',max:3,costs:[2.5e9,6e9,1.5e10]},
+ {id:'fines',st:'pls',n:'Malmstøvtilførsel',max:20,base:2.5e8,m:1.2},
+ {id:'cond',st:'pls',n:'Dampkondensator',max:10,base:6e8,m:1.35},
+ {id:'tanks',st:'ew',n:'Flere elektrolysekar',max:4,costs:[2.5e9,4.5e9,7e9,1.1e10]},
+ {id:'ewcur',st:'ew',n:'Strømtetthet',max:20,base:8e8,m:1.2},
+ {id:'harv',st:'ew',n:'Høsterobot',max:12,base:8e8,m:1.28}];
 const UPm=Object.fromEntries(UP.map(u=>[u.id,u]));
 UP.forEach(u=>{if(u.costs)u.max=u.costs.length});
 /* the 4th and 5th ladle come with the automated melt shop (the ladle car and both casting lines need them) */
@@ -291,7 +333,7 @@ Object.defineProperty(UPm.ladle,'max',{get:()=>{try{return AUTO()?4:2}catch(e){r
 const HIRE={
  rj:{id:'h_rj',n:'Malmhjelper',costs:[70,900,9000],col:'#ff9a6a'},
  skrap:{id:'h_skrap',n:'Skraphjelper',op:'Kranfører',costs:[90,900,9000],col:'#ffd23f',req:()=>scrapUse()},
- ovn:{id:'h_ovn',n:'Ovnshjelper',op:'Kontrollromsoperatør',costs:[2500,15000,1.2e5],col:'#f1ede2',req:()=>slagOn()},
+ ovn:{id:'h_ovn',n:'Ovnshjelper',op:'Kontrollromsoperatør',costs:[2500,15000,1.2e5],col:'#f1ede2',req:()=>slagOn()||era()>=8},
  blokk:{id:'h_blokk',n:'Blokkhjelper',op:'Blokkoperatør',costs:[250,2500,25000],col:'#ff8c5a'},
  strang:{id:'h_strang',n:'Emnehjelper',op:'Strengoperatør',costs:[3e4,2.5e5,2e6],col:'#a0d8ff'},
  vv:{id:'h_vv',n:'Valseverkshjelper',op:'Valseoperatør',costs:[1.5e5,1.2e6,1e7],col:'#d0d6de'},
@@ -299,7 +341,11 @@ const HIRE={
  stel:{id:'h_stel',n:'Valstrådhjelper',op:'Valstrådoperatør',costs:[8e6,5e7,3e8],col:'#c48bff'},
  nett:{id:'h_nett',n:'Netthjelper',op:'Sveiseoperatør',costs:[1.5e7,1e8,6e8],col:'#9bd35f'},
  kob:{id:'h_kob',n:'Bøyehjelper',op:'Bøyeoperatør',costs:[6e7,4e8,3e9],col:'#ef8ad6'},
- dri:{id:'h_dri',n:'DRI-operatør',op:'DRI-operatør',costs:[3e8,2e9,1.2e10],col:'#7ad7c2'}};
+ dri:{id:'h_dri',n:'DRI-operatør',op:'DRI-operatør',costs:[3e8,2e9,1.2e10],col:'#7ad7c2',b:'h2'},
+ /* Phase 5: operators at the desks of the new plants (b: the build the plant comes with) */
+ moe:{id:'h_moe',n:'Celleoperatør',op:'Celleoperatør',costs:[3e8,2e9,1e10],col:'#f2b84b',b:'moe'},
+ pls:{id:'h_pls',n:'Plasmaoperatør',op:'Plasmaoperatør',costs:[6e8,4e9,2e10],col:'#d08cff',b:'pls'},
+ ew:{id:'h_ew',n:'Karoperatør',op:'Karoperatør',costs:[1.2e9,8e9,4e10],col:'#5cc8e8',b:'ew'}};
 /* upgrade rows: slots [x,y] filled in UP order by the upgrades a station shows (maxed ones keep their slot as MAKS);
    lw = label width (row pitch − 4). One hire pad per station, beside its row. */
 const R_=(x0,y,n,dx)=>Array.from({length:n},(_,i)=>[x0+i*dx,y]);
@@ -326,11 +372,13 @@ const UPROW={
  rob:{s:[[3200,1490],[3278,1490]],lw:74},
  cr:{s:[[1180,1480]],lw:74},
  dri:{s:R_(-1556,548,5,78),lw:74},
- esf:{s:R_(-1556,1056,3,78),lw:74}};
-const HIREPOS={rj:{x:-444,y:932},skrap:{x:296,y:930},ovn:{x:600,y:930},blokk:{x:1346,y:484,lw:74},strang:{x:1354,y:690},vv:{x:2596,y:840},tc:{x:2968,y:830},stel:{x:2352,y:130},nett:{x:3456,y:130},kob:{x:3350,y:1062},dri:{x:-1166,y:548}};
+ esf:{s:R_(-1556,1056,3,78),lw:74},
+ moe:{s:R_(-1556,1488,5,78),lw:74},pls:{s:R_(-1556,1910,5,78),lw:74},ew:{s:R_(-1556,2330,5,78),lw:74}};
+const HIREPOS={rj:{x:-444,y:932},skrap:{x:296,y:930},ovn:{x:600,y:930},blokk:{x:1346,y:484,lw:74},strang:{x:1354,y:690},vv:{x:2596,y:840},tc:{x:2968,y:830},stel:{x:2352,y:130},nett:{x:3456,y:130},kob:{x:3350,y:1062},dri:{x:-1166,y:548},moe:{x:-1166,y:1488},pls:{x:-1166,y:1910},ew:{x:-1166,y:2330}};
 /* where an idle helper goes when automation has his route covered: a control desk in the station (and the crane cab) */
 const POSTS={rj:{x:-660,y:560,crane:'malm'},skrap:{x:490,y:840,crane:'skrap'},ovn:{x:900,y:745},blokk:{x:1372,y:196},strang:{x:1700,y:628,crane:'mag'},
- vv:{x:2680,y:862},tc:{x:3060,y:724},stel:{x:2660,y:256},nett:{x:3196,y:180},kob:{x:3470,y:900},dri:{x:-1010,y:500}};
+ vv:{x:2680,y:862},tc:{x:3060,y:724},stel:{x:2660,y:256},nett:{x:3196,y:180},kob:{x:3470,y:900},dri:{x:-1010,y:500},
+ moe:{x:-1010,y:1462},pls:{x:-1010,y:1884},ew:{x:-1010,y:2304}};
 const TAPDESK={x:1018,y:520};
 /* the control room (arc-furnace eras): furnace, ladle-crane and caster desks; control-room / caster operators sit here */
 const CRB={x0:1080,y0:1170,x1:1280,y1:1330};
@@ -365,7 +413,15 @@ const MBU={
  eaf:{n:'Lysbueovn',yr:1975,from:'uhp',kind:'eaf',e:3,dem:1.5e5,up:3000,scrap:220},
  uhp:{n:'UHP-lysbueovn',yr:1985,from:'consteel',kind:'eaf',e:4,dem:1.5e6,up:3e4,scrap:260},
  /* Phase 4: the conveyor-fed arc furnace is laid down when the LD converter is restarted for the electric smelting era */
- cs:{n:'Båndchargert ovn',yr:1995,from:'esf',when:()=>era()===7,kind:'eaf',e:5,dem:1.5e7,up:3e5,scrap:300}};
+ cs:{n:'Båndchargert ovn',yr:1995,from:'esf',when:()=>era()>=7,kind:'eaf',e:5,dem:1.5e7,up:3e5,scrap:300},
+ /* Phase 5: the plants on their own plots are laid down where they stand (own: their zone). The H₂ plant is restarted for the
+    plasma reactor (its electrolysers; the shaft furnace stays cold) and laid down again with the tank house. */
+ esf:{n:'Elektrisk smelteovn',yr:2035,from:'hold',own:'esf',dem:5e9,up:2e5,scrap:400},
+ dri:{n:'Hydrogen-DRI-anlegg',yr:2030,from:'hold',own:'dri',dem:4e9,up:2e5,scrap:350,re:1,rc:4e9,rb:1.2e10},
+ moe:{n:'Smelteelektrolyse',yr:2040,from:'pls',when:()=>era()>=9,own:'moe',dem:8e9,up:4e5,scrap:450},
+ pls:{n:'Hydrogenplasma-reaktor',yr:2045,from:'ind',own:'pls',dem:2e10,up:8e5,scrap:500}};
+/* Demolish / Restart pads of the plants laid down on their own plots */
+const OWNP={esf:{dem:{x:-1478,y:1056}},dri:{rst:{x:-1478,y:548},dem:{x:-1322,y:548}},moe:{dem:{x:-1478,y:1488}},pls:{dem:{x:-1478,y:1910}}};
 const MBK=Object.keys(MBU);
 const MBPLOTS=['mbp0','mbp1','mbp2','mbp3','mbp4'];
 const mbSt=u=>(S.mb&&S.mb[u]&&S.mb[u].st)||'';
@@ -373,7 +429,8 @@ const mbOn=u=>mbSt(u)==='mb';
 const mbZone=u=>{const m=S.mb[u];return m&&m.p?ZN[m.p]:null};
 /* a plant can be restarted once an era that needs it is open (its gate build done), or the current era declares the need */
 const eraOpen=i=>i<=era()||!!(ERA[i].gate&&B_(ERA[i].gate));
-const restartOK=u=>!!MBU[u].re&&ERA.some((e,i)=>e.needs.indexOf(u)>=0&&eraOpen(i));
+/* (only for the era that is running or the next one: an old era's need does not reopen a plant later) */
+const restartOK=u=>!!MBU[u].re&&ERA.some((e,i)=>e.needs.indexOf(u)>=0&&eraOpen(i)&&i>=era()&&i<=era()+1);
 /* the LD converter runs again (electric smelting era) */
 const ldRun=()=>mbSt('ld')==='run';
 const rjGone=()=>mbSt('rj')==='gone';
@@ -387,11 +444,13 @@ function freshS(){return{v:6,money:0,earned:0,life:0,heats:0,ph:0,lv:{},paid:{},
  piles:{},nodes:{},store:{},cash:{},kok:{slots:6,hot:0,ready:6,cool:[]},pot:0,elek:12,chg:0,yard:{y0:24,y1:0,ore:40},F:{bath:0,solid:0},
  rj:{ore:14,hearth:6},hm:10,torp:[],mb:{},bonusGiven:false,ord:null,
  /* Phase 4: H₂ in store (t), pellets in the yard (t), hot DRI in the bin (t); DRI share set-point; pellet grade */
- dri:{h2:0,pel:0,bin:0},drimix:.5,pgrade:'bf'}}
+ dri:{h2:0,pel:0,bin:0},drimix:.5,pgrade:'bf',
+ /* Phase 5: ore fines in the plasma reactor's silo (t), iron plates growing on the cathodes in the tank house (t) */
+ p5:{fines:0,cath:0}}}
 let S=freshS();
 const num=v=>isFinite(v)&&v>=0?+v:0;
 (()=>{const s=rawLoad(KEY);
- if(s&&typeof s==='object'&&s.v===6){const f=freshS();S=Object.assign(f,s);for(const k of['lv','paid','b','tg','pres','st','piles','nodes','store','cash','kok','yard','F','rj','dri'])S[k]=Object.assign(freshS()[k],s[k]&&typeof s[k]==='object'&&!Array.isArray(s[k])?s[k]:{});
+ if(s&&typeof s==='object'&&s.v===6){const f=freshS();S=Object.assign(f,s);for(const k of['lv','paid','b','tg','pres','st','piles','nodes','store','cash','kok','yard','F','rj','dri','p5'])S[k]=Object.assign(freshS()[k],s[k]&&typeof s[k]==='object'&&!Array.isArray(s[k])?s[k]:{});
   S.st.prod=Object.assign({},S.st.prod||{});S.st.soldK=Object.assign({},S.st.soldK||{});S.st.eraT=Object.assign({},S.st.eraT||{});if(!Array.isArray(S.kok.cool))S.kok.cool=[];if(!Array.isArray(S.torp))S.torp=[];
   for(const k in S.lv){if(!UPm[k]&&!HIREbyId(k)){delete S.lv[k];continue}S.lv[k]=clamp(S.lv[k]|0,0,(UPm[k]?UPm[k].max:HIREbyId(k).costs.length))}
   for(const k in S.paid){const v=S.paid[k];if(!isFinite(v)||v<0)delete S.paid[k]}
@@ -402,7 +461,7 @@ const num=v=>isFinite(v)&&v>=0?+v:0;
   if(bonus>0){S.money=bonus;S.bonusGiven=bonus}}
  for(const k of['money','earned','life','heats','lvl','rate','pot','elek','chg','hm'])S[k]=num(S[k]);
  for(const k of['ore','hearth'])S.rj[k]=num(S.rj[k]);
- for(const k of['h2','pel','bin'])S.dri[k]=num(S.dri[k]);if([.3,.5,.7].indexOf(S.drimix)<0)S.drimix=.5;if(S.pgrade!=='dr')S.pgrade='bf';
+ for(const k of['h2','pel','bin'])S.dri[k]=num(S.dri[k]);for(const k of['fines','cath'])S.p5[k]=num(S.p5[k]);if([.3,.5,.7].indexOf(S.drimix)<0)S.drimix=.5;if(S.pgrade!=='dr')S.pgrade='bf';
  if(!isFinite(S.pres.pts)||S.pres.pts<0)S.pres.pts=0;
  /* Phase 3: a construction-site order in progress (anything malformed is dropped; a new order comes later) */
  {const o=S.ord;let ok=o&&typeof o==='object'&&o.q&&typeof o.q==='object'&&o.g&&typeof o.g==='object'&&isFinite(o.left)&&isFinite(o.bonus)&&o.bonus>=0;
@@ -412,20 +471,22 @@ const num=v=>isFinite(v)&&v>=0?+v:0;
 function HIREbyId(id){for(const k in HIRE)if(HIRE[k].id===id)return HIRE[k];return null}
 const lv=id=>S.lv[id]||0;
 const B_=id=>!!S.b[id];
-const era=()=>B_('esf')&&ldRun()?7:B_('h2')?6:B_('consteel')?5:B_('uhp')?4:B_('eaf1')?3:B_('ld')?2:B_('sm')?1:0;
+/* Phase 5: era 8 = the holding furnace takes the cell hall's steel; era 9 = the plasma reactor runs (its H₂ plant restarted);
+   era 10 = the induction furnace melts the tank house's plates */
+const era=()=>B_('ind')?10:B_('hold')?(B_('pls')&&mbSt('dri')==='run'?9:8):B_('esf')&&ldRun()?7:B_('h2')?6:B_('consteel')?5:B_('uhp')?4:B_('eaf1')?3:B_('ld')?2:B_('sm')?1:0;
 /* the conveyor-fed (Consteel) charging line runs: the conveyor-charged arc furnace, with or without DRI */
 const CS=()=>E_().ch==='belt';
 const E_=()=>ERA[era()];
 const ET=()=>E_().type;
 const isEAF=()=>ET()==='eaf';
-const slagOn=()=>era()>=2;
+const slagOn=()=>era()>=2&&era()<8;/* the holding / induction furnace of the ore-electric eras makes (almost) no slag */
 const rjEra=()=>B_('elrj')?1:0;
 const rjClosed=()=>era()>=3;
 const usesHM=()=>E_().hm[1]>0;
 /* scrap matters for this era (Bessemer only takes a little cooling scrap) */
-const scrapUse=()=>era()>=1||S.heats>=4;
+const scrapUse=()=>(era()>=1||S.heats>=4)&&era()<8;/* from era 8 the steel is made from ore: the scrap yard rests */
 /* a station exists when its build is done (base stations always exist); the råjernsverk closes at the Omlegging */
-const zoneBuilt=z=>z.on?z.on():z.mbp?MBK.some(u=>mbOn(u)&&S.mb[u].p===z.id):z.cr?AUTO():(!z.b||B_(z.b))&&!(z.rj&&rjClosed());
+const zoneBuilt=z=>z.on?z.on():z.mbp?MBK.some(u=>mbOn(u)&&S.mb[u].p===z.id):z.cr?AUTO():(!z.b||B_(z.b))&&!(z.rj&&rjClosed())&&!(z.mbu&&mbSt(z.mbu)&&mbSt(z.mbu)!=='run');
 const stOn=id=>zoneBuilt(ZN[id]);
 const pileOn=k=>k==='ebar'?lv('endless')>0||PILE.ebar.length>0:k==='cage'?lv('robot')>0||PILE.cage.length>0:stOn(PR[k].z)||(k==='pig'&&PILE.pig.length>0);
 
@@ -436,12 +497,12 @@ const speed=()=>160*(1+.08*lv('speed'));
 const hspeed=()=>130*(1+.08*lv('hspeed'));
 const fcap=()=>Math.round(E_().cap*(1+.18*lv('furnace')));
 /* the player at the furnace desk (control room) runs the power program by hand: +10 % */
-const MW=()=>(E_().P||0)*(1+.15*lv('power'))*(G.ctl==='furnace'?1.1:1);
-const kwh=()=>ET()==='conv'?0:Math.round(E_().E*(lv('forvarm')&&(era()===3||era()===4)?.88:1)*(CS()?csPreK():1)*(era()===6?driKwhK():1));
+const MW=()=>(E_().P||0)*(ET()==='ind'?1+.15*lv('indmw'):1+.15*lv('power'))*(G.ctl==='furnace'?1.1:1);/* era 10: the induction furnace's own power upgrade */
+const kwh=()=>ET()==='conv'||ET()==='hold'?0:Math.round(E_().E*(lv('forvarm')&&(era()===3||era()===4)?.88:1)*(CS()?csPreK():1)*(era()===6?driKwhK():1));
 /* converters: the blow takes blowT seconds (blower / lance upgrades shorten it); no external energy */
 const blowT=()=>E_().blow/(1+.15*lv('power'));
 /* melting / blowing limit in t/s (game time): power / specific energy, or a full charge per blow */
-const Rpow=()=>ET()==='conv'?fcap()/blowT():MW()/kwh()*30;
+const Rpow=()=>ET()==='conv'?fcap()/blowT():ET()==='hold'?max(1,p5Nom()):MW()/kwh()*30;/* the holding furnace only takes what the plant sends */
 /* the share of the charge that is scrap: at least scrapMin(), at most scrapMax() per heat; the rest is råjern */
 const scrapMax=()=>fcap()*(1-E_().hm[0]),scrapMin=()=>fcap()*(1-E_().hm[1]);
 const supCap=s=>lv(s)>0?SUPC[s]*Math.pow(1.24,lv(s)-1)*(s==='o2'?[1,1.35,1.8][lv('lans')]:1):0;
@@ -461,7 +522,7 @@ const beltRate=()=>3*Math.pow(1.2,lv('charge'));
 const refineT=()=>E_().ref*Math.pow(.86,lv('refine'));
 /* tap automation (conveyor-fed furnace, restarted converter): tap-hole filling, tilt control and the sampling robot shorten the
    tapping itself and the converter's charging tilt */
-const tapK=()=>CS()||era()===7?Math.pow(.85,lv('tapauto')):1;
+const tapK=()=>CS()||era()>=7?Math.pow(.85,lv('tapauto')):1;
 /* how long a ready furnace waits before it is tapped: the tapper (.8 s), control-room operators in the automated eras, or the
    player at the furnace desk */
 const tapReact=()=>G.ctl==='furnace'?.2:AUTO()?.8/(1+opN('ovn')):.8;
@@ -476,11 +537,11 @@ const oreYardCap=()=>40+14*lv('malmtog');
 const oreYardRate=()=>.5*Math.pow(1.22,lv('malmtog'))*(rjEra()?3:1);
 const malmLoad=()=>4*(1+.38*max(0,lv('malmkran')-1));
 const malmSpd=()=>170*(1+.09*lv('malmkran'));
-const torpCap=l=>era()===7?Math.round(60*(1+.2*(l==null?lv('etorp'):l))):Math.round(12*(1+.22*lv('torp'))*(rjEra()?1.6:1));
-const nTorp=()=>era()===7?2+lv('etorpn'):1+lv('torpn');
-const torpSpd=()=>era()===7?260*(1+.06*lv('etorp')):150*(1+.06*lv('torp'));
-const hearthCap=()=>max(12,torpCap()*1.4);
-const hmCap=()=>max(fcap()*1.3,torpCap()*1.25);
+const torpCap=l=>era()>=8?Math.round(100*(1+.15*(l==null?lv('ltc'):l))):era()===7?Math.round(60*(1+.2*(l==null?lv('etorp'):l))):Math.round(12*(1+.22*lv('torp'))*(rjEra()?1.6:1));
+const nTorp=()=>era()>=8?2+lv('ltcn'):era()===7?2+lv('etorpn'):1+lv('torpn');
+const torpSpd=()=>era()>=8?380*(1+.05*lv('ltc')):era()===7?260*(1+.06*lv('etorp')):150*(1+.06*lv('torp'));
+const hearthCap=()=>era()>=8?400:max(12,torpCap()*1.4);
+const hmCap=()=>era()>=10?600:era()>=8?fcap():max(fcap()*1.3,torpCap()*1.25);/* era 10: the plate bin at the induction furnace */
 const potMax=()=>8+2*lv('slagcap');
 const IT=()=>2*(1+.25*lv('kokbig')),RUNNER=.06;               /* ingot tonnes; steel lost in the runner system ("ben") */
 const slotsMax=()=>6+lv('kokup');
@@ -510,13 +571,13 @@ const elRate=()=>.9*Math.pow(1.16,lv('elspd'));
 const hssK=()=>1+.12*lv('hss');
 /* CO₂ per tonne of steel by furnace era (t CO₂/t): the ore-based routes are high, scrap + arc furnace low. Capture, the endless
    line (no reheating furnace) and sorted scrap lower it further. With the product passport the buyers pay a green premium. */
-const CO2E=[2.3,2.1,1.9,.75,.6,.45,.3,.2];
+const CO2E=[2.3,2.1,1.9,.75,.6,.45,.3,.2,.12,.08,.05];
 /* Phase 4: DRI made with hydrogen carries almost no CO₂ – the more DRI in the charge, the lower the footprint; fossil-free
    steel below 0,3 t CO₂/t earns an extra green premium */
 const co2t=()=>max(era()>=6?.02:.05,CO2E[era()]-(era()===6?.25*DRI.sh:0)-(lv('endless')?.04:0)-.09*lv('co2')-.01*lv('sort'));
 const greenK=()=>lv('pass')?1+clamp((1.05-co2t())*.14,0,.14)+(era()>=6?clamp((.3-co2t())*.4,0,.1):0):1;
 /* virgin iron (DRI in the arc furnace, green hot metal in the converter) dilutes copper and tin: premium low-residual grades */
-const p4K=()=>era()===6?1+.25*DRI.sh:era()===7?1.2:1;
+const p4K=()=>era()===6?1+.25*DRI.sh:era()===7?1.2:era()>=8?[1.35,1.45,1.55][era()-8]:1;/* Phase 5: ultra-pure iron from ore and electricity */
 /* copper in the scrap (%): the sorting line picks out copper; clean scrap gives better steel (price) and fewer surface cracks */
 const cuPct=()=>.22-.14*[0,.4,.7,1][lv('sort')];
 const cuK=()=>AUTO()?1+(.22-cuPct())*.3:1;
@@ -546,6 +607,32 @@ const esfKwh=()=>pelGrade()?520:450;
 const esfDriPer=()=>pelGrade()?1.2:1.08;
 const esfSlagPer=()=>pelGrade()?.25:.08;
 const esfRate=()=>esfMW()/esfKwh()*30;
+/* ---------- Phase 5 tuning (eras 8–10), t per game second.
+   MOE: each cell makes steel in proportion to its current; the anode robot takes a cell out for an anode change now and then.
+   Plasma: MW / kWh per t, limited by the ore fines feed and H₂ (the restarted electrolysers, whose water the condenser returns).
+   Electrowinning: plates grow on the cathodes (current density × tanks), robots harvest them; the induction furnace melts them. ---------- */
+const nCell=()=>8+lv('cells');
+const cellK=l=>1+.04*(l==null?lv('rect'):l);
+const anodeAv=l=>.9+.012*(l==null?lv('anode'):l);
+const opK5=st=>1+.04*opN(st);
+const moeRate=()=>nCell()*1.548*cellK()*anodeAv()*opK5('moe')*(G.ctl==='moe'?1.1:1);
+const cellKA=()=>Math.round(250*cellK());/* busbar current per cell (kA) */
+const O2PER=.43,o2Val=()=>1.2*(1+.2*lv('o2c'));/* t O₂ per t iron; value per t O₂ (before the sale contract) */
+const FE_ORE=.68,PH2=.045;/* t iron per t ore fines; t H₂ per t steel (unused H₂ is recycled) */
+const plsMW=l=>415*(1+.06*(l==null?lv('pmw'):l))*(1+.1*lv('ptorch'));
+const nTorch=()=>3+lv('ptorch');
+const plsCap=()=>plsMW()/1100*30*opK5('pls')*(G.ctl==='pls'?1.1:1);
+const finesRate=l=>12*Math.pow(1.09,l==null?lv('fines'):l);
+const finesCap=()=>500+40*lv('fines');
+/* the condenser returns the steam's water to the electrolysers: without it the make-up water limits them */
+const waterK=l=>.7+.03*(l==null?lv('cond'):l);
+const nTankE=()=>8+lv('tanks');
+const ewRate=()=>nTankE()*1.625*(1+.05*lv('ewcur'))*opK5('ew')*(G.ctl==='ew'?1.1:1);
+const harvR=l=>8*(1+.4*(l==null?lv('harv'):l));
+const cathCap=()=>nTankE()*40;
+const plateFeed=()=>90;
+/* the plant's nominal output now (t/s): what the holding furnace can expect */
+const p5Nom=()=>era()===8?moeRate():era()===9?min(plsCap(),finesRate()*FE_ORE):era()===10?ewRate():0;
 const magLoad=()=>2+lv('magkran');
 const storeMax=()=>24,storeIv=()=>1.2;
 const gm=()=>(1+.5*S.pres.pts)*(1+.03*S.lvl);
@@ -564,8 +651,8 @@ const upRaw=u=>typeof u.n==='function'?u.n():u.n;
 const PN={tapauto:'Tappe\u00ADautomatikk',elyz:'Elektro\u00ADlysører',pellet:'Pellet\u00ADtilførsel',etorp:'Større torpedo\u00ADvogner',etorpn:'Ekstra torpedo\u00ADvogn',esfmw:'Mer effekt (MW)',yard:'Skrap\u00ADtilførsel',forvarm:'Kurv\u00ADforvarming',elekkran:'Elektrode\u00ADkran',o2:'Oksygen\u00ADanlegg',kull:'Kull\u00ADinjeksjon',malmtog:'Malm\u00ADtilførsel',
  kanal:'Kanalstein\u00ADlager',hette:'Varmholds\u00ADmasse',torch:'Skjære\u00ADbrenner',varm:'Varm\u00ADinnsetting',hcap:'Hjelper\u00ADkapasitet',gjvup:'Ovns\u00ADkapasitet',
  splitt:'Splitt\u00ADvalsing',stelup:'Finverks\u00ADfart',ktrans:'Kveile\u00ADtransport',hspeed:'Hjelper\u00ADfart',slagcap:'Større slagg\u00ADpotte',kokup:'Flere kokiller',
- operator:'Tapper',sort:'Skrap\u00ADsortering',tdheat:'Fordeler\u00ADvarme',hss:'Hurtig\u00ADstreng',insp:'Inspeksjons\u00ADbue',loop:'Sløyfe\u00ADbuffer',slagmill:'Slagg til sement',dheat:'Fjern\u00ADvarme',twin:'Digital tvilling'};
-const padTitleNo=u=>{const n=upRaw(u);if(u.id==='hcap'&&AUTO())return'Vogn\u00ADkapasitet';if(u.id==='hspeed'&&AUTO())return'Vognfart';if(u.id==='lans')return lv('lans')?'Vegg\u00ADinjektorer':'Dørlanse';if(u.id==='charge'&&era()===1)return'Flere kasser';if(u.id==='charge'&&CS())return'Raskere bånd';if(u.id==='skip'&&rjEra())return'Større bånd';
+ operator:'Tapper',sort:'Skrap\u00ADsortering',cells:'Flere celler',rect:'Like\u00ADretter',anode:'Anode\u00ADrobot',o2c:'O₂-kom\u00ADpressor',indmw:'Induksjons\u00ADeffekt',pmw:'Plasma\u00ADeffekt (MW)',ptorch:'Flere plasma\u00ADbrennere',fines:'Malmstøv\u00ADtilførsel',cond:'Damp\u00ADkondensator',tanks:'Flere elektrolyse\u00ADkar',ewcur:'Strøm\u00ADtetthet',harv:'Høste\u00ADrobot',tdheat:'Fordeler\u00ADvarme',hss:'Hurtig\u00ADstreng',insp:'Inspeksjons\u00ADbue',loop:'Sløyfe\u00ADbuffer',slagmill:'Slagg til sement',dheat:'Fjern\u00ADvarme',twin:'Digital tvilling'};
+const padTitleNo=u=>{const n=upRaw(u);if(u.id==='ltc')return era()>=10?'Større plate\u00ADvogner':'Større over\u00ADføringsøse';if(u.id==='ltcn')return era()>=10?'Ekstra plate\u00ADvogn':'Ekstra over\u00ADføringsvogn';if(u.id==='hcap'&&AUTO())return'Vogn\u00ADkapasitet';if(u.id==='hspeed'&&AUTO())return'Vognfart';if(u.id==='lans')return lv('lans')?'Vegg\u00ADinjektorer':'Dørlanse';if(u.id==='charge'&&era()===1)return'Flere kasser';if(u.id==='charge'&&CS())return'Raskere bånd';if(u.id==='skip'&&rjEra())return'Større bånd';
  if(u.id==='power'&&era()===0)return'Sterkere blåse\u00ADmaskin';return PN[u.id]||n};
 /* English pad titles come from the dictionary (keyed by the Norwegian text without soft hyphens) */
 const padTitle=u=>{const n=padTitleNo(u);return NO_()?n:t_(n.replace(/\u00AD/g,''))};
@@ -604,7 +691,12 @@ function upSub(u){const l=lv(u.id),nx=l+1,ar=(a,b,un)=>a+' → '+b+(un?' '+un:''
  /* Phase 4 */
  case'elyz':return ar(Math.round(elyMW()),Math.round(elyMW(nx)),'MW');case'h2st':return l===2?t_('Fjellhall: ×{0} lager',3):ar(tf(h2Cap()),tf(h2Cap(nx)),t_('t H₂'));
  case'shaft':return ar(tf(shaftCap()*60),tf(shaftCap(nx)*60),t_('t/min'));case'pellet':return t_('+{0} % pellets',18);case'dribelt':return ar(tf(driBelt()*60),tf(driBelt(nx)*60),t_('t/min'));
- case'esfmw':return ar(Math.round(esfMW()),Math.round(esfMW(nx)),'MW');case'etorp':return ar(Math.round(60*(1+.2*l)),Math.round(60*(1+.2*nx)),'t');case'etorpn':return ar(2+l,3+l,t_('vogner'));case'sinter':return t_('{0} → {1} % jern',Math.round(feY()*100),Math.round([.5,.58,.64][min(2,l+1)]*100));case'togp':case'kaip':return t_('+{0} % pris',8);}
+ case'esfmw':return ar(Math.round(esfMW()),Math.round(esfMW(nx)),'MW');case'etorp':return ar(Math.round(60*(1+.2*l)),Math.round(60*(1+.2*nx)),'t');case'etorpn':return ar(2+l,3+l,t_('vogner'));case'sinter':return t_('{0} → {1} % jern',Math.round(feY()*100),Math.round([.5,.58,.64][min(2,l+1)]*100));case'togp':case'kaip':return t_('+{0} % pris',8);
+ /* Phase 5 */
+ case'cells':return ar(nCell(),nCell()+1,t_('celler'));case'rect':return ar(cellKA(),Math.round(240*cellK(nx)),'kA');case'anode':return ar(Math.round(anodeAv()*100),Math.round(anodeAv(nx)*100),t_('% i drift'));
+ case'o2c':return t_('O₂-pris ×{0}',L1(1+.2*nx));case'ltc':return ar(torpCap(),torpCap(nx),'t');case'ltcn':return ar(nTorp(),nTorp()+1,t_('vogner'));case'indmw':return ar(Math.round(E_().type==='ind'?MW():ERA[10].P*(1+.15*l)),Math.round(ERA[10].P*(1+.15*nx)),'MW');
+ case'pmw':return ar(Math.round(plsMW()),Math.round(plsMW(nx)),'MW');case'ptorch':return ar(nTorch(),nTorch()+1,t_('brennere'));case'fines':return t_('+{0} % malmstøv',9);case'cond':return ar(Math.round(waterK()*100),Math.round(waterK(nx)*100),t_('% vann tilbake'));
+ case'tanks':return ar(nTankE(),nTankE()+1,t_('kar'));case'ewcur':return t_('+{0} % plater',5);case'harv':return ar(tf(harvR()*60),tf(harvR(nx)*60),t_('t/min'));}
  return fa(16)}
 
 /* ---------- runtime state ---------- */

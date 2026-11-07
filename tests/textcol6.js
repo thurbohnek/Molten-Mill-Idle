@@ -23,7 +23,8 @@ await p.addInitScript(()=>{window.__TX=[];window.__PN=[];let seq=0;const P=Canva
   return ft.apply(this,arguments)}});
 fs.writeFileSync(require('path').join(require('os').tmpdir(),'tc_page.html'),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">'+fs.readFileSync(FILE,'utf8')+'</body></html>');await p.goto('file://'+require('path').join(require('os').tmpdir(),'tc_page.html'));await p.waitForTimeout(600);
 const scan=async(tag)=>{const r=await p.evaluate(tag=>{const W=window.__smelt,out=[];const dpr=devicePixelRatio;
-  const pts=[];for(let x=W.WXL+120;x<=4100;x+=Math.round(innerWidth*.7))for(let y=150;y<=(W.WH>1200?1460:1000);y+=Math.round(innerHeight*.6))pts.push([x,y]);
+  /* (Phase 5: below 1560 only the plot column exists) */
+  const pts=[];for(let x=W.WXL+120;x<=4100;x+=Math.round(innerWidth*.7))for(let y=150;y<=(W.WH>2000?2300:W.WH>1200?1460:1000);y+=Math.round(innerHeight*.6))if(y<1560||x<-700)pts.push([x,y]);
   for(const [x,y] of pts){W.P.x=x;W.P.y=y;W.cam.x=x;W.cam.y=y;for(let k=0;k<3;k++)W.update(1/60);window.__TX=[];window.__PN=[];window.__TXon=1;W.draw();window.__TXon=0;
    const A=window.__TX.filter(o=>o.w>2),PN=window.__PN;const ov=(a,c)=>[Math.min(a.x+a.w,c.x+c.w)-Math.max(a.x,c.x),Math.min(a.y+a.h,c.y+c.h)-Math.max(a.y,c.y)];
    const hud=[...document.querySelectorAll('#hud *, .hud *, header *')].length;
@@ -50,5 +51,9 @@ await st("for(const[k,v]of Object.entries({endless:1,loop:2,elspd:4,robot:1,robs
 /* Phase 4: hydrogen DRI (era 6) and electric smelting with the LD restarted (era 7) */
 await st("W.toEra(6);for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=Math.min(u.max,(W.S.lv[u.id]||0)+4);W.hire('dri',2);W.rebuildSolids();W.bakeFloor()",60);await scan('era6 '+VW);
 await st("W.toEra(7);for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=Math.min(u.max,(W.S.lv[u.id]||0)+4);W.rebuildSolids();W.bakeFloor()",60);await scan('era7 '+VW);
+/* Phase 5: molten oxide electrolysis (era 8, with the plasma plot waiting), hydrogen plasma (era 9), electrowinning (era 10) */
+await st("W.toEra(8);W.build('pls');for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=Math.min(u.max,(W.S.lv[u.id]||0)+4);W.hire('moe',2);W.rebuildSolids();W.bakeFloor()",60);await scan('era8 '+VW);
+await st("W.toEra(9);for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=Math.min(u.max,(W.S.lv[u.id]||0)+4);W.hire('pls',2);W.rebuildSolids();W.bakeFloor()",60);await scan('era9 '+VW);
+await st("W.toEra(10);for(const u of W.UP)if(W.upOpen(u))W.S.lv[u.id]=Math.min(u.max,(W.S.lv[u.id]||0)+4);W.hire('ew',2);W.rebuildSolids();W.bakeFloor()",60);await scan('era10 '+VW);
 console.log(VW,'errs',errs.slice(0,3));await p.close()}
 for(const v of found.values())console.log(v);console.log('unique',found.size);await b.close()})();

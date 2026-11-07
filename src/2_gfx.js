@@ -385,12 +385,15 @@ function torpedo(g,x,y,L,load,t,o){o=o||{};const r=17,z=16,yy=y-z*OK;
 return{slice,cyl,cap,converter,convPt,blastFurnace,elFurnace,cowper,torpedo,bfTap}})();
 
 /* ---------- floor bake: static floor, zones, rails and roller tables go to one offscreen canvas ---------- */
-const FS=1,fc=document.createElement('canvas');fc.width=(WW-WX0)*FS;fc.height=WHMAX*FS;
+const FS=1,fc=document.createElement('canvas');fc.width=(WW-WX0)*FS;fc.height=WHM*FS;
+/* Phase 5: the floor of the plot column below 1560 (the rest of the world stays 1560 tall) */
+const fc2=document.createElement('canvas');fc2.width=(OUTX-WX0)*FS;fc2.height=(WHMAX-WHM)*FS;
 /* which zone plot is next to be built (only that one is shown before it exists) */
-const nextBuild=()=>BUILDS[S.ph]||null;
-const zoneShown=z=>(z.rj&&!rjGone())||zoneBuilt(z)||(nextBuild()&&ZN[nextBuild().z]===z)||(z.id==='gjv'||z.id==='vv')&&nextBuild()&&nextBuild().id==='vv'||(z.id==='salg2'&&nextBuild()&&nextBuild().id==='stel');
+const nextBuild=()=>{const b=BUILDS[S.ph]||null;return b&&b.after&&!b.after()?null:b};/* Phase 5: a plot build waits for the era before it */
+const zoneShown=z=>(z.rj&&!rjGone())||(z.mbu&&mbOn(z.mbu))||zoneBuilt(z)||(nextBuild()&&ZN[nextBuild().z]===z)||(z.id==='gjv'||z.id==='vv')&&nextBuild()&&nextBuild().id==='vv'||(z.id==='salg2'&&nextBuild()&&nextBuild().id==='stel');
 function zonePlate(z){const nb=nextBuild(),built=zoneBuilt(z);let t=t_(z.n);if(z.id==='ovn')t=t_('STÅLVERK')+' · '+t_(E_().k);if(z.id==='rj')t=t_('RÅJERNSVERK')+' · '+t_(rjEra()?'EL-OVN':'MASOVN');
  if(z.rj&&rjClosed())return{t:t_(z.n)+' · '+t_('NEDLAGT'),x:z.x0+12,y:z.y0+12,h:20,w:0,col:'#6b7079'};
+ if(z.mbu&&mbOn(z.mbu))return{t:t_('LAGT NED')+' · '+t_(z.n),x:z.x0+12,y:z.y0+12,h:20,w:0,col:'#8d96a3'};
  if(z.mbp){const u=MBK.find(k=>mbOn(k)&&S.mb[k].p===z.id);return{t:t_('LAGT NED')+' · '+(u?mbName(u).toUpperCase():''),x:z.x0+12,y:z.y0+12,h:20,w:0,col:'#8d96a3'}}
  if(z.cr)return{t:t_('KONTROLLROM'),x:z.x0+12,y:z.y0+12,h:20,w:0,col:z.col};
  if(!built)t=t_('TOMT')+' · '+(nb?t_(nb.n).toUpperCase():t_(z.n));
@@ -399,7 +402,9 @@ function zonePlate(z){const nb=nextBuild(),built=zoneBuilt(z);let t=t_(z.n);if(z
  return{t,x:z.x0+12+(z.id==='endl'?210:0),y:z.y0+12,h:20,w:0,col:built?z.col:'#7d8590'}}
 function plateW(p,g){g=g||ctx;g.font=`800 11px ${FONT}`;return g.measureText(p.t).width+18}
 const ROLLS=[];/* [path, built()] static roller tables / conveyors */
-function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0,0,FS,-WX0*FS,0);
+function bakeFloor(){bakeOn(fc.getContext('2d'),0);if(WH>WHM)bakeOn(fc2.getContext('2d'),WHM)}
+/* the same floor is baked into the main canvas and (Phase 5) the column canvas below y 1560 */
+function bakeOn(f,oy){const r=seeded(7);f.setTransform(FS,0,0,FS,-WX0*FS,-oy*FS);
  f.fillStyle='#373c44';f.fillRect(WX0,0,WW-WX0,WH);
  f.strokeStyle='rgba(0,0,0,.2)';f.lineWidth=1;f.beginPath();for(let x=24-48*34;x<WW;x+=48){f.moveTo(x+.5,0);f.lineTo(x+.5,WH)}for(let y=24;y<WH;y+=48){f.moveTo(0,y+.5);f.lineTo(WW,y+.5)}f.stroke();
  for(let i=0;i<620;i++){const x=WXL0+r()*(WW-WXL0),y=r()*WH,rad=3+r()*18;f.fillStyle=r()>.5?'rgba(0,0,0,.06)':'rgba(255,255,255,.025)';f.beginPath();f.arc(x,y,rad,0,TAU);f.fill()}
@@ -418,7 +423,7 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   const rail=(y,x0,x1)=>{f.fillStyle='#2b2620';for(let x=x0;x<x1;x+=8)f.fillRect(x,y-13,3.4,26);f.fillStyle=cl?'#5a4e44':'#7d7064';f.fillRect(x0,y-9,x1-x0,2.6);f.fillRect(x0,y+7,x1-x0,2.6)};
   /* Consteel: the old torpedo tracks are gone, the line's foundation runs through the yard */
   /* Phase 4 (era 7): the torpedo line runs again, from the electric smelting furnace's taphole across the old ironworks */
-  if(era()===7){rail(POS.torpA,ESFG.tapX-80,POS.torpX1+70);rail(POS.torpB,ESFG.tapX+60,POS.torpX1-60)}
+  if(era()===7){rail(POS.torpA,ESFG.tapX-80,POS.torpX1+70);rail(POS.torpB,ESFG.tapX+60,POS.torpX1-60)}else if(era()>=8){}
   else if(era()<5){if(!gn){rail(POS.torpA,-340,POS.torpX1+70);rail(POS.torpB,-340,POS.torpX1-60);
   if(cl){f.fillStyle='rgba(55,60,68,.55)';f.fillRect(-340,POS.torpA-16,POS.torpX1+410,54)}}}
   else{f.fillStyle='rgba(0,0,0,.22)';f.fillRect(20,CSG.y-34,CSG.xf-20,68);f.fillStyle='rgba(0,0,0,.18)';SK.rr(f,SLAGP.x-60,SLAGP.y-50,120,104,10);f.fill()}}
@@ -427,6 +432,8 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   const ty=P4G.rail;f.fillStyle='#2b2826';f.fillRect(WX0+10,ty-20,-1270-WX0,40);for(let x=WX0+14;x<-1272;x+=16){f.fillStyle='#4a3f36';f.fillRect(x,ty-17,7,34)}f.fillStyle=C.rail;f.fillRect(WX0+10,ty-11,-1270-WX0,4);f.fillRect(WX0+10,ty+7,-1270-WX0,4);
   f.fillStyle='rgba(0,0,0,.18)';f.beginPath();f.arc(P4G.shaft.x,P4G.shaft.y,P4G.shaft.R+30,0,TAU);f.fill()}
  if(B_('esf')){const E=ESFG;f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,E.x0-110,E.y0-30,E.x1-E.x0+150,E.trafo.y+E.trafo.h+16-(E.y0-30),14);f.fill()}
+ /* Phase 5: the transfer line (up the corridor, then along the old torpedo tracks) and the plots' foundations */
+ if(era()>=8)p5Floor(f);
  /* crane rails */
  f.fillStyle='#22252b';{const c=CRN.skrap;f.fillRect(c.x0-6,c.y0-8,c.x1-c.x0+12,6);f.fillRect(c.x0-6,c.y1+2,c.x1-c.x0+12,6)}
  {const c=CRN.ose;f.fillRect(c.x0-6,c.y0-10,c.x1-c.x0+12,5);f.fillRect(c.x0-6,c.y1+4,c.x1-c.x0+12,5)}
@@ -464,6 +471,21 @@ function bakeFloor(){const f=fc.getContext('2d'),r=seeded(7);f.setTransform(FS,0
   f.strokeStyle='rgba(255,255,255,.08)';f.lineWidth=2;for(let i=0;i<22;i++){const x=QX+10+r()*(WW-QX-40),y=qy+20+r()*(WH-qy-30);f.beginPath();f.moveTo(x,y);f.quadraticCurveTo(x+12,y-4,x+24,y);f.stroke()}}
  /* border */
  f.fillStyle='#1d2026';if(WXL>WX0)f.fillRect(WX0,0,WXL-WX0,WH);f.fillRect(WXL,0,WW-WXL,10);f.fillRect(WXL,0,10,WH);f.fillRect(WXL,WH-10,QX-WXL,10);f.fillRect(WW-10,0,10,QY);
+ if(WH>WHM){f.fillRect(OUTX,WHM-10,QX-OUTX,10);f.fillRect(OUTX-10,WHM-10,10,WH-WHM+10)}/* the L-shaped edge of the Phase 5 column */
  /* zone name plates */
  f.textBaseline='middle';for(const z of ZONES){if(!zoneShown(z))continue;const p=zonePlate(z),w=plateW(p,f);SK.box(f,p.x,p.y,w,p.h,p.col,null,10);f.font=`800 11px ${FONT}`;f.textAlign='center';f.fillStyle='#111';f.fillText(p.t,p.x+w/2,p.y+p.h/2+.5)}
 }
+
+/* Phase 5 floor: sleepers + rails of tracks A and B (vertical in the corridor, then east to the melt shop), buffer stops at the
+   ends, a concrete bed under each plant */
+function p5Floor(f){const rl=(x0,y0,x1,y1)=>{f.fillStyle='#2b2620';if(y0===y1){for(let x=min(x0,x1);x<max(x0,x1);x+=8)f.fillRect(x,y0-13,3.4,26);f.fillStyle='#7d7064';f.fillRect(min(x0,x1),y0-9,Math.abs(x1-x0),2.6);f.fillRect(min(x0,x1),y0+7,Math.abs(x1-x0),2.6)}
+   else{for(let y=min(y0,y1);y<max(y0,y1);y+=8)f.fillRect(x0-13,y,26,3.4);f.fillStyle='#7d7064';f.fillRect(x0-9,min(y0,y1),2.6,Math.abs(y1-y0));f.fillRect(x0+7,min(y0,y1),2.6,Math.abs(y1-y0))}};
+ for(const p of[TL.A,TL.B]){for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i];rl(a[0],a[1]+(i===1?12:0),b[0],b[1])}
+  /* the corner: a few curved sleepers */const c=p[1];f.fillStyle='#2b2620';f.fillRect(c[0]-13,c[1]-13,26,26)}
+ /* buffer stops: at the fill point (south end) and at the melt shop */
+ for(const[x,y,v]of[[TL.A[0][0],TL.A[0][1]+18,1],[TL.B[0][0],TL.B[0][1]+18,1],[TL.A[2][0]+10,TL.A[2][1],0]]){f.fillStyle='#8f2a20';if(v)f.fillRect(x-13,y-4,26,8);else f.fillRect(x-4,y-13,8,26);f.fillStyle='#f5c518';if(v){f.fillRect(x-13,y-4,5,8);f.fillRect(x+8,y-4,5,8)}else{f.fillRect(x-4,y-13,8,5);f.fillRect(x-4,y+8,8,5)}}
+ /* plant beds */
+ const bed=(x,y,w,h)=>{f.fillStyle='rgba(0,0,0,.2)';SK.rr(f,x,y,w,h,12);f.fill()};
+ if(B_('moe')&&mbSt('moe')!=='gone'){const m=P5G.moe;bed(m.yx0-14,m.hy0-14,m.hx1-m.yx0+28,m.hy1-m.hy0+28)}
+ if(B_('pls')&&mbSt('pls')!=='gone'){const q=P5G.pls;f.fillStyle='rgba(0,0,0,.2)';f.beginPath();f.arc(q.R.x,q.R.y,q.R.r+30,0,TAU);f.fill();bed(q.cond.x0-12,q.cond.y0-12,q.cond.x1-q.cond.x0+24,q.cond.y1-q.cond.y0+24)}
+ if(B_('ew')){const w=P5G.ew;bed(w.hx0-14,w.hy0-14,w.hx1-w.hx0+28,w.hy1-w.hy0+28)}}
