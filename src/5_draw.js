@@ -941,7 +941,7 @@ function drawBeltLine(){const C=CSG,y=C.y,w=C.w,hw=C.hw,osc=csOsc();
   const gr=g.createLinearGradient(x0,0,x1,0);gr.addColorStop(0,'#9aa2ac');gr.addColorStop(.45,'#6a7078');gr.addColorStop(1,'#3e434a');g.fillStyle=gr;g.fillRect(x0,y0,C.dw,y1-y0);
   g.fillStyle='rgba(0,0,0,.35)';for(let yy=y1-14;yy>y0;yy-=38)g.fillRect(x0-2,yy,C.dw+4,3);
   {const ym=(y0+y1)/2;g.fillStyle='#3a3f46';g.fillRect(x0-3,ym-9,C.dw+6,18);g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=1;for(let q=-7;q<=7;q+=3.5){g.beginPath();g.moveTo(x0-3,ym+q);g.lineTo(x1+3,ym+q);g.stroke()}}
-  if(!RM){g.save();g.beginPath();g.rect(x0+6,y0,C.dw-12,y1-y0);g.clip();g.setLineDash([5,9]);g.lineDashOffset=T*60;g.strokeStyle=`rgba(210,196,182,${.18+.25*CSB.gasK})`;g.lineWidth=3;g.beginPath();g.moveTo(C.dx,y1);g.lineTo(C.dx,y0);g.stroke();g.setLineDash([]);g.restore()}
+  if(!RM){g.save();g.beginPath();g.rect(x0+6,y0,C.dw-12,y1-y0);g.clip();g.setLineDash([5,9]);g.lineDashOffset=-T*60;g.strokeStyle=`rgba(210,196,182,${.18+.25*CSB.gasK})`;g.lineWidth=3;g.beginPath();g.moveTo(C.dx,y1);g.lineTo(C.dx,y0);g.stroke();g.setLineDash([]);g.restore()}
   /* takeoff box on the first tunnel section */
   SK.box(g,x0-6,y-hw-10,C.dw+12,22,'#555c65','#15171a',3);g.fillStyle='rgba(255,255,255,.15)';g.fillRect(x0-6,y-hw-10,C.dw+12,3)}
  drawCsGas()}
@@ -953,7 +953,7 @@ function drawCsGas(){const C=CSG;if(!inView(270,150,300))return;const H=OK;
   g.fillStyle='#3a2a24';g.beginPath();g.moveTo(x+12,y0+d-6);g.lineTo(x+w-12,y0+d-6);g.lineTo(x+w/2+5,y0+d+6);g.lineTo(x+w/2-5,y0+d+6);g.closePath();g.fill();
   SK.box(g,x+w+4,y0+d-14,18,16,'#4a5058','#15171a',2);SK.line(g,x+w/2,y0+d+3,x+w+8,y0+d-6,'#8b939e',3)}
  /* duct from the drop-out box into the bag filter */
- SK.pipe(g,[[372,186],[340,186]],16,'#6a7078',T,{flow:'rgba(220,210,200,.6)',speed:-26,cap:'butt'});
+ SK.pipe(g,[[372,186],[340,186]],16,'#6a7078',T,{flow:'rgba(220,210,200,.6)',speed:26,cap:'butt'});
  /* bag filter: eight compartments with rows of pulse-jet blowpipes on the roof, dust hoppers under */
  {const x=170,y0=140,w=170,d=94,yt=obox(x,y0,w,d,82,'#8b939e','#5b636d','#24272c');
   for(let i=0;i<4;i++)for(let j=0;j<2;j++){const cx=x+6+i*40,cy=yt+6+j*42;g.fillStyle='#7a828c';g.fillRect(cx,cy,36,38);g.strokeStyle='rgba(0,0,0,.25)';g.strokeRect(cx+.5,cy+.5,35,37);
@@ -961,7 +961,7 @@ function drawCsGas(){const C=CSG;if(!inView(270,150,300))return;const H=OK;
   g.fillStyle='#3e434a';for(let i=0;i<4;i++){const hx=x+12+i*40;g.beginPath();g.moveTo(hx,y0+d-8);g.lineTo(hx+28,y0+d-8);g.lineTo(hx+18,y0+d+2);g.lineTo(hx+10,y0+d+2);g.closePath();g.fill()}
   SK.hazardBar(g,x,y0+d-12,w,3)}
  /* induced-draught fan (spiral casing + motor) and the stack */
- SK.pipe(g,[[170,214],[146,214]],12,'#6a7078',T,{flow:'rgba(230,230,230,.5)',speed:-30,cap:'butt'});
+ SK.pipe(g,[[170,214],[146,214]],12,'#6a7078',T,{flow:'rgba(230,230,230,.5)',speed:30,cap:'butt'});
  {const fx=128,fy=212;SK.shadow(g,fx+4,fy+6,22,16,.3);g.fillStyle='#4a5058';SK.circ(g,fx,fy,18);g.fill();g.strokeStyle='#15171a';g.lineWidth=1.5;SK.circ(g,fx,fy,18);g.stroke();SK.fan(g,fx,fy,12,T,14);SK.box(g,fx-10,fy+16,20,12,'#2f6fb0','#15171a',2)}
  SK.pipe(g,[[112,206],[100,206],[100,196]],10,'#6a7078',T);
  {const sx=88,sy=196;SK.shadow(g,sx+14,sy+8,22,12,.3);SK2.cyl(g,sx,sy,14,0,215,'#6b7079','#b3bac3',44);SK2.cap(g,sx,sy-215*H,14,'#4a4f56');g.fillStyle='#15171a';SK.circ(g,sx,sy-215*H,9);g.fill();
@@ -1187,7 +1187,7 @@ function drawPLS(){if(!B_('pls')||mbSt('pls')==='gone')return;const q=P5G.pls;if
  const run=era()===9,live=run?PLS.heat:0,mb=mbOn('pls'),on=run&&PLS.rate>.01,hk=clamp(PLS.rate/max(.01,plsCap()),0,1);
  /* H₂ in from the store and the condensed water back to the electrolysers, along the plant fence */
  SK.pipe(g,[[-1600,1604],[-1600,1640],[-1300,1640],[-1300,q.R.y-q.R.r+18]],5,'#cfd8e3',T,{flow:on?'#9fd8ff':null,speed:26});
- SK.pipe(g,[[q.cond.x0+20,q.cond.y0],[q.cond.x0+20,1614],[-1607,1614],[-1607,1580]],4,'#4f8fd8',T,{flow:on?'#bfe3ff':null,speed:-22});
+ SK.pipe(g,[[q.cond.x0+20,q.cond.y0],[q.cond.x0+20,1614],[-1607,1614],[-1607,1580]],4,'#4f8fd8',T,{flow:on?'#bfe3ff':null,speed:22});
  /* ore fines silo + pneumatic feed */
  const s=q.silo,ff=clamp(S.p5.fines/finesCap(),0,1);SK2.cyl(g,s.x,s.y,s.r,0,46,'#5d636c','#a3a9b1',14);SK2.cap(g,s.x,s.y-46*OK,s.r,mix('#5b636d','#7d5c49',ff));
  g.strokeStyle='#e0a050';g.lineWidth=3;g.beginPath();g.arc(s.x,s.y-46*OK,s.r+4,-PI/2,-PI/2+TAU*ff);g.stroke();
