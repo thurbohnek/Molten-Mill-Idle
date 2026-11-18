@@ -65,8 +65,8 @@ setInterval(save,4000);document.addEventListener('visibilitychange',()=>{if(docu
 function resize(){const r=stage.getBoundingClientRect();cssW=max(200,r.width);cssH=max(300,r.height);dpr=min(2,window.devicePixelRatio||1);
  cv.width=Math.round(cssW*dpr);cv.height=Math.round(cssH*dpr);BZ=clamp(min(cssW/400,cssH/1000),.6,1.3);zoom=BZ*UZ}
 /* player zoom: pinch, mouse wheel, +/- keys or the menu buttons; remembered per device */
-let BZ=1,UZ=1;try{UZ=clamp(+localStorage.getItem('molten.uz')||1,.85,1.9)}catch(e){}
-function setUZ(v){UZ=clamp(v,.85,1.9);zoom=BZ*UZ;try{localStorage.setItem('molten.uz',String(UZ))}catch(e){}const a=$('mZo'),b=$('mZi');if(a)a.disabled=UZ<=.86;if(b)b.disabled=UZ>=1.89}
+let BZ=1,UZ=1;try{UZ=clamp(+localStorage.getItem('molten.uz')||1,.45,1.9)}catch(e){}
+function setUZ(v){UZ=clamp(v,.45,1.9);zoom=BZ*UZ;try{localStorage.setItem('molten.uz',String(UZ))}catch(e){}const a=$('mZo'),b=$('mZi');if(a)a.disabled=UZ<=.46;if(b)b.disabled=UZ>=1.89}
 {let pin=null;const D=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
  cv.addEventListener('touchstart',e=>{if(e.touches.length===2&&!G.mapOn){pin={d:D(e.touches),z:UZ};J.on=false;e.preventDefault()}},{passive:false});
  cv.addEventListener('touchmove',e=>{if(pin&&e.touches.length===2){e.preventDefault();setUZ(pin.z*D(e.touches)/max(1,pin.d))}},{passive:false});
